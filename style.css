@@ -31,6 +31,7 @@ body {
     color: var(--black);
     background: var(--white);
     overflow-x: hidden;
+    font-weight: 500; /* 전체적으로 더 볼드하게 */
 }
 
 .container {
@@ -102,7 +103,7 @@ body {
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
-        font-weight: 300;
+        font-weight: 600; /* 더 볼드하게 */
         letter-spacing: 20px;
     }
 }
@@ -145,7 +146,7 @@ body {
 .logo {
     font-family: 'Outfit', sans-serif;
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     color: var(--black);
     letter-spacing: 2px;
 }
@@ -159,7 +160,7 @@ body {
     color: var(--gray-600);
     text-decoration: none;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     padding: 8px 0;
     transition: all 0.3s ease;
     position: relative;
@@ -169,7 +170,7 @@ body {
 .nav-link:hover,
 .nav-link.active {
     color: var(--black);
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
 }
 
 .nav-link::after {
@@ -251,7 +252,7 @@ body {
 .mobile-logo {
     font-family: 'Outfit', sans-serif;
     font-size: 32px;
-    font-weight: 300;
+    font-weight: 600; /* 더 볼드하게 */
     color: var(--white);
     letter-spacing: 4px;
     margin-bottom: 64px;
@@ -269,7 +270,7 @@ body {
     color: var(--gray-400);
     text-decoration: none;
     font-size: 24px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     font-family: 'Outfit', sans-serif;
     transition: all 0.3s ease;
     letter-spacing: 2px;
@@ -277,29 +278,41 @@ body {
 
 .mobile-nav-link:hover {
     color: var(--white);
-    font-weight: 400;
+    font-weight: 600; /* 더 볼드하게 */
 }
 
-/* Hero Section - Enhanced */
+/* Hero Section - Enhanced with Three.js Background */
 .hero {
     min-height: 100vh;
     display: flex;
     align-items: center;
     position: relative;
-    background: var(--white);
+    background: var(--black); /* 배경을 검은색으로 변경 */
     padding-top: 120px;
+    overflow: hidden;
+}
+
+.hero-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
 }
 
 .hero-content {
     width: 100%;
     text-align: center;
+    position: relative;
+    z-index: 2;
 }
 
 .hero-tag {
     font-family: 'Outfit', sans-serif;
     font-size: 12px;
-    font-weight: 600;
-    color: var(--gray-500);
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--gray-300); /* 텍스트 색상 조정 */
     letter-spacing: 4px;
     text-transform: uppercase;
     margin-bottom: 40px;
@@ -308,15 +321,15 @@ body {
 .hero-text h1 {
     font-family: 'Outfit', sans-serif;
     font-size: 96px;
-    font-weight: 200;
+    font-weight: 400; /* 더 볼드하게 */
     line-height: 1.1;
     margin-bottom: 48px;
-    color: var(--black);
+    color: var(--white); /* 텍스트 색상을 흰색으로 */
     letter-spacing: -2px;
 }
 
 .hero-text h1 strong {
-    font-weight: 800;
+    font-weight: 900; /* 강조 텍스트를 더 볼드하게 */
 }
 
 .vision-text,
@@ -326,10 +339,10 @@ body {
 
 .hero-description {
     font-size: 18px;
-    color: var(--gray-600);
+    color: var(--gray-300); /* 텍스트 색상 조정 */
     margin-bottom: 64px;
     line-height: 1.7;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -342,34 +355,9 @@ body {
     justify-content: center;
 }
 
-.btn-primary,
-.btn-contact {
-    position: relative;
-    padding: 20px 40px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    font-family: 'Outfit', sans-serif;
-}
-
-.btn-primary {
-    background: var(--black);
-    color: var(--white);
-}
-
-.btn-primary:hover {
-    background: var(--gray-800);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
 .btn-contact {
     background: transparent;
-    color: var(--black);
+    color: var(--white); /* 색상 변경 */
     border: 2px solid var(--gray-300);
     display: flex;
     align-items: center;
@@ -377,7 +365,7 @@ body {
 }
 
 .btn-contact:hover {
-    border-color: var(--black);
+    border-color: var(--white);
     transform: translateY(-2px);
 }
 
@@ -400,7 +388,7 @@ body {
 .section-tag {
     font-family: 'Outfit', sans-serif;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     color: var(--gray-400);
     letter-spacing: 4px;
     text-transform: uppercase;
@@ -415,7 +403,7 @@ body {
 .about-text h2 {
     font-family: 'Outfit', sans-serif;
     font-size: 64px;
-    font-weight: 200;
+    font-weight: 400; /* 더 볼드하게 */
     color: var(--white);
     margin-bottom: 32px;
     letter-spacing: -1px;
@@ -425,7 +413,7 @@ body {
     font-size: 24px;
     color: var(--white);
     margin-bottom: 32px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     line-height: 1.5;
 }
 
@@ -434,7 +422,7 @@ body {
     color: var(--gray-400);
     margin-bottom: 0;
     line-height: 1.7;
-    font-weight: 300;
+    font-weight: 400; /* 더 볼드하게 */
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
@@ -467,7 +455,7 @@ body {
 .phil-number {
     font-family: 'Outfit', sans-serif;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     color: var(--gray-500);
     margin-bottom: 24px;
     letter-spacing: 2px;
@@ -476,7 +464,7 @@ body {
 .phil-content h4 {
     font-family: 'Outfit', sans-serif;
     font-size: 24px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     color: var(--white);
     margin-bottom: 8px;
     letter-spacing: -0.5px;
@@ -485,7 +473,7 @@ body {
 .phil-content h5 {
     font-family: 'Pretendard Variable', sans-serif;
     font-size: 18px;
-    font-weight: 400;
+    font-weight: 600; /* 더 볼드하게 */
     color: var(--gray-400);
     margin-bottom: 16px;
 }
@@ -493,7 +481,7 @@ body {
 .phil-content p {
     color: var(--gray-400);
     font-size: 15px;
-    font-weight: 300;
+    font-weight: 400; /* 더 볼드하게 */
     line-height: 1.6;
     margin: 0;
 }
@@ -518,14 +506,14 @@ body {
     margin-bottom: 24px;
     font-family: 'Outfit', sans-serif;
     font-size: 64px;
-    font-weight: 200;
+    font-weight: 400; /* 더 볼드하게 */
     letter-spacing: -1px;
 }
 
 .brands .section-header p {
     color: var(--gray-600);
     font-size: 18px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     line-height: 1.6;
     max-width: 700px;
     margin: 0 auto;
@@ -578,14 +566,14 @@ body {
 .brand-name {
     font-family: 'Outfit', sans-serif;
     font-size: 32px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     color: var(--black);
     letter-spacing: 1px;
 }
 
 .brand-status {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     text-transform: uppercase;
     letter-spacing: 1px;
     padding: 6px 12px;
@@ -606,7 +594,7 @@ body {
 .brand-description p {
     font-size: 16px;
     color: var(--gray-600);
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     margin-bottom: 12px;
     font-family: 'Outfit', sans-serif;
 }
@@ -616,7 +604,7 @@ body {
     color: var(--gray-500);
     line-height: 1.5;
     margin-bottom: 32px;
-    font-weight: 300;
+    font-weight: 400; /* 더 볼드하게 */
 }
 
 .brand-link {
@@ -627,7 +615,7 @@ body {
     align-items: center;
     gap: 12px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     color: var(--gray-600);
     transition: all 0.3s ease;
     font-family: 'Outfit', sans-serif;
@@ -646,7 +634,7 @@ body {
     transform: translateX(4px);
 }
 
-/* Work Section - Dark Background */
+/* Work Section - Updated to 2x2 Grid */
 .work {
     padding: 160px 0;
     background: var(--black);
@@ -667,21 +655,25 @@ body {
     margin-bottom: 24px;
     font-family: 'Outfit', sans-serif;
     font-size: 64px;
-    font-weight: 200;
+    font-weight: 400; /* 더 볼드하게 */
     letter-spacing: -1px;
 }
 
 .work .section-header p {
     color: var(--gray-400);
     font-size: 18px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     line-height: 1.6;
 }
 
+/* 2x2 Grid for Work Gallery */
 .work-gallery {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
     gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .work-card {
@@ -692,11 +684,6 @@ body {
     transition: transform 0.4s ease;
     border: 1px solid var(--gray-800);
     background: var(--gray-900);
-}
-
-.work-card.featured {
-    grid-column: span 2;
-    height: 500px;
 }
 
 .work-card:hover {
@@ -723,7 +710,7 @@ body {
 .work-info h3 {
     font-family: 'Outfit', sans-serif;
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     margin-bottom: 12px;
     letter-spacing: -0.5px;
 }
@@ -732,7 +719,7 @@ body {
     color: var(--gray-300);
     margin-bottom: 24px;
     font-size: 16px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
 }
 
 .work-tech {
@@ -747,7 +734,7 @@ body {
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     text-transform: uppercase;
     letter-spacing: 1px;
     backdrop-filter: blur(10px);
@@ -770,7 +757,7 @@ body {
 .contact-info h2 {
     font-family: 'Outfit', sans-serif;
     font-size: 64px;
-    font-weight: 200;
+    font-weight: 400; /* 더 볼드하게 */
     color: var(--black);
     margin-bottom: 32px;
     line-height: 1.2;
@@ -782,7 +769,7 @@ body {
     color: var(--gray-600);
     margin-bottom: 64px;
     line-height: 1.7;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
 }
 
 .contact-details {
@@ -801,7 +788,7 @@ body {
 
 .contact-content .label {
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700; /* 더 볼드하게 */
     color: var(--gray-500);
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -814,7 +801,7 @@ body {
 .contact-content span {
     color: var(--black);
     text-decoration: none;
-    font-weight: 400;
+    font-weight: 600; /* 더 볼드하게 */
     font-size: 18px;
     transition: color 0.3s ease;
     font-family: 'Outfit', sans-serif;
@@ -835,7 +822,7 @@ body {
 .form-container h3 {
     font-family: 'Outfit', sans-serif;
     font-size: 32px;
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     color: var(--black);
     margin-bottom: 48px;
     letter-spacing: -0.5px;
@@ -861,7 +848,7 @@ body {
     border-bottom: 2px solid var(--gray-300);
     font-size: 16px;
     font-family: 'Outfit', sans-serif;
-    font-weight: 400;
+    font-weight: 500; /* 더 볼드하게 */
     transition: all 0.3s ease;
     background: transparent;
     border-radius: 0;
@@ -877,7 +864,7 @@ body {
 .form-container input::placeholder,
 .form-container textarea::placeholder {
     color: var(--gray-500);
-    font-weight: 300;
+    font-weight: 400; /* 더 볼드하게 */
 }
 
 .btn-submit {
@@ -889,7 +876,7 @@ body {
     border-radius: 8px;
     font-family: 'Outfit', sans-serif;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 32px;
@@ -920,7 +907,7 @@ body {
 .footer-logo {
     font-family: 'Outfit', sans-serif;
     font-size: 36px;
-    font-weight: 300;
+    font-weight: 600; /* 더 볼드하게 */
     color: var(--white);
     margin-bottom: 24px;
     letter-spacing: 2px;
@@ -930,7 +917,7 @@ body {
     font-family: 'Outfit', sans-serif;
     color: var(--gray-500);
     font-size: 14px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     margin-bottom: 48px;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -945,7 +932,7 @@ body {
     color: var(--gray-500);
     text-decoration: none;
     font-size: 16px;
-    font-weight: 400;
+    font-weight: 500; /* 더 볼드하게 */
     transition: color 0.3s ease;
     font-family: 'Outfit', sans-serif;
 }
@@ -964,7 +951,7 @@ body {
     font-family: 'Outfit', sans-serif;
     color: var(--white);
     font-size: 18px;
-    font-weight: 500;
+    font-weight: 600; /* 더 볼드하게 */
     margin-bottom: 32px;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -975,7 +962,7 @@ body {
     color: var(--gray-500);
     text-decoration: none;
     font-size: 16px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     margin-bottom: 20px;
     transition: color 0.3s ease;
     font-family: 'Outfit', sans-serif;
@@ -1005,7 +992,7 @@ body {
 .footer-bottom p {
     color: var(--gray-600);
     font-size: 14px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     font-family: 'Outfit', sans-serif;
 }
 
@@ -1018,7 +1005,7 @@ body {
     color: var(--gray-600);
     text-decoration: none;
     font-size: 14px;
-    font-weight: 300;
+    font-weight: 500; /* 더 볼드하게 */
     transition: color 0.3s ease;
     font-family: 'Outfit', sans-serif;
 }
@@ -1035,9 +1022,9 @@ body {
         gap: 80px;
     }
     
-    .work-card.featured {
-        grid-column: span 1;
-        height: 400px;
+    .work-gallery {
+        grid-template-columns: 1fr;
+        gap: 24px;
     }
     
     .footer-grid {
@@ -1143,4 +1130,29 @@ body {
     .nav-container {
         padding: 0 24px;
     }
+}primary,
+.btn-contact {
+    position: relative;
+    padding: 20px 40px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600; /* 더 볼드하게 */
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
 }
+
+.btn-primary {
+    background: var(--white); /* 버튼 색상 반전 */
+    color: var(--black);
+}
+
+.btn-primary:hover {
+    background: var(--gray-200);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+}
+
+.btn-
