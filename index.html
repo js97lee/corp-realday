@@ -7,10 +7,25 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 </head>
 <body>
+    <!-- Logo Intro Animation -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-content">
+            <div class="logo-animation">
+                <span class="letter">R</span>
+                <span class="letter">E</span>
+                <span class="letter">A</span>
+                <span class="letter">L</span>
+                <span class="letter">D</span>
+                <span class="letter">A</span>
+                <span class="letter">Y</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Navigation -->
     <nav class="nav">
         <div class="nav-pill">
@@ -19,6 +34,7 @@
                 <div class="nav-links">
                     <a href="#home" class="nav-link active">Home</a>
                     <a href="#about" class="nav-link">About</a>
+                    <a href="#brands" class="nav-link">Brands</a>
                     <a href="#work" class="nav-link">Work</a>
                     <a href="#contact" class="nav-link">Contact</a>
                 </div>
@@ -33,14 +49,6 @@
 
     <!-- Hero Section -->
     <section id="home" class="hero">
-        <div class="hero-bg">
-            <div class="grid-overlay"></div>
-            <div class="floating-elements">
-                <div class="element-1"></div>
-                <div class="element-2"></div>
-                <div class="element-3"></div>
-            </div>
-        </div>
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text">
@@ -51,10 +59,7 @@
                     </h1>
                     <p class="hero-description">확장현실의 무한한 가능성을 창조합니다.<br>상상을 현실로, 현실을 더 나은 경험으로 변화시킵니다.</p>
                     <div class="hero-buttons">
-                        <a href="#work" class="btn-primary">
-                            <span>프로젝트 보기</span>
-                            <div class="btn-glow"></div>
-                        </a>
+                        <a href="#work" class="btn-primary">프로젝트 보기</a>
                         <a href="#contact" class="btn-contact">
                             <span>CONTACT</span>
                             <div class="btn-arrow">→</div>
@@ -62,19 +67,9 @@
                     </div>
                 </div>
                 <div class="hero-visual">
-                    <div class="xr-cube">
-                        <div class="cube-face front"></div>
-                        <div class="cube-face back"></div>
-                        <div class="cube-face right"></div>
-                        <div class="cube-face left"></div>
-                        <div class="cube-face top"></div>
-                        <div class="cube-face bottom"></div>
-                    </div>
-                    <div class="hologram-ring"></div>
-                    <div class="data-streams">
-                        <div class="stream"></div>
-                        <div class="stream"></div>
-                        <div class="stream"></div>
+                    <div class="minimal-visual">
+                        <div class="visual-line"></div>
+                        <div class="visual-dot"></div>
                     </div>
                 </div>
             </div>
@@ -94,27 +89,34 @@
                     <div class="philosophy-grid">
                         <div class="phil-card">
                             <div class="phil-icon">E</div>
-                            <h4>Emotion</h4>
-                            <p>감정적 연결을 통한 깊은 몰입 경험</p>
+                            <div class="phil-content">
+                                <h4>Emotion</h4>
+                                <p>감정적 연결을 통한 깊은 몰입 경험</p>
+                            </div>
                         </div>
                         <div class="phil-card">
                             <div class="phil-icon">L</div>
-                            <h4>Logic</h4>
-                            <p>논리적 구조 기반의 체계적 접근</p>
+                            <div class="phil-content">
+                                <h4>Logic</h4>
+                                <p>논리적 구조 기반의 체계적 접근</p>
+                            </div>
                         </div>
                         <div class="phil-card">
                             <div class="phil-icon">S</div>
-                            <h4>Sense</h4>
-                            <p>감각적 완성도로 전달하는 메시지</p>
+                            <div class="phil-content">
+                                <h4>Sense</h4>
+                                <p>감각적 완성도로 전달하는 메시지</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="about-visual">
-                    <div class="about-graphic">
-                        <div class="graphic-circle"></div>
-                        <div class="graphic-circle"></div>
-                        <div class="graphic-circle"></div>
+                    <div class="minimal-grid">
+                        <div class="grid-item"></div>
+                        <div class="grid-item"></div>
+                        <div class="grid-item"></div>
+                        <div class="grid-item"></div>
                     </div>
                 </div>
             </div>
@@ -123,7 +125,6 @@
 
     <!-- Work Section -->
     <section id="work" class="work">
-        <div class="work-bg"></div>
         <div class="container">
             <div class="section-header">
                 <div class="section-tag">PORTFOLIO</div>
@@ -134,7 +135,6 @@
             <div class="work-gallery">
                 <div class="work-card featured">
                     <div class="work-preview">
-                        <div class="work-bg xr-gradient-1"></div>
                         <div class="work-overlay">
                             <div class="work-info">
                                 <h3>XR Brand Experience</h3>
@@ -151,7 +151,6 @@
                 
                 <div class="work-card">
                     <div class="work-preview">
-                        <div class="work-bg xr-gradient-2"></div>
                         <div class="work-overlay">
                             <div class="work-info">
                                 <h3>AR Mobile App</h3>
@@ -167,7 +166,6 @@
                 
                 <div class="work-card">
                     <div class="work-preview">
-                        <div class="work-bg xr-gradient-3"></div>
                         <div class="work-overlay">
                             <div class="work-info">
                                 <h3>Metaverse Platform</h3>
@@ -183,7 +181,6 @@
                 
                 <div class="work-card">
                     <div class="work-preview">
-                        <div class="work-bg xr-gradient-4"></div>
                         <div class="work-overlay">
                             <div class="work-info">
                                 <h3>Smart Glasses UI</h3>
@@ -211,21 +208,18 @@
                     
                     <div class="contact-details">
                         <div class="contact-item">
-                            <div class="contact-icon">📧</div>
                             <div class="contact-content">
                                 <span class="label">Email</span>
                                 <a href="mailto:studio.realday@gmail.com">studio.realday@gmail.com</a>
                             </div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">📱</div>
                             <div class="contact-content">
                                 <span class="label">Phone</span>
                                 <a href="tel:+82-10-2021-5243">+82 10-2021-5243</a>
                             </div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">📍</div>
                             <div class="contact-content">
                                 <span class="label">Location</span>
                                 <span>Seoul, South Korea</span>
@@ -237,7 +231,6 @@
                         <span class="family-title">Our Family</span>
                         <div class="family-cards">
                             <a href="https://applex.kr" target="_blank" class="family-card active">
-                                <div class="family-logo">A</div>
                                 <div class="family-info">
                                     <h4>APPLEX</h4>
                                     <p>XR Developer Group</p>
@@ -245,7 +238,6 @@
                                 <div class="family-status">Active</div>
                             </a>
                             <div class="family-card coming-soon">
-                                <div class="family-logo">E</div>
                                 <div class="family-info">
                                     <h4>ELS</h4>
                                     <p>Design Create Group</p>
@@ -281,10 +273,7 @@
                             <div class="form-group full">
                                 <textarea placeholder="프로젝트에 대해 자세히 설명해주세요" rows="4" required></textarea>
                             </div>
-                            <button type="submit" class="btn-submit">
-                                <span>메시지 보내기</span>
-                                <div class="submit-glow"></div>
-                            </button>
+                            <button type="submit" class="btn-submit">메시지 보내기</button>
                         </form>
                     </div>
                 </div>
@@ -301,15 +290,9 @@
                         <div class="footer-logo">REALDAY</div>
                         <p>FROM VISION TO INFINITE CREATION</p>
                         <div class="footer-social">
-                            <a href="#" class="social-link">
-                                <span>Instagram</span>
-                            </a>
-                            <a href="#" class="social-link">
-                                <span>LinkedIn</span>
-                            </a>
-                            <a href="#" class="social-link">
-                                <span>Behance</span>
-                            </a>
+                            <a href="#" class="social-link">Instagram</a>
+                            <a href="#" class="social-link">LinkedIn</a>
+                            <a href="#" class="social-link">Behance</a>
                         </div>
                     </div>
                     
