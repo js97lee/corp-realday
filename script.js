@@ -1,440 +1,305 @@
-// REALDAY - Enhanced XR Studio (Outfit Font + Impact Design)
+// Three.js Scene Setup
+let scene, camera, renderer, particles, mouseX = 0, mouseY = 0;
+
+function init() {
+    // Scene setup
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
+    // Renderer setup
+    const canvas = document.getElementById('three-canvas');
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+
+    // Create particle system
+    createParticleSystem();
+    
+    // Create floating geometric shapes
+    createFloatingShapes();
+    
+    // Camera position
+    camera.position.z = 5;
+
+    // Mouse event listeners
+    document.addEventListener('mousemove', onMouseMove, false);
+    
+    // Start animation
+    animate();
+}
+
+function createParticleSystem() {
+    const particleCount = 800;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+        // Positions
+        positions[i * 3] = (Math.random() - 0.5) * 20;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 15;
+
+        // Colors - white to gray gradient
+        const intensity = Math.random() * 0.5 + 0.5;
+        colors[i * 3] = intensity;
+        colors[i * 3 + 1] = intensity;
+        colors[i * 3 + 2] = intensity;
+
+        // Sizes
+        sizes[i] = Math.random() * 3 + 1;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    // Create shader material for better performance and effects
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 },
+            pointTexture: { value: createCircleTexture() }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            uniform float time;
+            
+            void main() {
+                vColor = color;
+                
+                vec3 pos = position;
+                pos.x += sin(time * 0.001 + position.y * 0.01) * 0.5;
+                pos.y += cos(time * 0.001 + position.x * 0.01) * 0.3;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_PointSize = size * (300.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            uniform sampler2D pointTexture;
+            varying vec3 vColor;
+            
+            void main() {
+                vec4 textureColor = texture2D(pointTexture, gl_PointCoord);
+                gl_FragColor = vec4(vColor, textureColor.a * 0.8);
+            }
+        `,
+        transparent: true,
+        vertexColors: true
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createCircleTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    
+    const texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+}
+
+function createFloatingShapes() {
+    // Create floating geometric shapes
+    const shapes = [];
+    
+    // Torus
+    const torusGeometry = new THREE.TorusGeometry(0.6, 0.2, 16, 100);
+    const torusMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.1,
+        wireframe: true
+    });
+    const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+    torus.position.set(-3, 2, -2);
+    scene.add(torus);
+    shapes.push({ mesh: torus, rotationSpeed: { x: 0.005, y: 0.01, z: 0 } });
+
+    // Octahedron
+    const octaGeometry = new THREE.OctahedronGeometry(0.8);
+    const octaMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.08,
+        wireframe: true
+    });
+    const octahedron = new THREE.Mesh(octaGeometry, octaMaterial);
+    octahedron.position.set(3, -2, -1);
+    scene.add(octahedron);
+    shapes.push({ mesh: octahedron, rotationSpeed: { x: 0.01, y: 0.005, z: 0.008 } });
+
+    // Sphere
+    const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const sphereMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.06,
+        wireframe: true
+    });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphere.position.set(0, 3, -3);
+    scene.add(sphere);
+    shapes.push({ mesh: sphere, rotationSpeed: { x: 0.008, y: 0.012, z: 0.005 } });
+
+    // Store shapes for animation
+    scene.userData.shapes = shapes;
+}
+
+function onMouseMove(event) {
+    mouseX = (event.clientX - window.innerWidth / 2) / 100;
+    mouseY = (event.clientY - window.innerHeight / 2) / 100;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = Date.now();
+
+    // Update particle system
+    if (particles && particles.material.uniforms) {
+        particles.material.uniforms.time.value = time;
+        
+        // Rotate particles based on mouse movement
+        particles.rotation.x += (mouseY * 0.001 - particles.rotation.x) * 0.05;
+        particles.rotation.y += (mouseX * 0.001 - particles.rotation.y) * 0.05;
+    }
+
+    // Animate floating shapes
+    if (scene.userData.shapes) {
+        scene.userData.shapes.forEach(({ mesh, rotationSpeed }) => {
+            mesh.rotation.x += rotationSpeed.x;
+            mesh.rotation.y += rotationSpeed.y;
+            mesh.rotation.z += rotationSpeed.z;
+            
+            // Add subtle floating motion
+            mesh.position.y += Math.sin(time * 0.001 + mesh.position.x) * 0.002;
+        });
+    }
+
+    renderer.render(scene, camera);
+}
+
+// Handle window resize
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+window.addEventListener('resize', onWindowResize, false);
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
+
+// Smooth scrolling for better performance
+let ticking = false;
+
+function updateParallax() {
+    const scrollTop = window.pageYOffset;
+    
+    if (particles) {
+        particles.rotation.y = scrollTop * 0.0001;
+    }
+    
+    ticking = false;
+}
+
+function requestTick() {
+    if (!ticking) {
+        requestAnimationFrame(updateParallax);
+        ticking = true;
+    }
+}
+
+window.addEventListener('scroll', requestTick);
+
+// Add subtle interactions to project cards
 document.addEventListener('DOMContentLoaded', function() {
+    const projectCards = document.querySelectorAll('.project-card');
     
-    // Enhanced logo intro animation
-    const introOverlay = document.getElementById('introOverlay');
-    
-    // Hide intro after animation completes
-    setTimeout(() => {
-        introOverlay.classList.add('hidden');
-        // Remove from DOM after fade out
-        setTimeout(() => {
-            introOverlay.remove();
-        }, 1000);
-    }, 3500); // Show for 3.5 seconds for enhanced animation
-    
-    // Navigation smooth scroll
-    const navLinks = document.querySelectorAll('a[href^="#"]');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                
-                // Update active nav link
-                document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Close mobile menu if open
-                closeMobileMenu();
-            }
-        });
-    });
-
-    // Enhanced Mobile menu toggle
-    const menuToggle = document.querySelector('.menu-toggle');
-    const mobileMenu = document.querySelector('.mobile-menu');
-    
-    function openMobileMenu() {
-        menuToggle.classList.add('active');
-        mobileMenu.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeMobileMenu() {
-        menuToggle.classList.remove('active');
-        mobileMenu.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-    
-    if (menuToggle && mobileMenu) {
-        menuToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (mobileMenu.classList.contains('open')) {
-                closeMobileMenu();
-            } else {
-                openMobileMenu();
-            }
-        });
-        
-        // Close menu when clicking on mobile menu links
-        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
-        mobileNavLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                closeMobileMenu();
-            });
-        });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (mobileMenu.classList.contains('open') && 
-                !mobileMenu.contains(e.target) && 
-                !menuToggle.contains(e.target)) {
-                closeMobileMenu();
-            }
-        });
-    }
-
-    // Update active nav on scroll
-    const sections = document.querySelectorAll('section[id]');
-    window.addEventListener('scroll', function() {
-        let current = '';
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop - 200;
-            const sectionHeight = section.clientHeight;
-            if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
-                current = section.getAttribute('id');
-            }
-        });
-        
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${current}`) {
-                link.classList.add('active');
-            }
-        });
-    });
-
-    // Enhanced Contact form submission
-    const contactForm = document.querySelector('.contact-form form');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form elements
-            const inputs = this.querySelectorAll('input[required], select[required], textarea[required]');
-            let isValid = true;
-            
-            // Enhanced validation with animations
-            inputs.forEach(input => {
-                if (!input.value.trim()) {
-                    isValid = false;
-                    input.style.borderBottomColor = '#dc3545';
-                    input.style.transform = 'translateX(-4px)';
-                    setTimeout(() => {
-                        input.style.transform = 'translateX(4px)';
-                        setTimeout(() => {
-                            input.style.transform = 'translateX(0)';
-                        }, 100);
-                    }, 100);
-                } else {
-                    input.style.borderBottomColor = 'var(--gray-300)';
-                    input.style.transform = 'translateX(0)';
-                }
-            });
-            
-            if (isValid) {
-                // Show enhanced success message
-                showNotification('메시지가 성공적으로 전송되었습니다. 빠른 시일 내에 연락드리겠습니다.', 'success');
-                this.reset();
-                
-                // Reset form styles
-                inputs.forEach(input => {
-                    input.style.borderBottomColor = 'var(--gray-300)';
-                    input.style.transform = 'translateX(0)';
-                });
-            } else {
-                showNotification('모든 필수 필드를 입력해주세요.', 'error');
-            }
-        });
-    }
-
-    // Enhanced Intersection Observer for animations
-    const observeElements = document.querySelectorAll('.work-card, .phil-card, .brand-card');
-    
-    if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach((entry, index) => {
-                if (entry.isIntersecting) {
-                    setTimeout(() => {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }, index * 100);
-                }
-            });
-        }, { 
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        });
-
-        observeElements.forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(40px)';
-            el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-            observer.observe(el);
-        });
-    }
-
-    // Enhanced button interactions
-    const buttons = document.querySelectorAll('.btn-primary, .btn-contact, .btn-submit');
-    buttons.forEach(button => {
-        button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px)';
-        });
-        
-        button.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-        
-        button.addEventListener('mousedown', function() {
-            this.style.transform = 'translateY(-1px)';
-        });
-        
-        button.addEventListener('mouseup', function() {
-            this.style.transform = 'translateY(-3px)';
-        });
-    });
-
-    // Brand card enhanced interactions
-    const brandCards = document.querySelectorAll('.brand-card.active');
-    brandCards.forEach(card => {
+    projectCards.forEach((card, index) => {
         card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-12px)';
-            this.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.15)';
+            // Add subtle scale effect with stagger
+            setTimeout(() => {
+                card.style.transform = 'translateY(-15px) scale(1.02)';
+            }, index * 50);
         });
         
         card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '0 16px 48px rgba(0, 0, 0, 0.12)';
+            card.style.transform = 'translateY(0) scale(1)';
         });
     });
 
-    // Work card enhanced hover
-    const workCards = document.querySelectorAll('.work-card');
-    workCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-12px)';
-            const overlay = this.querySelector('.work-overlay');
-            if (overlay) {
-                overlay.style.background = 'linear-gradient(transparent, rgba(0, 0, 0, 0.9))';
-            }
-        });
+    // Add parallax effect to sections
+    const sections = document.querySelectorAll('.section');
+    
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset;
         
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            const overlay = this.querySelector('.work-overlay');
-            if (overlay) {
-                overlay.style.background = 'linear-gradient(transparent, rgba(0, 0, 0, 0.8))';
-            }
+        sections.forEach((section, index) => {
+            const speed = 0.5 + (index * 0.1);
+            const yPos = -(scrollTop * speed);
+            section.style.transform = `translateY(${yPos}px)`;
         });
     });
 
-    // Philosophy card enhanced hover
-    const philCards = document.querySelectorAll('.phil-card');
-    philCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Enhanced page load animation
-    document.body.style.opacity = '0';
-    window.addEventListener('load', function() {
-        document.body.style.transition = 'opacity 0.6s ease';
-        document.body.style.opacity = '1';
-    });
-
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeMobileMenu();
-        }
-    });
-
-    // Enhanced scroll effects for nav
-    let lastScroll = 0;
-    window.addEventListener('scroll', function() {
-        const currentScroll = window.pageYOffset;
-        const nav = document.querySelector('.nav');
-        
-        if (currentScroll > 100) {
-            nav.style.background = 'rgba(255, 255, 255, 0.98)';
-            nav.querySelector('.nav-pill').style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
-        } else {
-            nav.style.background = 'transparent';
-            nav.querySelector('.nav-pill').style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
-        }
-        
-        lastScroll = currentScroll;
-    });
-
-    // Parallax effect for hero section
-    const hero = document.querySelector('.hero');
-    if (hero) {
-        window.addEventListener('scroll', function() {
-            const scrolled = window.pageYOffset;
-            const parallax = scrolled * 0.3;
-            hero.style.transform = `translateY(${parallax}px)`;
+    // Add click interaction to CTA button
+    const ctaButton = document.querySelector('.cta-button');
+    if (ctaButton) {
+        ctaButton.addEventListener('click', function() {
+            // Add ripple effect
+            const ripple = document.createElement('span');
+            ripple.style.position = 'absolute';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'rgba(0, 0, 0, 0.3)';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            ripple.style.width = '20px';
+            ripple.style.height = '20px';
+            ripple.style.marginLeft = '-10px';
+            ripple.style.marginTop = '-10px';
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
         });
     }
 });
 
-// Enhanced notification system
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => notification.remove());
-
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    
-    // Set notification content
-    notification.innerHTML = `
-        <div class="notification-content">
-            <div class="notification-icon">${type === 'success' ? '✓' : '!'}</div>
-            <span class="notification-text">${message}</span>
-            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
-        </div>
-    `;
-
-    // Apply enhanced styles
-    Object.assign(notification.style, {
-        position: 'fixed',
-        top: '120px',
-        right: '32px',
-        background: type === 'success' ? 'var(--black)' : '#dc3545',
-        color: 'var(--white)',
-        padding: '0',
-        borderRadius: '12px',
-        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.2)',
-        zIndex: '10000',
-        maxWidth: '420px',
-        minWidth: '320px',
-        transform: 'translateX(100%)',
-        transition: 'transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-        overflow: 'hidden',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        fontFamily: 'Outfit, sans-serif'
-    });
-
-    // Style notification content
-    const content = notification.querySelector('.notification-content');
-    Object.assign(content.style, {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        padding: '20px 24px',
-        position: 'relative'
-    });
-
-    // Style icon
-    const icon = notification.querySelector('.notification-icon');
-    Object.assign(icon.style, {
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        background: 'rgba(255, 255, 255, 0.2)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '16px',
-        fontWeight: 'bold',
-        flexShrink: '0'
-    });
-
-    // Style text
-    const text = notification.querySelector('.notification-text');
-    Object.assign(text.style, {
-        flex: '1',
-        fontSize: '15px',
-        lineHeight: '1.4',
-        fontWeight: '400'
-    });
-
-    // Style close button
-    const closeBtn = notification.querySelector('.notification-close');
-    Object.assign(closeBtn.style, {
-        background: 'none',
-        border: 'none',
-        color: 'white',
-        fontSize: '20px',
-        cursor: 'pointer',
-        padding: '0',
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'background 0.2s ease',
-        flexShrink: '0'
-    });
-
-    closeBtn.addEventListener('mouseenter', function() {
-        this.style.background = 'rgba(255, 255, 255, 0.1)';
-    });
-
-    closeBtn.addEventListener('mouseleave', function() {
-        this.style.background = 'none';
-    });
-
-    // Add to page
-    document.body.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 10);
-
-    // Auto remove after 5 seconds
-    const autoRemove = setTimeout(() => {
-        removeNotification(notification);
-    }, 5000);
-
-    // Clear timeout if manually closed
-    closeBtn.addEventListener('click', () => {
-        clearTimeout(autoRemove);
-    });
-}
-
-function removeNotification(notification) {
-    notification.style.transform = 'translateX(100%)';
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
+// Add CSS for ripple animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
         }
-    }, 400);
-}
-
-// Performance optimization
-window.addEventListener('load', function() {
-    // Optimize scroll performance
-    let ticking = false;
-    
-    function updateScrollElements() {
-        // Enhanced scroll effects
-        const scrollY = window.pageYOffset;
-        
-        // Parallax elements
-        const parallaxElements = document.querySelectorAll('.phil-card, .brand-card');
-        parallaxElements.forEach((el, index) => {
-            const speed = (index % 3 + 1) * 0.02;
-            el.style.transform = `translateY(${scrollY * speed}px)`;
-        });
-        
-        ticking = false;
     }
     
-    window.addEventListener('scroll', function() {
-        if (!ticking) {
-            requestAnimationFrame(updateScrollElements);
-            ticking = true;
-        }
-    });
-    
-    // Preload critical fonts
-    const fontLoad = new FontFace('Outfit', 'url(https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap)');
-    fontLoad.load().then(function(loadedFont) {
-        document.fonts.add(loadedFont);
-    });
-});
+    .cta-button {
+        position: relative;
+        overflow: hidden;
+    }
+`;
+document.head.appendChild(style);
