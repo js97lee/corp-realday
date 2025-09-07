@@ -3,83 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio RealDay - FROM VISION TO INFINITE CREATION</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>REALDAY - XR Creative Studio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 </head>
 <body>
-    <!-- Hero Section with Three.js Background -->
-    <section class="hero">
-        <canvas id="three-canvas"></canvas>
-        <div class="hero-content">
-            <h1>FROM VISION TO INFINITE CREATION</h1>
-            <p class="hero-subtitle">확장현실의 무한한 가능성을 창조합니다</p>
-            <p class="hero-description">
-                상상을 현실로, 현실을 더 나은 경험으로 변화시킵니다.<br>
-                모든 순간에서 한번의 리얼한 경험을
-            </p>
+    <!-- Logo Intro Animation -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-content">
+            <div class="logo-animation">
+                <span class="letter">R</span>
+                <span class="letter">E</span>
+                <span class="letter">A</span>
+                <span class="letter">L</span>
+                <span class="letter">D</span>
+                <span class="letter">A</span>
+                <span class="letter">Y</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <div class="nav-pill">
+                <div class="nav-content">
+                    <div class="logo">REALDAY</div>
+                    <div class="nav-links">
+                        <a href="#home" class="nav-link active">Home</a>
+                        <a href="#about" class="nav-link">About</a>
+                        <a href="#brands" class="nav-link">Brands</a>
+                        <a href="#work" class="nav-link">Work</a>
+                        <a href="#contact" class="nav-link">Contact</a>
+                    </div>
+                </div>
+            </div>
+            <button class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <div class="mobile-menu-content">
+                <div class="mobile-logo">REALDAY</div>
+                <div class="mobile-nav-links">
+                    <a href="#home" class="mobile-nav-link">Home</a>
+                    <a href="#about" class="mobile-nav-link">About</a>
+                    <a href="#brands" class="mobile-nav-link">Brands</a>
+                    <a href="#work" class="mobile-nav-link">Work</a>
+                    <a href="#contact" class="mobile-nav-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <div class="hero-tag">XR CREATIVE STUDIO</div>
+                    <h1>
+                        <span class="vision-text">FROM <strong>VISION</strong></span>
+                        <span class="creation-text">TO <strong>INFINITE CREATION</strong></span>
+                    </h1>
+                    <p class="hero-description">확장현실의 무한한 가능성을 창조합니다.<br>상상을 현실로, 현실을 더 나은 경험으로 변화시킵니다.</p>
+                    <div class="hero-buttons">
+                        <a href="#work" class="btn-primary">프로젝트 보기</a>
+                        <a href="#contact" class="btn-contact">
+                            <span>CONTACT</span>
+                            <div class="btn-arrow">→</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- About Section -->
-    <section class="section">
-        <h2>Studio RealDay</h2>
-        <div class="about-intro">
-            <p>Studio RealDay는 순간적인 경험이 사람의 감각과 관점을 변화시킨다고 생각합니다. 우리는 한 번의 경험을 통해 새로운 감정을 일으키고, 세상을 바라보는 방식을 바꾸는 전환점을 설계합니다.</p>
-        </div>
-        
-        <div class="about-content">
-            <div class="about-card">
-                <h3>디자인과 상상력</h3>
-                <p>우리는 디자인과 상상력을 일상에 불어넣어, 평범한 순간을 특별한 경험으로 바꿉니다.</p>
+    <section id="about" class="about">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-text">
+                    <div class="section-tag">OUR PHILOSOPHY</div>
+                    <h2>Design Real Day</h2>
+                    <p class="intro-text">모든 순간에서 한번의 리얼한 경험을</p>
+                    <p class="desc-text">Studio RealDay는 순간적인 경험이 사람의 감각과 관점을 변화시킨다고 생각합니다. 우리는 한 번의 경험을 통해 새로운 감정을 일으키고, 세상을 바라보는 방식을 바꾸는 전환점을 설계합니다.</p>
+                </div>
             </div>
-            <div class="about-card">
-                <h3>감정의 연결</h3>
-                <p>우리는 감정을 불러일으키는 스토리와 오브제를 통해, 개인의 감정을 모두가 공감하는 연결로 확장합니다.</p>
-            </div>
-            <div class="about-card">
-                <h3>기술과 예술의 융합</h3>
-                <p>우리는 예술적 비전과 XR·AI 같은 첨단 기술을 융합해, 미래 지향적인 디자인 경험을 만듭니다.</p>
+            
+            <div class="philosophy-grid">
+                <div class="phil-card">
+                    <div class="phil-number">01</div>
+                    <div class="phil-content">
+                        <h4>Creativity in Everyday Life</h4>
+                        <h5>일상 속의 창의성</h5>
+                        <p>우리는 디자인과 상상력을 일상에 불어넣어, 평범한 순간을 특별한 경험으로 바꿉니다.</p>
+                    </div>
+                </div>
+                <div class="phil-card">
+                    <div class="phil-number">02</div>
+                    <div class="phil-content">
+                        <h4>Emotions that Connect</h4>
+                        <h5>감정을 연결하는 힘</h5>
+                        <p>우리는 감정을 불러일으키는 스토리와 오브제를 통해, 개인의 감정을 모두가 공감하는 연결로 확장합니다.</p>
+                    </div>
+                </div>
+                <div class="phil-card">
+                    <div class="phil-number">03</div>
+                    <div class="phil-content">
+                        <h4>Where Art Meets Technology</h4>
+                        <h5>예술과 기술의 융합</h5>
+                        <p>우리는 예술적 비전과 XR·AI 같은 첨단 기술을 융합해, 미래 지향적인 디자인 경험을 만듭니다.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Projects Section - 2x2 Grid -->
-    <section class="section">
-        <h2>Our Brands</h2>
-        <p class="section-subtitle">각각의 전문성을 가진 브랜드들이 하나의 비전 아래 혁신을 만들어갑니다</p>
-        
-        <div class="projects-grid">
-            <div class="project-card">
-                <div class="project-icon">🥽</div>
-                <h3>XR Developer Group</h3>
-                <p>확장현실 기술 개발과 혁신적인 XR 솔루션을 제공하는 개발자 그룹</p>
+    <!-- Brands Section -->
+    <section id="brands" class="brands">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">OUR ECOSYSTEM</div>
+                <h2>Brands</h2>
+                <p>각각의 전문성을 가진 브랜드들이 하나의 비전 아래 혁신을 만들어갑니다</p>
             </div>
-            <div class="project-card">
-                <div class="project-icon">🎨</div>
-                <h3>Design Create Group</h3>
-                <p>감정, 논리, 감각이 조화된 창의적 디자인을 전문으로 하는 크리에이티브 그룹</p>
+            
+            <div class="brands-grid">
+                <a href="https://applex.kr" target="_blank" class="brand-card active">
+                    <div class="brand-header">
+                        <div class="brand-name">APPLEX</div>
+                        <div class="brand-status active">Active</div>
+                    </div>
+                    <div class="brand-description">
+                        <p>XR Developer Group</p>
+                        <p class="brand-detail">확장현실 기술 개발과 혁신적인 XR 솔루션을 제공하는 개발자 그룹</p>
+                    </div>
+                    <div class="brand-link">
+                        <span>Visit Site</span>
+                        <div class="link-arrow">→</div>
+                    </div>
+                </a>
+                
+                <div class="brand-card coming-soon">
+                    <div class="brand-header">
+                        <div class="brand-name">E.L.S</div>
+                        <div class="brand-status coming">준비중</div>
+                    </div>
+                    <div class="brand-description">
+                        <p>Design Create Group</p>
+                        <p class="brand-detail">감정, 논리, 감각이 조화된 창의적 디자인을 전문으로 하는 크리에이티브 그룹</p>
+                    </div>
+                </div>
+                
+                <a href="https://luv-sachet.imweb.me/" target="_blank" class="brand-card active">
+                    <div class="brand-header">
+                        <div class="brand-name">LUV-Sachet</div>
+                        <div class="brand-status active">Active</div>
+                    </div>
+                    <div class="brand-description">
+                        <p>Lifestyle Brand</p>
+                        <p class="brand-detail">감성적이고 실용적인 라이프스타일 제품을 통한 일상의 특별함 창조</p>
+                    </div>
+                    <div class="brand-link">
+                        <span>Visit Site</span>
+                        <div class="link-arrow">→</div>
+                    </div>
+                </a>
             </div>
-            <div class="project-card">
-                <div class="project-icon">✨</div>
-                <h3>Lifestyle Brand</h3>
-                <p>감성적이고 실용적인 라이프스타일 제품을 통한 일상의 특별함 창조</p>
-            </div>
-            <div class="project-card">
-                <div class="project-icon">🚀</div>
-                <h3>Future Experience</h3>
+        </div>
+    </section>
+
+    <!-- Work Section -->
+    <section id="work" class="work">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">PORTFOLIO</div>
+                <h2>Selected Works</h2>
                 <p>확장현실을 통해 새로운 차원의 경험을 설계합니다</p>
             </div>
+            
+            <div class="work-gallery">
+                <div class="work-card featured">
+                    <div class="work-preview">
+                        <div class="work-overlay">
+                            <div class="work-info">
+                                <h3>XR Brand Experience</h3>
+                                <p>몰입형 브랜드 경험 디자인</p>
+                                <div class="work-tech">
+                                    <span>Unity</span>
+                                    <span>VR</span>
+                                    <span>UI/UX</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="work-card">
+                    <div class="work-preview">
+                        <div class="work-overlay">
+                            <div class="work-info">
+                                <h3>AR Mobile App</h3>
+                                <p>증강현실 모바일 경험</p>
+                                <div class="work-tech">
+                                    <span>ARKit</span>
+                                    <span>iOS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="work-card">
+                    <div class="work-preview">
+                        <div class="work-overlay">
+                            <div class="work-info">
+                                <h3>Metaverse Platform</h3>
+                                <p>가상공간 플랫폼 구축</p>
+                                <div class="work-tech">
+                                    <span>WebXR</span>
+                                    <span>3D</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="work-card">
+                    <div class="work-preview">
+                        <div class="work-overlay">
+                            <div class="work-info">
+                                <h3>Smart Glasses UI</h3>
+                                <p>웨어러블 인터페이스 디자인</p>
+                                <div class="work-tech">
+                                    <span>HoloLens</span>
+                                    <span>MR</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Call to Action -->
-    <section class="section cta">
-        <h2>새로운 차원의 경험을 함께 만들어갑니다</h2>
-        <p class="cta-description">당신의 비전을 확장현실로 구현해보세요</p>
-        <button class="cta-button">Contact Us</button>
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <div class="section-tag">GET IN TOUCH</div>
+                    <h2>Let's Create<br>Your XR Vision</h2>
+                    <p>새로운 차원의 경험을 함께 만들어갑니다.<br>당신의 비전을 확장현실로 구현해보세요.</p>
+                    
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <div class="contact-content">
+                                <span class="label">Email</span>
+                                <a href="mailto:studio.realday@gmail.com">studio.realday@gmail.com</a>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-content">
+                                <span class="label">Phone</span>
+                                <a href="tel:+82-10-2021-5243">+82 10-2021-5243</a>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-content">
+                                <span class="label">Location</span>
+                                <span>Seoul, South Korea</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="contact-form">
+                    <div class="form-container">
+                        <h3>프로젝트 문의</h3>
+                        <form>
+                            <div class="form-group">
+                                <input type="text" placeholder="이름" required>
+                                <input type="email" placeholder="이메일" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" placeholder="회사명">
+                                <input type="text" placeholder="연락처">
+                            </div>
+                            <div class="form-group full">
+                                <select required>
+                                    <option value="">프로젝트 유형 선택</option>
+                                    <option value="vr">VR Experience</option>
+                                    <option value="ar">AR Application</option>
+                                    <option value="mr">Mixed Reality</option>
+                                    <option value="web">Web XR</option>
+                                    <option value="other">기타</option>
+                                </select>
+                            </div>
+                            <div class="form-group full">
+                                <textarea placeholder="프로젝트에 대해 자세히 설명해주세요" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn-submit">메시지 보내기</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-brand">
+                        <div class="footer-logo">REALDAY</div>
+                        <p>FROM VISION TO INFINITE CREATION</p>
+                        <div class="footer-social">
+                            <a href="#" class="social-link">Instagram</a>
+                            <a href="#" class="social-link">LinkedIn</a>
+                            <a href="#" class="social-link">Behance</a>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-nav">
+                        <div class="footer-column">
+                            <h4>Studio</h4>
+                            <a href="#about">About</a>
+                            <a href="#brands">Brands</a>
+                            <a href="#work">Work</a>
+                            <a href="#contact">Contact</a>
+                        </div>
+                        <div class="footer-column">
+                            <h4>Brands</h4>
+                            <a href="https://applex.kr" target="_blank">APPLEX</a>
+                            <a href="#" class="coming-soon">E.L.S (준비중)</a>
+                            <a href="https://luv-sachet.imweb.me/" target="_blank">LUV-Sachet</a>
+                        </div>
+                        <div class="footer-column">
+                            <h4>Services</h4>
+                            <a href="#">VR Development</a>
+                            <a href="#">AR Experience</a>
+                            <a href="#">XR Consulting</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p>&copy; 2025 REALDAY. All rights reserved.</p>
+                    <div class="footer-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
