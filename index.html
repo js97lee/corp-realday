@@ -3,231 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corp.realday</title>
+    <title>Design Real Day - ELS Studio</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- 네비게이션 -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">Corp.realday</div>
-            <ul class="nav-menu">
-                <li><a href="#home" class="nav-link">Home</a></li>
-                <li><a href="#about" class="nav-link">About</a></li>
-                <li><a href="#artwork" class="nav-link">Artwork</a></li>
-                <li><a href="#contact" class="nav-link">Contact</a></li>
-            </ul>
-            <div class="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="logo">ELS</div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#about">About</a>
+                <a href="#work">Work</a>
+                <a href="#contact">Contact</a>
             </div>
+            <div class="family-sites">
+                <a href="https://applex.kr" target="_blank" class="family-link">APPLEX</a>
+            </div>
+            <button class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </nav>
 
-    <!-- 랜딩 섹션 -->
+    <!-- Hero Section -->
     <section id="home" class="hero">
-        <div class="hero-container">
+        <div class="container">
             <div class="hero-content">
-                <h1 class="hero-title">
-                    <span class="text-gradient">Creative</span><br>
-                    Digital Experience
-                </h1>
-                <p class="hero-subtitle">혁신적인 디지털 솔루션으로 당신의 비전을 현실로 만들어갑니다.</p>
-                <div class="hero-buttons">
-                    <a href="#artwork" class="btn-primary">작품 보기</a>
-                    <a href="#contact" class="btn-secondary">문의하기</a>
-                </div>
-            </div>
-            <div class="hero-visual">
-                <div class="floating-card">
-                    <div class="card-content">
-                        <div class="card-icon">✨</div>
-                        <h3>Innovation</h3>
-                        <p>창의적 사고</p>
+                <div class="hero-text">
+                    <h1>Design Real Day</h1>
+                    <h2>모든 순간에서<br>한번의 리얼한 경험을</h2>
+                    <p>단 한 번의 경험이 당신의 시야를 바꿀 수 있다고 믿습니다.</p>
+                    <div class="hero-buttons">
+                        <a href="#work" class="btn-primary">작품 보기</a>
+                        <a href="#contact" class="btn-secondary">문의하기</a>
                     </div>
                 </div>
-                <div class="floating-card delay-1">
-                    <div class="card-content">
-                        <div class="card-icon">🎨</div>
-                        <h3>Design</h3>
-                        <p>미적 완성도</p>
-                    </div>
-                </div>
-                <div class="floating-card delay-2">
-                    <div class="card-content">
-                        <div class="card-icon">⚡</div>
-                        <h3>Performance</h3>
-                        <p>최적화된 성능</p>
+                <div class="hero-visual">
+                    <div class="crystal-star">
+                        <div class="star-core"></div>
+                        <div class="star-ray"></div>
+                        <div class="star-ray"></div>
+                        <div class="star-ray"></div>
+                        <div class="star-ray"></div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 어바웃 섹션 -->
+    <!-- About Section -->
     <section id="about" class="about">
         <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">About Us</h2>
-                <p class="section-subtitle">디지털 경험의 새로운 패러다임을 제시합니다</p>
-            </div>
-            <div class="about-content">
+            <div class="about-grid">
                 <div class="about-text">
-                    <h3>우리는 단순한 제작사가 아닙니다</h3>
-                    <p>Corp.realday는 기술과 창의성의 경계를 넘나들며, 혁신적인 디지털 경험을 창조하는 크리에이티브 스튜디오입니다.</p>
-                    <p>우리의 모든 프로젝트는 사용자 중심의 사고와 최신 기술의 결합으로 탄생합니다.</p>
+                    <h3>ELS Studio Philosophy</h3>
+                    <h2>Emotion. Logic. Sense</h2>
+                    <p>Studio RealDay는 순간적인 경험이 사람의 감각과 관점을 변화시킨다고 생각합니다. 우리는 한 번의 경험을 통해 새로운 감정을 일으키고, 세상을 바라보는 방식을 바꾸는 전환점을 설계합니다.</p>
                     
-                    <div class="stats">
-                        <div class="stat-item">
-                            <div class="stat-number">50+</div>
-                            <div class="stat-label">성공한 프로젝트</div>
+                    <div class="philosophy">
+                        <div class="phil-item">
+                            <div class="phil-number">01</div>
+                            <div class="phil-content">
+                                <h4>Emotion</h4>
+                                <p>감정적 연결을 통한 깊은 경험</p>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-number">3년+</div>
-                            <div class="stat-label">경험과 노하우</div>
+                        <div class="phil-item">
+                            <div class="phil-number">02</div>
+                            <div class="phil-content">
+                                <h4>Logic</h4>
+                                <p>논리적 구조 기반의 체계적 접근</p>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-number">100%</div>
-                            <div class="stat-label">고객 만족도</div>
+                        <div class="phil-item">
+                            <div class="phil-number">03</div>
+                            <div class="phil-content">
+                                <h4>Sense</h4>
+                                <p>감각적 완성도로 전달하는 메시지</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+                
                 <div class="about-visual">
-                    <div class="visual-element">
-                        <div class="circle-1"></div>
-                        <div class="circle-2"></div>
-                        <div class="circle-3"></div>
-                    </div>
+                    <div class="circle-element primary"></div>
+                    <div class="circle-element secondary"></div>
+                    <div class="circle-element accent"></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 아트워크 섹션 -->
-    <section id="artwork" class="artwork">
+    <!-- Work Section -->
+    <section id="work" class="work">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Our Artwork</h2>
-                <p class="section-subtitle">창의적 사고가 만들어낸 디지털 작품들</p>
+                <h2>Selected Works</h2>
+                <p>진짜 경험은 짧지만 긴 울림을 남깁니다</p>
             </div>
-            <div class="artwork-grid">
-                <div class="artwork-item">
-                    <div class="artwork-image">
-                        <div class="placeholder-img gradient-1"></div>
-                    </div>
-                    <div class="artwork-info">
-                        <h3>브랜드 아이덴티티</h3>
-                        <p>모던하고 세련된 브랜드 디자인</p>
-                    </div>
-                </div>
-                <div class="artwork-item">
-                    <div class="artwork-image">
-                        <div class="placeholder-img gradient-2"></div>
-                    </div>
-                    <div class="artwork-info">
-                        <h3>웹 인터페이스</h3>
-                        <p>사용자 경험을 극대화한 UI/UX</p>
+            
+            <div class="work-grid">
+                <div class="work-item large">
+                    <div class="work-image navy-gradient">
+                        <div class="work-overlay">
+                            <h3>Brand Identity</h3>
+                            <p>Visual Identity Design</p>
+                        </div>
                     </div>
                 </div>
-                <div class="artwork-item">
-                    <div class="artwork-image">
-                        <div class="placeholder-img gradient-3"></div>
-                    </div>
-                    <div class="artwork-info">
-                        <h3>모션 그래픽</h3>
-                        <p>생동감 넘치는 애니메이션</p>
+                
+                <div class="work-item">
+                    <div class="work-image yellow-gradient">
+                        <div class="work-overlay">
+                            <h3>Web Design</h3>
+                            <p>Digital Experience</p>
+                        </div>
                     </div>
                 </div>
-                <div class="artwork-item">
-                    <div class="artwork-image">
-                        <div class="placeholder-img gradient-4"></div>
+                
+                <div class="work-item">
+                    <div class="work-image navy-gradient">
+                        <div class="work-overlay">
+                            <h3>UI/UX</h3>
+                            <p>Interface Design</p>
+                        </div>
                     </div>
-                    <div class="artwork-info">
-                        <h3>3D 비주얼</h3>
-                        <p>차원을 넘나드는 입체적 표현</p>
+                </div>
+                
+                <div class="work-item wide">
+                    <div class="work-image yellow-gradient">
+                        <div class="work-overlay">
+                            <h3>Motion Graphics</h3>
+                            <p>동적 시각 디자인</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 컨택트 섹션 -->
+    <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Get In Touch</h2>
-                <p class="section-subtitle">새로운 프로젝트를 함께 시작해보세요</p>
-            </div>
-            <div class="contact-content">
+            <div class="contact-grid">
                 <div class="contact-info">
-                    <h3>프로젝트 문의</h3>
-                    <p>혁신적인 아이디어가 있으시나요? 언제든 연락주세요.</p>
+                    <h2>Let's Create<br>Real Day Together</h2>
+                    <p>모든 이의 고유한 시간을 존중하며, 감정과 논리, 감각이 공존하는 균형 속에서 한 번의 리얼한 경험이 인사이트로 이어지는 그 찰나를 섬세하게 디자인합니다.</p>
                     
                     <div class="contact-details">
                         <div class="contact-item">
-                            <div class="contact-icon">📧</div>
-                            <div>
-                                <strong>Email</strong>
-                                <p>hello@realday.com</p>
-                            </div>
+                            <span class="label">Email</span>
+                            <a href="mailto:hello@realday.com">hello@realday.com</a>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">📱</div>
-                            <div>
-                                <strong>Phone</strong>
-                                <p>+82 10-1234-5678</p>
-                            </div>
+                            <span class="label">Phone</span>
+                            <a href="tel:+82-10-1234-5678">+82 10-1234-5678</a>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">📍</div>
-                            <div>
-                                <strong>Location</strong>
-                                <p>Seoul, South Korea</p>
-                            </div>
+                            <span class="label">Location</span>
+                            <span>Seoul, South Korea</span>
+                        </div>
+                    </div>
+                    
+                    <div class="family-sites-footer">
+                        <span class="label">Our Family</span>
+                        <div class="family-links">
+                            <a href="https://applex.kr" target="_blank">
+                                <span class="family-name">APPLEX</span>
+                                <span class="family-desc">XR Developer Group</span>
+                            </a>
                         </div>
                     </div>
                 </div>
                 
                 <div class="contact-form">
                     <form>
-                        <div class="form-group">
+                        <div class="form-row">
                             <input type="text" placeholder="이름" required>
-                        </div>
-                        <div class="form-group">
                             <input type="email" placeholder="이메일" required>
                         </div>
-                        <div class="form-group">
-                            <input type="text" placeholder="프로젝트 제목">
-                        </div>
-                        <div class="form-group">
-                            <textarea placeholder="프로젝트 내용을 간단히 설명해주세요" rows="5"></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary full-width">메시지 보내기</button>
+                        <input type="text" placeholder="회사명">
+                        <textarea placeholder="프로젝트에 대해 간단히 말씀해주세요" rows="4" required></textarea>
+                        <button type="submit" class="btn-primary">메시지 보내기</button>
                     </form>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 푸터 -->
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <h3>Corp.realday</h3>
-                    <p>Creative Digital Experience</p>
+                    <div class="logo">ELS</div>
+                    <p>Design Real Day</p>
                 </div>
                 <div class="footer-links">
                     <a href="#home">Home</a>
                     <a href="#about">About</a>
-                    <a href="#artwork">Artwork</a>
+                    <a href="#work">Work</a>
                     <a href="#contact">Contact</a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 Corp.realday. All rights reserved.</p>
+                <p>&copy; 2025 ELS Studio. All rights reserved.</p>
             </div>
         </div>
     </footer>
