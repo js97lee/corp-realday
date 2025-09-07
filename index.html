@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 </head>
 <body>
@@ -26,25 +26,41 @@
         </div>
     </div>
 
-    <!-- Floating Navigation -->
+    <!-- Navigation -->
     <nav class="nav">
-        <div class="nav-pill">
-            <div class="nav-content">
-                <div class="logo">REALDAY</div>
-                <div class="nav-links">
-                    <a href="#home" class="nav-link active">Home</a>
-                    <a href="#about" class="nav-link">About</a>
-                    <a href="#brands" class="nav-link">Brands</a>
-                    <a href="#work" class="nav-link">Work</a>
-                    <a href="#contact" class="nav-link">Contact</a>
+        <div class="nav-container">
+            <div class="nav-pill">
+                <div class="nav-content">
+                    <div class="logo">REALDAY</div>
+                    <div class="nav-links">
+                        <a href="#home" class="nav-link active">Home</a>
+                        <a href="#about" class="nav-link">About</a>
+                        <a href="#brands" class="nav-link">Brands</a>
+                        <a href="#work" class="nav-link">Work</a>
+                        <a href="#contact" class="nav-link">Contact</a>
+                    </div>
+                </div>
+            </div>
+            <button class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <div class="mobile-menu-content">
+                <div class="mobile-logo">REALDAY</div>
+                <div class="mobile-nav-links">
+                    <a href="#home" class="mobile-nav-link">Home</a>
+                    <a href="#about" class="mobile-nav-link">About</a>
+                    <a href="#brands" class="mobile-nav-link">Brands</a>
+                    <a href="#work" class="mobile-nav-link">Work</a>
+                    <a href="#contact" class="mobile-nav-link">Contact</a>
                 </div>
             </div>
         </div>
-        <button class="menu-toggle">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
     </nav>
 
     <!-- Hero Section -->
@@ -66,12 +82,6 @@
                         </a>
                     </div>
                 </div>
-                <div class="hero-visual">
-                    <div class="minimal-visual">
-                        <div class="visual-line"></div>
-                        <div class="visual-dot"></div>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
@@ -85,40 +95,88 @@
                     <h2>Design Real Day</h2>
                     <p class="intro-text">모든 순간에서 한번의 리얼한 경험을</p>
                     <p class="desc-text">Studio RealDay는 순간적인 경험이 사람의 감각과 관점을 변화시킨다고 생각합니다. 우리는 한 번의 경험을 통해 새로운 감정을 일으키고, 세상을 바라보는 방식을 바꾸는 전환점을 설계합니다.</p>
-                    
-                    <div class="philosophy-grid">
-                        <div class="phil-card">
-                            <div class="phil-icon">E</div>
-                            <div class="phil-content">
-                                <h4>Emotion</h4>
-                                <p>감정적 연결을 통한 깊은 몰입 경험</p>
-                            </div>
-                        </div>
-                        <div class="phil-card">
-                            <div class="phil-icon">L</div>
-                            <div class="phil-content">
-                                <h4>Logic</h4>
-                                <p>논리적 구조 기반의 체계적 접근</p>
-                            </div>
-                        </div>
-                        <div class="phil-card">
-                            <div class="phil-icon">S</div>
-                            <div class="phil-content">
-                                <h4>Sense</h4>
-                                <p>감각적 완성도로 전달하는 메시지</p>
-                            </div>
-                        </div>
+                </div>
+            </div>
+            
+            <div class="philosophy-grid">
+                <div class="phil-card">
+                    <div class="phil-number">01</div>
+                    <div class="phil-content">
+                        <h4>Creativity in Everyday Life</h4>
+                        <h5>일상 속의 창의성</h5>
+                        <p>우리는 디자인과 상상력을 일상에 불어넣어, 평범한 순간을 특별한 경험으로 바꿉니다.</p>
+                    </div>
+                </div>
+                <div class="phil-card">
+                    <div class="phil-number">02</div>
+                    <div class="phil-content">
+                        <h4>Emotions that Connect</h4>
+                        <h5>감정을 연결하는 힘</h5>
+                        <p>우리는 감정을 불러일으키는 스토리와 오브제를 통해, 개인의 감정을 모두가 공감하는 연결로 확장합니다.</p>
+                    </div>
+                </div>
+                <div class="phil-card">
+                    <div class="phil-number">03</div>
+                    <div class="phil-content">
+                        <h4>Where Art Meets Technology</h4>
+                        <h5>예술과 기술의 융합</h5>
+                        <p>우리는 예술적 비전과 XR·AI 같은 첨단 기술을 융합해, 미래 지향적인 디자인 경험을 만듭니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Brands Section -->
+    <section id="brands" class="brands">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">OUR ECOSYSTEM</div>
+                <h2>Brands</h2>
+                <p>각각의 전문성을 가진 브랜드들이 하나의 비전 아래 혁신을 만들어갑니다</p>
+            </div>
+            
+            <div class="brands-grid">
+                <a href="https://applex.kr" target="_blank" class="brand-card active">
+                    <div class="brand-header">
+                        <div class="brand-name">APPLEX</div>
+                        <div class="brand-status active">Active</div>
+                    </div>
+                    <div class="brand-description">
+                        <p>XR Developer Group</p>
+                        <p class="brand-detail">확장현실 기술 개발과 혁신적인 XR 솔루션을 제공하는 개발자 그룹</p>
+                    </div>
+                    <div class="brand-link">
+                        <span>Visit Site</span>
+                        <div class="link-arrow">→</div>
+                    </div>
+                </a>
+                
+                <div class="brand-card coming-soon">
+                    <div class="brand-header">
+                        <div class="brand-name">E.L.S</div>
+                        <div class="brand-status coming">준비중</div>
+                    </div>
+                    <div class="brand-description">
+                        <p>Design Create Group</p>
+                        <p class="brand-detail">감정, 논리, 감각이 조화된 창의적 디자인을 전문으로 하는 크리에이티브 그룹</p>
                     </div>
                 </div>
                 
-                <div class="about-visual">
-                    <div class="minimal-grid">
-                        <div class="grid-item"></div>
-                        <div class="grid-item"></div>
-                        <div class="grid-item"></div>
-                        <div class="grid-item"></div>
+                <a href="https://luv-sachet.imweb.me/" target="_blank" class="brand-card active">
+                    <div class="brand-header">
+                        <div class="brand-name">LUV-Sachet</div>
+                        <div class="brand-status active">Active</div>
                     </div>
-                </div>
+                    <div class="brand-description">
+                        <p>Lifestyle Brand</p>
+                        <p class="brand-detail">감성적이고 실용적인 라이프스타일 제품을 통한 일상의 특별함 창조</p>
+                    </div>
+                    <div class="brand-link">
+                        <span>Visit Site</span>
+                        <div class="link-arrow">→</div>
+                    </div>
+                </a>
             </div>
         </div>
     </section>
@@ -226,26 +284,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="family-section">
-                        <span class="family-title">Our Family</span>
-                        <div class="family-cards">
-                            <a href="https://applex.kr" target="_blank" class="family-card active">
-                                <div class="family-info">
-                                    <h4>APPLEX</h4>
-                                    <p>XR Developer Group</p>
-                                </div>
-                                <div class="family-status">Active</div>
-                            </a>
-                            <div class="family-card coming-soon">
-                                <div class="family-info">
-                                    <h4>ELS</h4>
-                                    <p>Design Create Group</p>
-                                </div>
-                                <div class="family-status">준비중</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="contact-form">
@@ -300,19 +338,21 @@
                         <div class="footer-column">
                             <h4>Studio</h4>
                             <a href="#about">About</a>
+                            <a href="#brands">Brands</a>
                             <a href="#work">Work</a>
                             <a href="#contact">Contact</a>
+                        </div>
+                        <div class="footer-column">
+                            <h4>Brands</h4>
+                            <a href="https://applex.kr" target="_blank">APPLEX</a>
+                            <a href="#" class="coming-soon">E.L.S (준비중)</a>
+                            <a href="https://luv-sachet.imweb.me/" target="_blank">LUV-Sachet</a>
                         </div>
                         <div class="footer-column">
                             <h4>Services</h4>
                             <a href="#">VR Development</a>
                             <a href="#">AR Experience</a>
                             <a href="#">XR Consulting</a>
-                        </div>
-                        <div class="footer-column">
-                            <h4>Family</h4>
-                            <a href="https://applex.kr" target="_blank">APPLEX</a>
-                            <a href="#" class="coming-soon">ELS (준비중)</a>
                         </div>
                     </div>
                 </div>
