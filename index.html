@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <!-- Logo Intro Animation -->
@@ -63,8 +64,9 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Three.js Background -->
     <section id="home" class="hero">
+        <canvas id="heroCanvas" class="hero-canvas"></canvas>
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text">
@@ -181,7 +183,7 @@
         </div>
     </section>
 
-    <!-- Work Section -->
+    <!-- Work Section - Updated to 2x2 Grid -->
     <section id="work" class="work">
         <div class="container">
             <div class="section-header">
@@ -191,7 +193,7 @@
             </div>
             
             <div class="work-gallery">
-                <div class="work-card featured">
+                <div class="work-card">
                     <div class="work-preview">
                         <div class="work-overlay">
                             <div class="work-info">
