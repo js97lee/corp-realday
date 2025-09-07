@@ -1,5 +1,17 @@
-// REALDAY - XR Studio JavaScript (경량화 버전)
+// REALDAY - Minimal XR Studio (LHBZR Style)
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // Logo intro animation
+    const introOverlay = document.getElementById('introOverlay');
+    
+    // Hide intro after animation completes
+    setTimeout(() => {
+        introOverlay.classList.add('hidden');
+        // Remove from DOM after fade out
+        setTimeout(() => {
+            introOverlay.remove();
+        }, 1000);
+    }, 3000); // Show for 3 seconds
     
     // Navigation smooth scroll
     const navLinks = document.querySelectorAll('a[href^="#"]');
@@ -26,38 +38,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (menuToggle && navPill) {
         menuToggle.addEventListener('click', function() {
-            navPill.style.display = navPill.style.display === 'block' ? 'none' : 'block';
+            if (navPill.style.display === 'block') {
+                navPill.style.display = 'none';
+                navPill.style.opacity = '0';
+            } else {
+                navPill.style.display = 'block';
+                navPill.style.position = 'fixed';
+                navPill.style.top = '80px';
+                navPill.style.left = '50%';
+                navPill.style.transform = 'translateX(-50%)';
+                navPill.style.opacity = '1';
+            }
             this.classList.toggle('active');
         });
     }
-
-    // Floating navigation scroll effect
-    const nav = document.querySelector('.nav');
-    let lastScroll = 0;
-    
-    window.addEventListener('scroll', function() {
-        const currentScroll = window.pageYOffset;
-        
-        // Add scroll effect to nav pill
-        if (currentScroll > 100) {
-            nav.style.transform = 'translateX(-50%) translateY(-5px)';
-            nav.querySelector('.nav-pill').style.background = 'rgba(0, 0, 0, 0.9)';
-        } else {
-            nav.style.transform = 'translateX(-50%) translateY(0)';
-            nav.querySelector('.nav-pill').style.background = 'rgba(0, 0, 0, 0.8)';
-        }
-        
-        lastScroll = currentScroll;
-    });
 
     // Update active nav on scroll
     const sections = document.querySelectorAll('section[id]');
     window.addEventListener('scroll', function() {
         let current = '';
         sections.forEach(section => {
-            const sectionTop = section.offsetTop;
+            const sectionTop = section.offsetTop - 200;
             const sectionHeight = section.clientHeight;
-            if (scrollY >= (sectionTop - 200)) {
+            if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
                 current = section.getAttribute('id');
             }
         });
@@ -84,23 +87,20 @@ document.addEventListener('DOMContentLoaded', function() {
             inputs.forEach(input => {
                 if (!input.value.trim()) {
                     isValid = false;
-                    input.style.borderColor = '#dc3545';
-                    input.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+                    input.style.borderBottomColor = '#dc3545';
                 } else {
-                    input.style.borderColor = '#e9ecef';
-                    input.style.boxShadow = 'none';
+                    input.style.borderBottomColor = 'var(--gray-300)';
                 }
             });
             
             if (isValid) {
                 // Show success message
-                showNotification('메시지가 성공적으로 전송되었습니다! 빠른 시일 내에 연락드리겠습니다.', 'success');
+                showNotification('메시지가 성공적으로 전송되었습니다.', 'success');
                 this.reset();
                 
                 // Reset form styles
                 inputs.forEach(input => {
-                    input.style.borderColor = '#e9ecef';
-                    input.style.boxShadow = 'none';
+                    input.style.borderBottomColor = 'var(--gray-300)';
                 });
             } else {
                 showNotification('모든 필수 필드를 입력해주세요.', 'error');
@@ -108,8 +108,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Intersection Observer for animations
-    const observeElements = document.querySelectorAll('.work-card, .phil-card, .contact-item');
+    // Intersection Observer for subtle animations
+    const observeElements = document.querySelectorAll('.work-card, .phil-card');
     
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver(function(entries) {
@@ -121,101 +121,76 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }, { 
             threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
+            rootMargin: '0px 0px -30px 0px'
         });
 
         observeElements.forEach(el => {
             el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
+            el.style.transform = 'translateY(20px)';
             el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
             observer.observe(el);
         });
     }
 
-    // Enhanced button interactions
+    // Minimal button interactions
     const buttons = document.querySelectorAll('.btn-primary, .btn-contact, .btn-submit');
     buttons.forEach(button => {
         button.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
+            this.style.transform = 'translateY(-1px)';
         });
         
         button.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0)';
         });
-        
-        button.addEventListener('mousedown', function() {
-            this.style.transform = 'translateY(0)';
-        });
-        
-        button.addEventListener('mouseup', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
     });
 
-    // Family card interactions
-    const familyCards = document.querySelectorAll('.family-card');
+    // Family card hover effects
+    const familyCards = document.querySelectorAll('.family-card:not(.coming-soon)');
     familyCards.forEach(card => {
         card.addEventListener('mouseenter', function() {
-            if (!this.classList.contains('coming-soon')) {
-                this.style.transform = 'translateY(-4px)';
-            }
+            this.style.paddingLeft = '12px';
+            this.style.color = 'var(--gray-600)';
         });
         
         card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
+            this.style.paddingLeft = '0';
+            this.style.color = 'var(--black)';
         });
     });
 
-    // Work card hover effects
+    // Work card subtle hover
     const workCards = document.querySelectorAll('.work-card');
     workCards.forEach(card => {
         card.addEventListener('mouseenter', function() {
-            this.querySelector('.work-overlay').style.background = 'rgba(0, 0, 0, 0.7)';
+            this.style.transform = 'translateY(-2px)';
         });
         
         card.addEventListener('mouseleave', function() {
-            this.querySelector('.work-overlay').style.background = 'rgba(0, 0, 0, 0.3)';
+            this.style.transform = 'translateY(0)';
         });
     });
 
-    // Add loading animation
+    // Smooth page load
     document.body.style.opacity = '0';
     window.addEventListener('load', function() {
-        document.body.style.transition = 'opacity 0.5s ease';
+        document.body.style.transition = 'opacity 0.3s ease';
         document.body.style.opacity = '1';
     });
 
-    // XR Cube interaction
-    const xrCube = document.querySelector('.xr-cube');
-    if (xrCube) {
-        let isHovering = false;
-        
-        xrCube.addEventListener('mouseenter', function() {
-            isHovering = true;
-            this.style.animationPlayState = 'paused';
-        });
-        
-        xrCube.addEventListener('mouseleave', function() {
-            isHovering = false;
-            this.style.animationPlayState = 'running';
-        });
-        
-        xrCube.addEventListener('mousemove', function(e) {
-            if (isHovering) {
-                const rect = this.getBoundingClientRect();
-                const x = e.clientX - rect.left - rect.width / 2;
-                const y = e.clientY - rect.top - rect.height / 2;
-                
-                const rotateX = (y / rect.height) * 30;
-                const rotateY = (x / rect.width) * 30;
-                
-                this.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    // Keyboard navigation (ESC 키로 모바일 메뉴 닫기)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const navPill = document.querySelector('.nav-pill');
+            if (menuToggle && navPill) {
+                menuToggle.classList.remove('active');
+                navPill.classList.remove('mobile-open');
             }
-        });
-    }
+        }
+    });
 });
 
-// Notification system
+// Minimal notification system
 function showNotification(message, type = 'info') {
     // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.notification');
@@ -228,30 +203,30 @@ function showNotification(message, type = 'info') {
     // Set notification content
     notification.innerHTML = `
         <div class="notification-content">
-            <div class="notification-icon">${type === 'success' ? '✓' : '!'}</div>
             <span class="notification-text">${message}</span>
             <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
         </div>
     `;
 
-    // Apply styles
+    // Apply minimal styles
     Object.assign(notification.style, {
         position: 'fixed',
         top: '100px',
-        right: '20px',
-        background: type === 'success' ? 'linear-gradient(135deg, #4caf50, #45a049)' : 'linear-gradient(135deg, #f44336, #d32f2f)',
-        color: 'white',
+        right: '32px',
+        background: type === 'success' ? 'var(--black)' : '#dc3545',
+        color: 'var(--white)',
         padding: '0',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        borderRadius: '2px',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.1)',
         zIndex: '10000',
         maxWidth: '400px',
         minWidth: '300px',
         transform: 'translateX(100%)',
-        transition: 'transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-        overflow: 'hidden',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        transition: 'transform 0.3s ease',
+        border: '1px solid var(--gray-200)',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px',
+        fontWeight: '300'
     });
 
     // Style notification content
@@ -259,33 +234,16 @@ function showNotification(message, type = 'info') {
     Object.assign(content.style, {
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        justifyContent: 'space-between',
         padding: '16px 20px',
-        position: 'relative'
-    });
-
-    // Style icon
-    const icon = notification.querySelector('.notification-icon');
-    Object.assign(icon.style, {
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
-        background: 'rgba(255, 255, 255, 0.2)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        flexShrink: '0'
+        gap: '16px'
     });
 
     // Style text
     const text = notification.querySelector('.notification-text');
     Object.assign(text.style, {
         flex: '1',
-        fontSize: '14px',
-        lineHeight: '1.4',
-        fontWeight: '500'
+        lineHeight: '1.4'
     });
 
     // Style close button
@@ -293,26 +251,25 @@ function showNotification(message, type = 'info') {
     Object.assign(closeBtn.style, {
         background: 'none',
         border: 'none',
-        color: 'white',
-        fontSize: '18px',
+        color: 'var(--white)',
+        fontSize: '16px',
         cursor: 'pointer',
         padding: '0',
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
+        width: '20px',
+        height: '20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'background 0.2s ease',
-        flexShrink: '0'
+        transition: 'opacity 0.2s ease',
+        opacity: '0.7'
     });
 
     closeBtn.addEventListener('mouseenter', function() {
-        this.style.background = 'rgba(255, 255, 255, 0.1)';
+        this.style.opacity = '1';
     });
 
     closeBtn.addEventListener('mouseleave', function() {
-        this.style.background = 'none';
+        this.style.opacity = '0.7';
     });
 
     // Add to page
@@ -323,10 +280,10 @@ function showNotification(message, type = 'info') {
         notification.style.transform = 'translateX(0)';
     }, 10);
 
-    // Auto remove after 5 seconds
+    // Auto remove after 4 seconds
     const autoRemove = setTimeout(() => {
         removeNotification(notification);
-    }, 5000);
+    }, 4000);
 
     // Clear timeout if manually closed
     closeBtn.addEventListener('click', () => {
@@ -340,27 +297,23 @@ function removeNotification(notification) {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
         }
-    }, 400);
+    }, 300);
 }
 
 // Performance optimization
 window.addEventListener('load', function() {
-    // Lazy load non-critical animations
-    setTimeout(() => {
-        document.querySelectorAll('.liquid-blob, .floating-elements div').forEach(el => {
-            el.style.willChange = 'transform';
-        });
-    }, 1000);
-});
-
-// Keyboard navigation
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        // Close mobile menu if open
-        const navPill = document.querySelector('.nav-pill');
-        if (navPill && navPill.style.display === 'block') {
-            navPill.style.display = 'none';
-            document.querySelector('.menu-toggle').classList.remove('active');
-        }
+    // Optimize scroll performance
+    let ticking = false;
+    
+    function updateScrollElements() {
+        // Minimal scroll effects only
+        ticking = false;
     }
+    
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(updateScrollElements);
+            ticking = true;
+        }
+    });
 });
