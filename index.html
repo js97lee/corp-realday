@@ -3,54 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Design Real Day - ELS Studio</title>
+    <title>REALDAY - XR Creative Studio</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Floating Navigation -->
     <nav class="nav">
-        <div class="nav-content">
-            <div class="logo">ELS</div>
-            <div class="nav-links">
-                <a href="#home">Home</a>
-                <a href="#about">About</a>
-                <a href="#work">Work</a>
-                <a href="#contact">Contact</a>
+        <div class="nav-pill">
+            <div class="nav-content">
+                <div class="logo">REALDAY</div>
+                <div class="nav-links">
+                    <a href="#home" class="nav-link active">Home</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#work" class="nav-link">Work</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+                <div class="family-sites">
+                    <a href="https://applex.kr" target="_blank" class="family-link">APPLEX</a>
+                </div>
             </div>
-            <div class="family-sites">
-                <a href="https://applex.kr" target="_blank" class="family-link">APPLEX</a>
-            </div>
-            <button class="menu-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
         </div>
+        <button class="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     </nav>
 
     <!-- Hero Section -->
     <section id="home" class="hero">
+        <div class="hero-bg">
+            <div class="grid-overlay"></div>
+            <div class="floating-elements">
+                <div class="element-1"></div>
+                <div class="element-2"></div>
+                <div class="element-3"></div>
+            </div>
+        </div>
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text">
-                    <h1>Design Real Day</h1>
-                    <h2>모든 순간에서<br>한번의 리얼한 경험을</h2>
-                    <p>단 한 번의 경험이 당신의 시야를 바꿀 수 있다고 믿습니다.</p>
+                    <div class="hero-tag">XR CREATIVE STUDIO</div>
+                    <h1>
+                        <span class="vision-text">FROM <strong>VISION</strong></span>
+                        <span class="creation-text">TO <strong>INFINITE CREATION</strong></span>
+                    </h1>
+                    <p class="hero-description">확장현실의 무한한 가능성을 창조합니다.<br>상상을 현실로, 현실을 더 나은 경험으로 변화시킵니다.</p>
                     <div class="hero-buttons">
-                        <a href="#work" class="btn-primary">작품 보기</a>
-                        <a href="#contact" class="btn-secondary">문의하기</a>
+                        <a href="#work" class="btn-primary">
+                            <span>프로젝트 보기</span>
+                            <div class="btn-glow"></div>
+                        </a>
+                        <a href="#contact" class="btn-contact">
+                            <span>CONTACT</span>
+                            <div class="btn-arrow">→</div>
+                        </a>
                     </div>
                 </div>
                 <div class="hero-visual">
-                    <div class="crystal-star">
-                        <div class="star-core"></div>
-                        <div class="star-ray"></div>
-                        <div class="star-ray"></div>
-                        <div class="star-ray"></div>
-                        <div class="star-ray"></div>
+                    <div class="xr-cube">
+                        <div class="cube-face front"></div>
+                        <div class="cube-face back"></div>
+                        <div class="cube-face right"></div>
+                        <div class="cube-face left"></div>
+                        <div class="cube-face top"></div>
+                        <div class="cube-face bottom"></div>
+                    </div>
+                    <div class="hologram-ring"></div>
+                    <div class="data-streams">
+                        <div class="stream"></div>
+                        <div class="stream"></div>
+                        <div class="stream"></div>
                     </div>
                 </div>
             </div>
@@ -62,39 +89,36 @@
         <div class="container">
             <div class="about-grid">
                 <div class="about-text">
-                    <h3>ELS Studio Philosophy</h3>
-                    <h2>Emotion. Logic. Sense</h2>
-                    <p>Studio RealDay는 순간적인 경험이 사람의 감각과 관점을 변화시킨다고 생각합니다. 우리는 한 번의 경험을 통해 새로운 감정을 일으키고, 세상을 바라보는 방식을 바꾸는 전환점을 설계합니다.</p>
+                    <div class="section-tag">OUR PHILOSOPHY</div>
+                    <h2>Design Real Day</h2>
+                    <p class="intro-text">모든 순간에서 한번의 리얼한 경험을</p>
+                    <p class="desc-text">Studio RealDay는 순간적인 경험이 사람의 감각과 관점을 변화시킨다고 생각합니다. 우리는 한 번의 경험을 통해 새로운 감정을 일으키고, 세상을 바라보는 방식을 바꾸는 전환점을 설계합니다.</p>
                     
-                    <div class="philosophy">
-                        <div class="phil-item">
-                            <div class="phil-number">01</div>
-                            <div class="phil-content">
-                                <h4>Emotion</h4>
-                                <p>감정적 연결을 통한 깊은 경험</p>
-                            </div>
+                    <div class="philosophy-grid">
+                        <div class="phil-card">
+                            <div class="phil-icon">E</div>
+                            <h4>Emotion</h4>
+                            <p>감정적 연결을 통한 깊은 몰입 경험</p>
                         </div>
-                        <div class="phil-item">
-                            <div class="phil-number">02</div>
-                            <div class="phil-content">
-                                <h4>Logic</h4>
-                                <p>논리적 구조 기반의 체계적 접근</p>
-                            </div>
+                        <div class="phil-card">
+                            <div class="phil-icon">L</div>
+                            <h4>Logic</h4>
+                            <p>논리적 구조 기반의 체계적 접근</p>
                         </div>
-                        <div class="phil-item">
-                            <div class="phil-number">03</div>
-                            <div class="phil-content">
-                                <h4>Sense</h4>
-                                <p>감각적 완성도로 전달하는 메시지</p>
-                            </div>
+                        <div class="phil-card">
+                            <div class="phil-icon">S</div>
+                            <h4>Sense</h4>
+                            <p>감각적 완성도로 전달하는 메시지</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="about-visual">
-                    <div class="circle-element primary"></div>
-                    <div class="circle-element secondary"></div>
-                    <div class="circle-element accent"></div>
+                    <div class="liquid-shape">
+                        <div class="liquid-blob blob-1"></div>
+                        <div class="liquid-blob blob-2"></div>
+                        <div class="liquid-blob blob-3"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -102,45 +126,76 @@
 
     <!-- Work Section -->
     <section id="work" class="work">
+        <div class="work-bg"></div>
         <div class="container">
             <div class="section-header">
+                <div class="section-tag">PORTFOLIO</div>
                 <h2>Selected Works</h2>
-                <p>진짜 경험은 짧지만 긴 울림을 남깁니다</p>
+                <p>확장현실을 통해 새로운 차원의 경험을 설계합니다</p>
             </div>
             
-            <div class="work-grid">
-                <div class="work-item large">
-                    <div class="work-image navy-gradient">
+            <div class="work-gallery">
+                <div class="work-card featured">
+                    <div class="work-preview">
+                        <div class="work-bg xr-gradient-1"></div>
                         <div class="work-overlay">
-                            <h3>Brand Identity</h3>
-                            <p>Visual Identity Design</p>
+                            <div class="work-info">
+                                <h3>XR Brand Experience</h3>
+                                <p>몰입형 브랜드 경험 디자인</p>
+                                <div class="work-tech">
+                                    <span>Unity</span>
+                                    <span>VR</span>
+                                    <span>UI/UX</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="work-item">
-                    <div class="work-image yellow-gradient">
+                <div class="work-card">
+                    <div class="work-preview">
+                        <div class="work-bg xr-gradient-2"></div>
                         <div class="work-overlay">
-                            <h3>Web Design</h3>
-                            <p>Digital Experience</p>
+                            <div class="work-info">
+                                <h3>AR Mobile App</h3>
+                                <p>증강현실 모바일 경험</p>
+                                <div class="work-tech">
+                                    <span>ARKit</span>
+                                    <span>iOS</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="work-item">
-                    <div class="work-image navy-gradient">
+                <div class="work-card">
+                    <div class="work-preview">
+                        <div class="work-bg xr-gradient-3"></div>
                         <div class="work-overlay">
-                            <h3>UI/UX</h3>
-                            <p>Interface Design</p>
+                            <div class="work-info">
+                                <h3>Metaverse Platform</h3>
+                                <p>가상공간 플랫폼 구축</p>
+                                <div class="work-tech">
+                                    <span>WebXR</span>
+                                    <span>3D</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="work-item wide">
-                    <div class="work-image yellow-gradient">
+                <div class="work-card">
+                    <div class="work-preview">
+                        <div class="work-bg xr-gradient-4"></div>
                         <div class="work-overlay">
-                            <h3>Motion Graphics</h3>
-                            <p>동적 시각 디자인</p>
+                            <div class="work-info">
+                                <h3>Smart Glasses UI</h3>
+                                <p>웨어러블 인터페이스 디자인</p>
+                                <div class="work-tech">
+                                    <span>HoloLens</span>
+                                    <span>MR</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -153,45 +208,88 @@
         <div class="container">
             <div class="contact-grid">
                 <div class="contact-info">
-                    <h2>Let's Create<br>Real Day Together</h2>
-                    <p>모든 이의 고유한 시간을 존중하며, 감정과 논리, 감각이 공존하는 균형 속에서 한 번의 리얼한 경험이 인사이트로 이어지는 그 찰나를 섬세하게 디자인합니다.</p>
+                    <div class="section-tag">GET IN TOUCH</div>
+                    <h2>Let's Create<br>Your XR Vision</h2>
+                    <p>새로운 차원의 경험을 함께 만들어갑니다.<br>당신의 비전을 확장현실로 구현해보세요.</p>
                     
                     <div class="contact-details">
                         <div class="contact-item">
-                            <span class="label">Email</span>
-                            <a href="mailto:hello@realday.com">hello@realday.com</a>
+                            <div class="contact-icon">📧</div>
+                            <div class="contact-content">
+                                <span class="label">Email</span>
+                                <a href="mailto:studio.realday@gmail.com">studio.realday@gmail.com</a>
+                            </div>
                         </div>
                         <div class="contact-item">
-                            <span class="label">Phone</span>
-                            <a href="tel:+82-10-1234-5678">+82 10-1234-5678</a>
+                            <div class="contact-icon">📱</div>
+                            <div class="contact-content">
+                                <span class="label">Phone</span>
+                                <a href="tel:+82-10-2021-5243">+82 10-2021-5243</a>
+                            </div>
                         </div>
                         <div class="contact-item">
-                            <span class="label">Location</span>
-                            <span>Seoul, South Korea</span>
+                            <div class="contact-icon">📍</div>
+                            <div class="contact-content">
+                                <span class="label">Location</span>
+                                <span>Seoul, South Korea</span>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="family-sites-footer">
-                        <span class="label">Our Family</span>
-                        <div class="family-links">
-                            <a href="https://applex.kr" target="_blank">
-                                <span class="family-name">APPLEX</span>
-                                <span class="family-desc">XR Developer Group</span>
+                    <div class="family-section">
+                        <span class="family-title">Our Family</span>
+                        <div class="family-cards">
+                            <a href="https://applex.kr" target="_blank" class="family-card active">
+                                <div class="family-logo">A</div>
+                                <div class="family-info">
+                                    <h4>APPLEX</h4>
+                                    <p>XR Developer Group</p>
+                                </div>
+                                <div class="family-status">Active</div>
                             </a>
+                            <div class="family-card coming-soon">
+                                <div class="family-logo">E</div>
+                                <div class="family-info">
+                                    <h4>ELS</h4>
+                                    <p>Design Create Group</p>
+                                </div>
+                                <div class="family-status">준비중</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="contact-form">
-                    <form>
-                        <div class="form-row">
-                            <input type="text" placeholder="이름" required>
-                            <input type="email" placeholder="이메일" required>
-                        </div>
-                        <input type="text" placeholder="회사명">
-                        <textarea placeholder="프로젝트에 대해 간단히 말씀해주세요" rows="4" required></textarea>
-                        <button type="submit" class="btn-primary">메시지 보내기</button>
-                    </form>
+                    <div class="form-container">
+                        <h3>프로젝트 문의</h3>
+                        <form>
+                            <div class="form-group">
+                                <input type="text" placeholder="이름" required>
+                                <input type="email" placeholder="이메일" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" placeholder="회사명">
+                                <input type="text" placeholder="연락처">
+                            </div>
+                            <div class="form-group full">
+                                <select required>
+                                    <option value="">프로젝트 유형 선택</option>
+                                    <option value="vr">VR Experience</option>
+                                    <option value="ar">AR Application</option>
+                                    <option value="mr">Mixed Reality</option>
+                                    <option value="web">Web XR</option>
+                                    <option value="other">기타</option>
+                                </select>
+                            </div>
+                            <div class="form-group full">
+                                <textarea placeholder="프로젝트에 대해 자세히 설명해주세요" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn-submit">
+                                <span>메시지 보내기</span>
+                                <div class="submit-glow"></div>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -199,21 +297,53 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <div class="logo">ELS</div>
-                    <p>Design Real Day</p>
+        <div class="footer-content">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-brand">
+                        <div class="footer-logo">REALDAY</div>
+                        <p>FROM VISION TO INFINITE CREATION</p>
+                        <div class="footer-social">
+                            <a href="#" class="social-link">
+                                <span>Instagram</span>
+                            </a>
+                            <a href="#" class="social-link">
+                                <span>LinkedIn</span>
+                            </a>
+                            <a href="#" class="social-link">
+                                <span>Behance</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-nav">
+                        <div class="footer-column">
+                            <h4>Studio</h4>
+                            <a href="#about">About</a>
+                            <a href="#work">Work</a>
+                            <a href="#contact">Contact</a>
+                        </div>
+                        <div class="footer-column">
+                            <h4>Services</h4>
+                            <a href="#">VR Development</a>
+                            <a href="#">AR Experience</a>
+                            <a href="#">XR Consulting</a>
+                        </div>
+                        <div class="footer-column">
+                            <h4>Family</h4>
+                            <a href="https://applex.kr" target="_blank">APPLEX</a>
+                            <a href="#" class="coming-soon">ELS (준비중)</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="footer-links">
-                    <a href="#home">Home</a>
-                    <a href="#about">About</a>
-                    <a href="#work">Work</a>
-                    <a href="#contact">Contact</a>
+                
+                <div class="footer-bottom">
+                    <p>&copy; 2025 REALDAY. All rights reserved.</p>
+                    <div class="footer-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                    </div>
                 </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 ELS Studio. All rights reserved.</p>
             </div>
         </div>
     </footer>
