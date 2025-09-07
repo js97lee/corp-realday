@@ -1,5 +1,163 @@
-// REALDAY - Enhanced XR Studio (Outfit Font + Impact Design)
+// REALDAY - Enhanced XR Studio with Three.js Background
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // Three.js Scene Setup for Hero Background
+    let scene, camera, renderer, particles, particleSystem;
+    let mouseX = 0, mouseY = 0;
+    const windowHalfX = window.innerWidth / 2;
+    const windowHalfY = window.innerHeight / 2;
+
+    function initThreeJS() {
+        const canvas = document.getElementById('heroCanvas');
+        if (!canvas) return;
+
+        // Scene setup
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.z = 1000;
+
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+
+        // Particle system for futuristic XR feel
+        const particleCount = 3000;
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 2000;
+            positions[i + 1] = (Math.random() - 0.5) * 2000;
+            positions[i + 2] = (Math.random() - 0.5) * 1000;
+
+            velocities[i] = (Math.random() - 0.5) * 0.5;
+            velocities[i + 1] = (Math.random() - 0.5) * 0.5;
+            velocities[i + 2] = (Math.random() - 0.5) * 0.5;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+
+        // Particle material with glow effect
+        const material = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 2,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+
+        particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        // Add floating geometric shapes for XR aesthetic
+        addFloatingShapes();
+
+        // Animation loop
+        animate();
+    }
+
+    function addFloatingShapes() {
+        const shapes = [];
+        const shapeCount = 15;
+
+        for (let i = 0; i < shapeCount; i++) {
+            let geometry, material, shape;
+            
+            const shapeType = Math.floor(Math.random() * 3);
+            
+            switch(shapeType) {
+                case 0:
+                    geometry = new THREE.BoxGeometry(20, 20, 20);
+                    break;
+                case 1:
+                    geometry = new THREE.SphereGeometry(12, 32, 32);
+                    break;
+                case 2:
+                    geometry = new THREE.ConeGeometry(10, 25, 8);
+                    break;
+            }
+
+            material = new THREE.MeshBasicMaterial({
+                color: Math.random() * 0xffffff,
+                transparent: true,
+                opacity: 0.1,
+                wireframe: true
+            });
+
+            shape = new THREE.Mesh(geometry, material);
+            
+            shape.position.x = (Math.random() - 0.5) * 1500;
+            shape.position.y = (Math.random() - 0.5) * 1500;
+            shape.position.z = (Math.random() - 0.5) * 500;
+            
+            shape.rotation.x = Math.random() * Math.PI;
+            shape.rotation.y = Math.random() * Math.PI;
+            
+            scene.add(shape);
+            shapes.push(shape);
+        }
+
+        // Store shapes for animation
+        window.floatingShapes = shapes;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Update particle positions
+        const positions = particleSystem.geometry.attributes.position.array;
+        const velocities = particleSystem.geometry.attributes.velocity.array;
+
+        for (let i = 0; i < positions.length; i += 3) {
+            positions[i] += velocities[i];
+            positions[i + 1] += velocities[i + 1];
+            positions[i + 2] += velocities[i + 2];
+
+            // Wrap around screen
+            if (positions[i] > 1000) positions[i] = -1000;
+            if (positions[i] < -1000) positions[i] = 1000;
+            if (positions[i + 1] > 1000) positions[i + 1] = -1000;
+            if (positions[i + 1] < -1000) positions[i + 1] = 1000;
+        }
+
+        particleSystem.geometry.attributes.position.needsUpdate = true;
+
+        // Animate floating shapes
+        if (window.floatingShapes) {
+            window.floatingShapes.forEach((shape, index) => {
+                shape.rotation.x += 0.005 + index * 0.001;
+                shape.rotation.y += 0.003 + index * 0.001;
+                shape.position.y += Math.sin(Date.now() * 0.001 + index) * 0.2;
+            });
+        }
+
+        // Mouse interaction
+        camera.position.x += (mouseX - camera.position.x) * 0.02;
+        camera.position.y += (-mouseY - camera.position.y) * 0.02;
+        camera.lookAt(scene.position);
+
+        renderer.render(scene, camera);
+    }
+
+    // Mouse movement tracking
+    document.addEventListener('mousemove', (event) => {
+        mouseX = (event.clientX - windowHalfX) * 0.5;
+        mouseY = (event.clientY - windowHalfY) * 0.5;
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        if (camera && renderer) {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    });
+
+    // Initialize Three.js after a short delay
+    setTimeout(initThreeJS, 100);
     
     // Enhanced logo intro animation
     const introOverlay = document.getElementById('introOverlay');
@@ -11,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             introOverlay.remove();
         }, 1000);
-    }, 3500); // Show for 3.5 seconds for enhanced animation
+    }, 3500);
     
     // Navigation smooth scroll
     const navLinks = document.querySelectorAll('a[href^="#"]');
@@ -256,23 +414,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const nav = document.querySelector('.nav');
         
         if (currentScroll > 100) {
-            nav.style.background = 'rgba(255, 255, 255, 0.98)';
-            nav.querySelector('.nav-pill').style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
+            nav.style.background = 'rgba(0, 0, 0, 0.95)'; // 어두운 배경으로 변경
+            nav.querySelector('.nav-pill').style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.3)';
+            nav.querySelector('.nav-pill').style.background = 'rgba(255, 255, 255, 0.1)';
+            nav.querySelector('.nav-pill').style.backdropFilter = 'blur(20px)';
+            
+            // 네비 텍스트 색상도 변경
+            nav.querySelectorAll('.nav-link, .logo').forEach(el => {
+                el.style.color = 'white';
+            });
         } else {
             nav.style.background = 'transparent';
             nav.querySelector('.nav-pill').style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+            nav.querySelector('.nav-pill').style.background = 'rgba(255, 255, 255, 0.95)';
+            
+            // 원래 색상으로 복원
+            nav.querySelector('.logo').style.color = 'var(--black)';
+            nav.querySelectorAll('.nav-link').forEach(el => {
+                el.style.color = 'var(--gray-600)';
+            });
         }
         
         lastScroll = currentScroll;
     });
 
-    // Parallax effect for hero section
+    // Enhanced parallax effect for hero section
     const hero = document.querySelector('.hero');
     if (hero) {
         window.addEventListener('scroll', function() {
             const scrolled = window.pageYOffset;
-            const parallax = scrolled * 0.3;
-            hero.style.transform = `translateY(${parallax}px)`;
+            const parallax = scrolled * 0.1; // 더 부드러운 패럴랙스
+            if (particleSystem) {
+                particleSystem.rotation.y = scrolled * 0.0005;
+            }
         });
     }
 });
@@ -348,7 +522,7 @@ function showNotification(message, type = 'info') {
         flex: '1',
         fontSize: '15px',
         lineHeight: '1.4',
-        fontWeight: '400'
+        fontWeight: '500'
     });
 
     // Style close button
@@ -415,10 +589,10 @@ window.addEventListener('load', function() {
         // Enhanced scroll effects
         const scrollY = window.pageYOffset;
         
-        // Parallax elements
+        // Subtle parallax for cards
         const parallaxElements = document.querySelectorAll('.phil-card, .brand-card');
         parallaxElements.forEach((el, index) => {
-            const speed = (index % 3 + 1) * 0.02;
+            const speed = (index % 3 + 1) * 0.01;
             el.style.transform = `translateY(${scrollY * speed}px)`;
         });
         
@@ -433,8 +607,12 @@ window.addEventListener('load', function() {
     });
     
     // Preload critical fonts
-    const fontLoad = new FontFace('Outfit', 'url(https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap)');
-    fontLoad.load().then(function(loadedFont) {
-        document.fonts.add(loadedFont);
-    });
+    if ('FontFace' in window) {
+        const fontLoad = new FontFace('Outfit', 'url(https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap)');
+        fontLoad.load().then(function(loadedFont) {
+            document.fonts.add(loadedFont);
+        }).catch(function(error) {
+            console.log('Font loading failed:', error);
+        });
+    }
 });
