@@ -77,7 +77,8 @@ export const handler = async (event, context) => {
     }
 
     // 데이터베이스에 Contact 저장
-    const result = await sql`
+    const sqlFunc = getSqlInstance()
+    const result = await sqlFunc`
       INSERT INTO contacts (name, email, message)
       VALUES (${name}, ${email}, ${message})
       RETURNING *

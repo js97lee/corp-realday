@@ -50,7 +50,8 @@ export const handler = async (event, context) => {
     }
 
     // Contact 목록 조회
-    const contacts = await sql`
+    const sqlFunc = getSqlInstance()
+    const contacts = await sqlFunc`
       SELECT * FROM contacts
       ORDER BY created_at DESC
     `
