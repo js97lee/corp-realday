@@ -1,25 +1,43 @@
 // 공통 DB 연결 유틸리티
 import { neon } from '@neondatabase/serverless'
 
-// Netlify 환경 변수에서 DATABASE_URL 가져오기
-// Netlify Neon 확장에서 자동으로 제공되는 환경 변수 사용
-const databaseUrl = process.env.DATABASE_URL || 
-                     process.env.NETLIFY_DATABASE_URL ||
-                     process.env.POSTGRES_PRISMA_URL ||
-                     process.env.POSTGRES_URL_NON_POOLING
+// DATABASE_URL 가져오기 함수 (런타임에 호출)
+function getDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL || 
+                       process.env.NETLIFY_DATABASE_URL ||
+                       process.env.POSTGRES_PRISMA_URL ||
+                       process.env.POSTGRES_URL_NON_POOLING
 
-if (!databaseUrl) {
-  console.error('❌ DATABASE_URL이 설정되지 않았습니다.')
-  console.error('사용 가능한 환경 변수:', Object.keys(process.env).filter(key => 
-    key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('NEON')
-  ))
-  throw new Error('DATABASE_URL이 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.')
+  if (!databaseUrl) {
+    const availableEnvKeys = Object.keys(process.env).filter(key => 
+      key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('NEON')
+    )
+    console.error('❌ DATABASE_URL이 설정되지 않았습니다.')
+    console.error('사용 가능한 환경 변수:', availableEnvKeys)
+    throw new Error('DATABASE_URL이 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.')
+  }
+
+  console.log('✅ DATABASE_URL 확인됨:', databaseUrl.substring(0, 30) + '...')
+  return databaseUrl
 }
 
-console.log('✅ DATABASE_URL 확인됨:', databaseUrl.substring(0, 30) + '...')
+// Neon DB 연결 (지연 초기화)
+let sqlInstance = null
 
-// Neon DB 연결
-export const sql = neon(databaseUrl)
+export function getSql() {
+  if (!sqlInstance) {
+    const databaseUrl = getDatabaseUrl()
+    sqlInstance = neon(databaseUrl)
+  }
+  return sqlInstance
+}
+
+// 기존 코드 호환성을 위한 export
+export const sql = new Proxy({}, {
+  get(target, prop) {
+    return getSql()[prop]
+  }
+})
 
 // 데이터베이스 초기화 (테이블 생성)
 export async function initDatabase() {
