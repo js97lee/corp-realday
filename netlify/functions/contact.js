@@ -33,8 +33,20 @@ export const handler = async (event, context) => {
   try {
     // 데이터베이스 초기화 (한 번만 실행)
     if (!dbInitialized) {
-      await initDatabase()
-      dbInitialized = true
+      try {
+        await initDatabase()
+        dbInitialized = true
+      } catch (dbError) {
+        console.error('Database initialization error:', dbError)
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '데이터베이스 연결 오류: ' + dbError.message,
+          }),
+        }
+      }
     }
 
     const { name, email, message } = JSON.parse(event.body || '{}')

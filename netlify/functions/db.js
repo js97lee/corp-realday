@@ -2,11 +2,21 @@
 import { neon } from '@neondatabase/serverless'
 
 // Netlify 환경 변수에서 DATABASE_URL 가져오기
-const databaseUrl = process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL
+// Netlify Neon 확장에서 자동으로 제공되는 환경 변수 사용
+const databaseUrl = process.env.DATABASE_URL || 
+                     process.env.NETLIFY_DATABASE_URL ||
+                     process.env.POSTGRES_PRISMA_URL ||
+                     process.env.POSTGRES_URL_NON_POOLING
 
 if (!databaseUrl) {
   console.error('❌ DATABASE_URL이 설정되지 않았습니다.')
+  console.error('사용 가능한 환경 변수:', Object.keys(process.env).filter(key => 
+    key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('NEON')
+  ))
+  throw new Error('DATABASE_URL이 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.')
 }
+
+console.log('✅ DATABASE_URL 확인됨:', databaseUrl.substring(0, 30) + '...')
 
 // Neon DB 연결
 export const sql = neon(databaseUrl)
