@@ -1,5 +1,6 @@
 // API 기본 URL (환경 변수로 관리 가능)
-// 프로덕션에서는 Netlify 환경 변수에서 VITE_API_URL 설정 필요
+// 프로덕션에서는 Netlify Functions 사용 (/api)
+// 로컬 개발 시에는 환경 변수로 백엔드 서버 URL 설정 가능
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD ? '/api' : 'http://localhost:5001/api')
 
