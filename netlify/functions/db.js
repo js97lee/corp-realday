@@ -32,9 +32,6 @@ export function getSql() {
   return sqlInstance
 }
 
-// 직접 sql 인스턴스 export (호환성)
-export const sql = getSql()
-
 // 데이터베이스 초기화 (테이블 생성)
 export async function initDatabase() {
   try {
