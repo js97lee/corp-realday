@@ -24,7 +24,7 @@ function getDatabaseUrl() {
 // Neon DB 연결 (지연 초기화)
 let sqlInstance = null
 
-export function getSql() {
+function getSql() {
   if (!sqlInstance) {
     const databaseUrl = getDatabaseUrl()
     sqlInstance = neon(databaseUrl)
@@ -32,18 +32,23 @@ export function getSql() {
   return sqlInstance
 }
 
-// 기존 코드 호환성을 위한 export
-export const sql = new Proxy({}, {
-  get(target, prop) {
-    return getSql()[prop]
-  }
-})
+// sql을 태그 함수로 export (템플릿 리터럴 지원)
+export const sql = (strings, ...values) => {
+  return getSql()(strings, ...values)
+}
+
+// getSql도 export (직접 접근이 필요한 경우)
+export function getSqlInstance() {
+  return getSql()
+}
 
 // 데이터베이스 초기화 (테이블 생성)
 export async function initDatabase() {
   try {
+    const sqlFunc = getSql()
+    
     // users 테이블 생성
-    await sql`
+    await sqlFunc`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -54,7 +59,7 @@ export async function initDatabase() {
     `
 
     // contacts 테이블 생성
-    await sql`
+    await sqlFunc`
       CREATE TABLE IF NOT EXISTS contacts (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -65,12 +70,12 @@ export async function initDatabase() {
     `
 
     // 초기 관리자 계정이 없으면 생성
-    const existingAdmin = await sql`
+    const existingAdmin = await sqlFunc`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
     `
     
     if (existingAdmin.length === 0) {
-      await sql`
+      await sqlFunc`
         INSERT INTO users (email, password, role)
         VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'super_admin'})
       `
@@ -80,6 +85,7 @@ export async function initDatabase() {
     console.log('데이터베이스 초기화 완료')
   } catch (error) {
     console.error('데이터베이스 초기화 오류:', error)
+    throw error // 에러를 다시 throw하여 호출자가 처리할 수 있도록
   }
 }
 

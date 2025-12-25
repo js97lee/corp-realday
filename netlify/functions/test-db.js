@@ -1,4 +1,4 @@
-import { sql, initDatabase } from './db.js'
+import { sql, initDatabase, getSqlInstance } from './db.js'
 
 export const handler = async (event, context) => {
   const headers = {
@@ -18,7 +18,8 @@ export const handler = async (event, context) => {
     await initDatabase()
     
     // 간단한 쿼리 테스트
-    const result = await sql`SELECT NOW() as current_time, COUNT(*) as user_count FROM users`
+    const sqlFunc = getSqlInstance()
+    const result = await sqlFunc`SELECT NOW() as current_time, COUNT(*) as user_count FROM users`
     
     console.log('=== DB 테스트 성공 ===')
     console.log('결과:', result)
