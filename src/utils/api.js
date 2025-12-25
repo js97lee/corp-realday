@@ -1,5 +1,7 @@
 // API 기본 URL (환경 변수로 관리 가능)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
+// 프로덕션에서는 Netlify 환경 변수에서 VITE_API_URL 설정 필요
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? '/api' : 'http://localhost:5001/api')
 
 // Admin 로그인 API
 export const adminLogin = async (email, password) => {
@@ -12,14 +14,18 @@ export const adminLogin = async (email, password) => {
       body: JSON.stringify({ email, password }),
     })
 
-    const data = await response.json()
-    
     if (!response.ok) {
-      throw new Error(data.message || '로그인에 실패했습니다.')
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
     }
 
+    const data = await response.json()
     return data
   } catch (error) {
+    // 네트워크 에러 처리
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
     throw error
   }
 }
@@ -35,14 +41,44 @@ export const submitContact = async (formData) => {
       body: JSON.stringify(formData),
     })
 
-    const data = await response.json()
-    
     if (!response.ok) {
-      throw new Error(data.message || '메시지 전송에 실패했습니다.')
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
     }
 
+    const data = await response.json()
     return data
   } catch (error) {
+    // 네트워크 에러 처리
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// Contacts 목록 조회 API
+export const fetchContacts = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/contacts`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    // 네트워크 에러 처리
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
     throw error
   }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isManagerOrAbove } from '../utils/auth'
+import { fetchContacts } from '../utils/api'
 
 function AdminContacts() {
   const [contacts, setContacts] = useState([])
@@ -21,30 +22,19 @@ function AdminContacts() {
       return
     }
 
-    // 문의 목록 가져오기 (실제로는 API 호출)
-    fetchContacts()
+    // 문의 목록 가져오기
+    loadContacts()
   }, [navigate])
 
-  const fetchContacts = async () => {
+  const loadContacts = async () => {
     try {
       setLoading(true)
-      // 실제로는 API 호출
-      // const response = await fetch('http://localhost:5001/api/contacts')
-      // const data = await response.json()
-      // setContacts(data.contacts || [])
-      
-      // 임시 데이터
-      setContacts([
-        {
-          id: 1,
-          name: '홍길동',
-          email: 'hong@example.com',
-          message: '프로젝트 문의드립니다.',
-          createdAt: new Date().toISOString(),
-        },
-      ])
+      const response = await fetchContacts()
+      setContacts(response.contacts || [])
     } catch (error) {
       console.error('문의 목록 가져오기 실패:', error)
+      // 에러 발생 시 빈 배열로 설정 (에러 메시지는 콘솔에만 표시)
+      setContacts([])
     } finally {
       setLoading(false)
     }
