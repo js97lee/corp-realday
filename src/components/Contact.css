@@ -1,0 +1,21 @@
+.contact { padding: 120px 0; background: #fff; }
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 120px; }
+.contact-info h2 { font-family: 'Outfit', sans-serif; font-size: clamp(48px, 8vw, 96px); font-weight: 300; color: #000; margin-bottom: 40px; line-height: 1.1; letter-spacing: -2px; }
+.contact-info p { font-size: 20px; color: #333; margin-bottom: 80px; line-height: 1.5; font-weight: 300; }
+.contact-details { margin-bottom: 0; }
+.contact-item { margin-bottom: 40px; padding: 32px 0; border-bottom: 1px solid #e0e0e0; }
+.contact-item:last-child { border-bottom: none; }
+.contact-content .label { font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 12px; font-family: 'Outfit', sans-serif; }
+.contact-content a, .contact-content span { color: #000; text-decoration: none; font-weight: 600; font-size: 18px; transition: color 0.3s ease; font-family: 'Outfit', sans-serif; }
+.contact-content a:hover { color: #666; }
+.form-container { background: #fafafa; padding: 64px; border-radius: 16px; border: 1px solid #e0e0e0; }
+.form-container h3 { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 600; color: #000; margin-bottom: 48px; letter-spacing: -0.5px; }
+.form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+.form-group.full { grid-template-columns: 1fr; }
+.form-container input, .form-container select, .form-container textarea { width: 100%; padding: 20px 0; border: none; border-bottom: 2px solid #e0e0e0; font-size: 16px; font-family: 'Outfit', sans-serif; font-weight: 500; transition: all 0.3s ease; background: transparent; border-radius: 0; }
+.form-container input:focus, .form-container select:focus, .form-container textarea:focus { outline: none; border-bottom-color: #000; }
+.form-container input::placeholder, .form-container textarea::placeholder { color: #999; font-weight: 400; }
+.btn-submit { width: 100%; padding: 20px; background: #000; color: #fff; border: none; border-radius: 8px; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 32px; text-transform: uppercase; letter-spacing: 2px; }
+.btn-submit:hover { background: #333; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); }
+@media (max-width: 1024px) { .contact-grid { grid-template-columns: 1fr; gap: 80px; } }
+@media (max-width: 768px) { .contact { padding: 80px 0; } .form-group { grid-template-columns: 1fr; } .form-container { padding: 40px 32px; } }

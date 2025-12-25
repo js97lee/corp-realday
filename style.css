@@ -1,0 +1,1158 @@
+/* Reset & Variables */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Primary Colors */
+    --black: #000000;
+    --white: #ffffff;
+    --gray-50: #fafafa;
+    --gray-100: #f5f5f5;
+    --gray-200: #e5e5e5;
+    --gray-300: #d4d4d4;
+    --gray-400: #a3a3a3;
+    --gray-500: #737373;
+    --gray-600: #525252;
+    --gray-700: #404040;
+    --gray-800: #262626;
+    --gray-900: #171717;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Outfit', 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    color: var(--black);
+    background: var(--white);
+    overflow-x: hidden;
+    font-weight: 500; /* 전체적으로 더 볼드하게 */
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px;
+}
+
+/* Logo Intro Animation - Enhanced */
+.intro-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--black);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1s ease, visibility 1s ease;
+}
+
+.intro-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.intro-content {
+    text-align: center;
+}
+
+.logo-animation {
+    font-family: 'Outfit', sans-serif;
+    font-size: 120px;
+    font-weight: 100;
+    letter-spacing: 20px;
+    color: var(--white);
+}
+
+.letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(100px) scale(0.5);
+    animation: letterReveal 1.2s ease forwards;
+}
+
+.letter:nth-child(1) { animation-delay: 0.1s; }
+.letter:nth-child(2) { animation-delay: 0.2s; }
+.letter:nth-child(3) { animation-delay: 0.3s; }
+.letter:nth-child(4) { animation-delay: 0.4s; }
+.letter:nth-child(5) { animation-delay: 0.5s; }
+.letter:nth-child(6) { animation-delay: 0.6s; }
+.letter:nth-child(7) { animation-delay: 0.7s; }
+
+@keyframes letterReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(100px) scale(0.5);
+        font-weight: 100;
+        letter-spacing: 40px;
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(0) scale(1.1);
+        font-weight: 500;
+        letter-spacing: 10px;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        font-weight: 600; /* 더 볼드하게 */
+        letter-spacing: 20px;
+    }
+}
+
+/* Navigation - Improved Mobile */
+.nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 24px 0;
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.nav-pill {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--gray-200);
+    border-radius: 50px;
+    padding: 12px 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.nav-content {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    padding: 0 16px;
+}
+
+.logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--black);
+    letter-spacing: 2px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 36px;
+}
+
+.nav-link {
+    color: var(--gray-600);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600; /* 더 볼드하게 */
+    padding: 8px 0;
+    transition: all 0.3s ease;
+    position: relative;
+    font-family: 'Outfit', sans-serif;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--black);
+    font-weight: 700; /* 더 볼드하게 */
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--black);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100%;
+}
+
+.menu-toggle {
+    display: none;
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    flex-direction: column;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+}
+
+.menu-toggle span {
+    width: 24px;
+    height: 2px;
+    background: var(--black);
+    margin: 3px 0;
+    transition: 0.3s;
+}
+
+.menu-toggle.active span:nth-child(1) {
+    transform: rotate(-45deg) translate(-6px, 6px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+    transform: rotate(45deg) translate(-6px, -6px);
+}
+
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: var(--black);
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+}
+
+.mobile-menu.open {
+    transform: translateX(0);
+}
+
+.mobile-menu-content {
+    padding: 80px 32px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mobile-logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 32px;
+    font-weight: 600; /* 더 볼드하게 */
+    color: var(--white);
+    letter-spacing: 4px;
+    margin-bottom: 64px;
+    text-align: center;
+}
+
+.mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    text-align: center;
+}
+
+.mobile-nav-link {
+    color: var(--gray-400);
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: 500; /* 더 볼드하게 */
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.3s ease;
+    letter-spacing: 2px;
+}
+
+.mobile-nav-link:hover {
+    color: var(--white);
+    font-weight: 600; /* 더 볼드하게 */
+}
+
+/* Hero Section - Enhanced with Three.js Background */
+.hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    background: var(--black); /* 배경을 검은색으로 변경 */
+    padding-top: 120px;
+    overflow: hidden;
+}
+
+.hero-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.hero-content {
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.hero-tag {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--gray-300); /* 텍스트 색상 조정 */
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+}
+
+.hero-text h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 96px;
+    font-weight: 400; /* 더 볼드하게 */
+    line-height: 1.1;
+    margin-bottom: 48px;
+    color: var(--white); /* 텍스트 색상을 흰색으로 */
+    letter-spacing: -2px;
+}
+
+.hero-text h1 strong {
+    font-weight: 900; /* 강조 텍스트를 더 볼드하게 */
+}
+
+.vision-text,
+.creation-text {
+    display: block;
+}
+
+.hero-description {
+    font-size: 18px;
+    color: var(--gray-300); /* 텍스트 색상 조정 */
+    margin-bottom: 64px;
+    line-height: 1.7;
+    font-weight: 500; /* 더 볼드하게 */
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-contact {
+    background: transparent;
+    color: var(--white); /* 색상 변경 */
+    border: 2px solid var(--gray-300);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-contact:hover {
+    border-color: var(--white);
+    transform: translateY(-2px);
+}
+
+.btn-arrow {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.btn-contact:hover .btn-arrow {
+    transform: translateX(4px);
+}
+
+/* About Section - Dark Background */
+.about {
+    padding: 160px 0;
+    background: var(--black);
+    color: var(--white);
+}
+
+.section-tag {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--gray-400);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+}
+
+.about-grid {
+    margin-bottom: 80px;
+    text-align: center;
+}
+
+.about-text h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 64px;
+    font-weight: 400; /* 더 볼드하게 */
+    color: var(--white);
+    margin-bottom: 32px;
+    letter-spacing: -1px;
+}
+
+.intro-text {
+    font-size: 24px;
+    color: var(--white);
+    margin-bottom: 32px;
+    font-weight: 500; /* 더 볼드하게 */
+    line-height: 1.5;
+}
+
+.desc-text {
+    font-size: 16px;
+    color: var(--gray-400);
+    margin-bottom: 0;
+    line-height: 1.7;
+    font-weight: 400; /* 더 볼드하게 */
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.phil-card {
+    background: var(--gray-900);
+    padding: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--gray-800);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.phil-card:hover {
+    border-color: var(--gray-600);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.phil-number {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--gray-500);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+}
+
+.phil-content h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 24px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--white);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.phil-content h5 {
+    font-family: 'Pretendard Variable', sans-serif;
+    font-size: 18px;
+    font-weight: 600; /* 더 볼드하게 */
+    color: var(--gray-400);
+    margin-bottom: 16px;
+}
+
+.phil-content p {
+    color: var(--gray-400);
+    font-size: 15px;
+    font-weight: 400; /* 더 볼드하게 */
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Brands Section - White Background */
+.brands {
+    padding: 160px 0;
+    background: var(--white);
+}
+
+.brands .section-header {
+    margin-bottom: 80px;
+    text-align: center;
+}
+
+.brands .section-tag {
+    color: var(--gray-500);
+}
+
+.brands .section-header h2 {
+    color: var(--black);
+    margin-bottom: 24px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 64px;
+    font-weight: 400; /* 더 볼드하게 */
+    letter-spacing: -1px;
+}
+
+.brands .section-header p {
+    color: var(--gray-600);
+    font-size: 18px;
+    font-weight: 500; /* 더 볼드하게 */
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.brands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.brand-card {
+    position: relative;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 16px;
+    padding: 48px;
+    text-decoration: none;
+    transition: all 0.4s ease;
+    display: block;
+    height: 280px;
+    overflow: hidden;
+}
+
+.brand-card.active {
+    background: var(--white);
+    border-color: var(--gray-400);
+}
+
+.brand-card.coming-soon {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.brand-card.active:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+    border-color: var(--black);
+}
+
+.brand-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+}
+
+.brand-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 32px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--black);
+    letter-spacing: 1px;
+}
+
+.brand-status {
+    font-size: 11px;
+    font-weight: 700; /* 더 볼드하게 */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.brand-status.active {
+    background: var(--black);
+    color: var(--white);
+}
+
+.brand-status.coming {
+    background: var(--gray-300);
+    color: var(--gray-600);
+}
+
+.brand-description p {
+    font-size: 16px;
+    color: var(--gray-600);
+    font-weight: 600; /* 더 볼드하게 */
+    margin-bottom: 12px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.brand-description .brand-detail {
+    font-size: 14px;
+    color: var(--gray-500);
+    line-height: 1.5;
+    margin-bottom: 32px;
+    font-weight: 400; /* 더 볼드하게 */
+}
+
+.brand-link {
+    position: absolute;
+    bottom: 48px;
+    left: 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 600; /* 더 볼드하게 */
+    color: var(--gray-600);
+    transition: all 0.3s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.brand-card.active:hover .brand-link {
+    color: var(--black);
+}
+
+.link-arrow {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.brand-card.active:hover .link-arrow {
+    transform: translateX(4px);
+}
+
+/* Work Section - Updated to 2x2 Grid */
+.work {
+    padding: 160px 0;
+    background: var(--black);
+}
+
+.work .section-header {
+    margin-bottom: 80px;
+    text-align: left;
+    max-width: 600px;
+}
+
+.work .section-tag {
+    color: var(--gray-400);
+}
+
+.work .section-header h2 {
+    color: var(--white);
+    margin-bottom: 24px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 64px;
+    font-weight: 400; /* 더 볼드하게 */
+    letter-spacing: -1px;
+}
+
+.work .section-header p {
+    color: var(--gray-400);
+    font-size: 18px;
+    font-weight: 500; /* 더 볼드하게 */
+    line-height: 1.6;
+}
+
+/* 2x2 Grid for Work Gallery */
+.work-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.work-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    height: 400px;
+    transition: transform 0.4s ease;
+    border: 1px solid var(--gray-800);
+    background: var(--gray-900);
+}
+
+.work-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--gray-600);
+}
+
+.work-preview {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.work-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    padding: 48px;
+    color: var(--white);
+}
+
+.work-info h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 28px;
+    font-weight: 700; /* 더 볼드하게 */
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+}
+
+.work-info p {
+    color: var(--gray-300);
+    margin-bottom: 24px;
+    font-size: 16px;
+    font-weight: 500; /* 더 볼드하게 */
+}
+
+.work-tech {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.work-tech span {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600; /* 더 볼드하게 */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Contact Section - White Background */
+.contact {
+    padding: 160px 0;
+    background: var(--white);
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 120px;
+}
+
+.contact-info h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 64px;
+    font-weight: 400; /* 더 볼드하게 */
+    color: var(--black);
+    margin-bottom: 32px;
+    line-height: 1.2;
+    letter-spacing: -1px;
+}
+
+.contact-info p {
+    font-size: 18px;
+    color: var(--gray-600);
+    margin-bottom: 64px;
+    line-height: 1.7;
+    font-weight: 500; /* 더 볼드하게 */
+}
+
+.contact-details {
+    margin-bottom: 0;
+}
+
+.contact-item {
+    margin-bottom: 40px;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.contact-item:last-child {
+    border-bottom: none;
+}
+
+.contact-content .label {
+    font-size: 12px;
+    font-weight: 700; /* 더 볼드하게 */
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 12px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.contact-content a,
+.contact-content span {
+    color: var(--black);
+    text-decoration: none;
+    font-weight: 600; /* 더 볼드하게 */
+    font-size: 18px;
+    transition: color 0.3s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.contact-content a:hover {
+    color: var(--gray-600);
+}
+
+/* Contact Form */
+.form-container {
+    background: var(--gray-50);
+    padding: 64px;
+    border-radius: 16px;
+    border: 1px solid var(--gray-200);
+}
+
+.form-container h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 32px;
+    font-weight: 600; /* 더 볼드하게 */
+    color: var(--black);
+    margin-bottom: 48px;
+    letter-spacing: -0.5px;
+}
+
+.form-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.form-group.full {
+    grid-template-columns: 1fr;
+}
+
+.form-container input,
+.form-container select,
+.form-container textarea {
+    width: 100%;
+    padding: 20px 0;
+    border: none;
+    border-bottom: 2px solid var(--gray-300);
+    font-size: 16px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500; /* 더 볼드하게 */
+    transition: all 0.3s ease;
+    background: transparent;
+    border-radius: 0;
+}
+
+.form-container input:focus,
+.form-container select:focus,
+.form-container textarea:focus {
+    outline: none;
+    border-bottom-color: var(--black);
+}
+
+.form-container input::placeholder,
+.form-container textarea::placeholder {
+    color: var(--gray-500);
+    font-weight: 400; /* 더 볼드하게 */
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 20px;
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 600; /* 더 볼드하게 */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 32px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.btn-submit:hover {
+    background: var(--gray-800);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Footer - Dark Background */
+.footer {
+    background: var(--black);
+    color: var(--white);
+    padding: 120px 0 0;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 120px;
+    margin-bottom: 80px;
+}
+
+.footer-logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 36px;
+    font-weight: 600; /* 더 볼드하게 */
+    color: var(--white);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+}
+
+.footer-brand p {
+    font-family: 'Outfit', sans-serif;
+    color: var(--gray-500);
+    font-size: 14px;
+    font-weight: 500; /* 더 볼드하게 */
+    margin-bottom: 48px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 32px;
+}
+
+.social-link {
+    color: var(--gray-500);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500; /* 더 볼드하게 */
+    transition: color 0.3s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.social-link:hover {
+    color: var(--white);
+}
+
+.footer-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 64px;
+}
+
+.footer-column h4 {
+    font-family: 'Outfit', sans-serif;
+    color: var(--white);
+    font-size: 18px;
+    font-weight: 600; /* 더 볼드하게 */
+    margin-bottom: 32px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.footer-column a {
+    display: block;
+    color: var(--gray-500);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500; /* 더 볼드하게 */
+    margin-bottom: 20px;
+    transition: color 0.3s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.footer-column a:hover {
+    color: var(--white);
+}
+
+.footer-column a.coming-soon {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.footer-column a.coming-soon:hover {
+    color: var(--gray-500);
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--gray-800);
+    padding: 48px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-bottom p {
+    color: var(--gray-600);
+    font-size: 14px;
+    font-weight: 500; /* 더 볼드하게 */
+    font-family: 'Outfit', sans-serif;
+}
+
+.footer-links {
+    display: flex;
+    gap: 32px;
+}
+
+.footer-links a {
+    color: var(--gray-600);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500; /* 더 볼드하게 */
+    transition: color 0.3s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.footer-links a:hover {
+    color: var(--gray-400);
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .hero-content,
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 80px;
+    }
+    
+    .work-gallery {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 60px;
+    }
+    
+    .philosophy-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .brands-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 24px;
+    }
+    
+    .nav-pill {
+        display: none;
+    }
+    
+    .menu-toggle {
+        display: flex;
+    }
+    
+    .hero-text h1 {
+        font-size: 56px;
+    }
+    
+    .logo-animation {
+        font-size: 72px;
+        letter-spacing: 12px;
+    }
+    
+    .about-text h2,
+    .contact-info h2,
+    .work .section-header h2,
+    .brands .section-header h2 {
+        font-size: 48px;
+    }
+    
+    .work-gallery {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .form-group {
+        grid-template-columns: 1fr;
+    }
+    
+    .footer-nav {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .footer-bottom {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+    }
+    
+    .philosophy-grid {
+        gap: 24px;
+    }
+    
+    .phil-card {
+        padding: 32px;
+        height: auto;
+    }
+    
+    .brands-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .brand-card {
+        height: auto;
+        min-height: 200px;
+        padding: 32px;
+    }
+    
+    .brand-link {
+        position: static;
+        margin-top: 24px;
+    }
+    
+    .hero,
+    .about,
+    .brands,
+    .work,
+    .contact {
+        padding: 100px 0;
+    }
+    
+    .form-container {
+        padding: 40px 32px;
+    }
+    
+    .nav-container {
+        padding: 0 24px;
+    }
+}primary,
+.btn-contact {
+    position: relative;
+    padding: 20px 40px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600; /* 더 볼드하게 */
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+}
+
+.btn-primary {
+    background: var(--white); /* 버튼 색상 반전 */
+    color: var(--black);
+}
+
+.btn-primary:hover {
+    background: var(--gray-200);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+}
+
+.btn-
