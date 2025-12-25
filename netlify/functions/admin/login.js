@@ -1,4 +1,4 @@
-import { sql, initDatabase, getSqlInstance } from '../db.js'
+import { getSql, initDatabase } from '../db.js'
 
 // 데이터베이스 초기화 (최초 실행 시)
 let dbInitialized = false
@@ -77,7 +77,7 @@ export const handler = async (event, context) => {
     }
 
     // 데이터베이스에서 사용자 조회
-    const sqlFunc = getSqlInstance()
+    const sqlFunc = getSql()
     const users = await sqlFunc`
       SELECT * FROM users WHERE email = ${email}
     `

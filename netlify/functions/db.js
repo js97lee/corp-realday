@@ -24,7 +24,7 @@ function getDatabaseUrl() {
 // Neon DB 연결 (지연 초기화)
 let sqlInstance = null
 
-function getSql() {
+export function getSql() {
   if (!sqlInstance) {
     const databaseUrl = getDatabaseUrl()
     sqlInstance = neon(databaseUrl)
@@ -32,15 +32,8 @@ function getSql() {
   return sqlInstance
 }
 
-// sql을 태그 함수로 export (템플릿 리터럴 지원)
-export const sql = (strings, ...values) => {
-  return getSql()(strings, ...values)
-}
-
-// getSql도 export (직접 접근이 필요한 경우)
-export function getSqlInstance() {
-  return getSql()
-}
+// 직접 sql 인스턴스 export (호환성)
+export const sql = getSql()
 
 // 데이터베이스 초기화 (테이블 생성)
 export async function initDatabase() {
@@ -85,7 +78,7 @@ export async function initDatabase() {
     console.log('데이터베이스 초기화 완료')
   } catch (error) {
     console.error('데이터베이스 초기화 오류:', error)
-    throw error // 에러를 다시 throw하여 호출자가 처리할 수 있도록
+    throw error
   }
 }
 
