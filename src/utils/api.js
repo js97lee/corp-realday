@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ||
 // Admin 로그인 API
 export const adminLogin = async (email, password) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/login`, {
+    const response = await fetch(`${API_BASE_URL}/admin-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
