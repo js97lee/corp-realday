@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isManagerOrAbove, getUserRole, USER_ROLES } from '../utils/auth'
+import { fetchProjects, addProject, updateProject, deleteProject } from '../utils/api'
 
 function AdminProjects() {
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [categories, setCategories] = useState(['Web Development', 'Design', 'Mobile', 'Branding', 'Marketing'])
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false)
   const [newCategory, setNewCategory] = useState('')
@@ -17,8 +20,54 @@ function AdminProjects() {
     imageFile: null,
     memo: '',
     isVisible: true,
+    status: 'planned',
   })
   const navigate = useNavigate()
+
+  // 프로젝트 목록 불러오기
+  const loadProjects = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const response = await fetchProjects(false) // 관리자용: 모든 프로젝트
+      if (response.success) {
+        // 직원은 진행 중인 프로젝트만 볼 수 있음
+        const userRole = getUserRole()
+        let filteredProjects = response.projects || []
+        
+        if (userRole === USER_ROLES.EMPLOYEE) {
+          filteredProjects = filteredProjects.filter(p => p.status === 'inProgress')
+        }
+        
+        // 데이터베이스 필드명을 컴포넌트 필드명으로 변환
+        const formattedProjects = filteredProjects.map(p => ({
+          id: p.id,
+          title: p.title,
+          description: p.description || '',
+          category: p.category || '',
+          image: p.image || '',
+          memo: p.memo || '',
+          isVisible: p.is_visible !== false,
+          status: p.status || 'planned',
+          createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        }))
+        
+        setProjects(formattedProjects)
+
+        // 프로젝트에서 사용된 카테고리도 목록에 추가
+        const projectCategories = formattedProjects.map(p => p.category).filter(Boolean)
+        setCategories(prev => {
+          const combined = [...prev, ...projectCategories]
+          return [...new Set(combined)] // 중복 제거
+        })
+      }
+    } catch (err) {
+      console.error('프로젝트 목록 불러오기 실패:', err)
+      setError(err.message || '프로젝트 목록을 불러올 수 없습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     // 로그인 상태 확인
@@ -28,29 +77,8 @@ function AdminProjects() {
       return
     }
 
-    // 직원은 진행 중인 프로젝트만 볼 수 있음 (권한 체크는 하지 않음)
-
-    // 임시 프로젝트 데이터 (실제로는 API에서 가져옴)
-    const allProjects = [
-      { id: 1, title: '프로젝트 1', description: '설명', category: 'Web Development', image: '', memo: '', isVisible: true, status: 'inProgress' },
-      { id: 2, title: '프로젝트 2', description: '설명', category: 'Design', image: '', memo: '내부 메모입니다', isVisible: false, status: 'planned' },
-      { id: 3, title: '프로젝트 3', description: '설명', category: 'Mobile', image: '', memo: '', isVisible: true, status: 'inProgress' },
-    ]
-
-    // 직원은 진행 중인 프로젝트만 볼 수 있음
-    const userRole = getUserRole()
-    const filteredProjects = userRole === USER_ROLES.EMPLOYEE 
-      ? allProjects.filter(p => p.status === 'inProgress')
-      : allProjects
-    
-    setProjects(filteredProjects)
-
-    // 프로젝트에서 사용된 카테고리도 목록에 추가
-    const projectCategories = filteredProjects.map(p => p.category).filter(Boolean)
-    setCategories(prev => {
-      const combined = [...prev, ...projectCategories]
-      return [...new Set(combined)] // 중복 제거
-    })
+    // 프로젝트 목록 불러오기
+    loadProjects()
   }, [navigate])
 
   const handleProjectClick = (project) => {
@@ -63,33 +91,73 @@ function AdminProjects() {
       imageFile: null,
       memo: project.memo || '',
       isVisible: project.isVisible,
+      status: project.status || 'planned',
     })
     setIsEditing(true)
   }
 
-  const handleSave = () => {
-    if (selectedProject) {
-      // 프로젝트 업데이트
-      setProjects(projects.map(p => 
-        p.id === selectedProject.id 
-          ? { ...selectedProject, ...formData }
-          : p
-      ))
-    } else {
-      // 새 프로젝트 추가
-      const newProject = {
-        id: projects.length + 1,
-        ...formData,
-      }
-      setProjects([...projects, newProject])
+  const handleSave = async () => {
+    if (!formData.title) {
+      alert('프로젝트 제목을 입력해주세요.')
+      return
     }
-    setIsEditing(false)
-    setSelectedProject(null)
-    setShowNewCategoryInput(false)
-    setNewCategory('')
-    setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true })
-    const fileInput = document.getElementById('imageFile')
-    if (fileInput) fileInput.value = ''
+
+    try {
+      setLoading(true)
+      setError('')
+
+      if (selectedProject) {
+        // 프로젝트 업데이트
+        const updateData = {
+          title: formData.title,
+          description: formData.description || null,
+          category: formData.category || null,
+          image: formData.image || null,
+          memo: formData.memo || null,
+          isVisible: formData.isVisible,
+          status: formData.status || 'planned',
+        }
+        
+        const response = await updateProject(selectedProject.id, updateData)
+        if (response.success) {
+          await loadProjects() // 목록 다시 불러오기
+          setIsEditing(false)
+          setSelectedProject(null)
+          setShowNewCategoryInput(false)
+          setNewCategory('')
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, status: 'planned' })
+          const fileInput = document.getElementById('imageFile')
+          if (fileInput) fileInput.value = ''
+        }
+      } else {
+        // 새 프로젝트 추가
+        const response = await addProject({
+          title: formData.title,
+          description: formData.description || null,
+          category: formData.category || null,
+          image: formData.image || null,
+          memo: formData.memo || null,
+          isVisible: formData.isVisible,
+          status: formData.status || 'planned',
+        })
+        if (response.success) {
+          await loadProjects() // 목록 다시 불러오기
+          setIsEditing(false)
+          setSelectedProject(null)
+          setShowNewCategoryInput(false)
+          setNewCategory('')
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, status: 'planned' })
+          const fileInput = document.getElementById('imageFile')
+          if (fileInput) fileInput.value = ''
+        }
+      }
+    } catch (err) {
+      console.error('프로젝트 저장 실패:', err)
+      setError(err.message || '프로젝트 저장에 실패했습니다.')
+      alert(err.message || '프로젝트 저장에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCancel = () => {
@@ -102,10 +170,47 @@ function AdminProjects() {
     if (fileInput) fileInput.value = ''
   }
 
-  const toggleVisibility = (projectId) => {
-    setProjects(projects.map(p => 
-      p.id === projectId ? { ...p, isVisible: !p.isVisible } : p
-    ))
+  const toggleVisibility = async (projectId) => {
+    const project = projects.find(p => p.id === projectId)
+    if (!project) return
+
+    try {
+      setLoading(true)
+      const response = await updateProject(projectId, {
+        isVisible: !project.isVisible
+      })
+      if (response.success) {
+        await loadProjects() // 목록 다시 불러오기
+      }
+    } catch (err) {
+      console.error('프로젝트 노출 상태 변경 실패:', err)
+      alert(err.message || '프로젝트 노출 상태 변경에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (projectId) => {
+    if (!window.confirm('정말 이 프로젝트를 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await deleteProject(projectId)
+      if (response.success) {
+        await loadProjects() // 목록 다시 불러오기
+        if (selectedProject?.id === projectId) {
+          setIsEditing(false)
+          setSelectedProject(null)
+        }
+      }
+    } catch (err) {
+      console.error('프로젝트 삭제 실패:', err)
+      alert(err.message || '프로젝트 삭제에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleAddCategory = () => {
@@ -131,15 +236,28 @@ function AdminProjects() {
           <button
             onClick={() => {
               setSelectedProject(null)
-              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true })
+              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, status: 'planned' })
               setIsEditing(true)
             }}
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
+            disabled={loading}
           >
             새 프로젝트 추가
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
+      {loading && !isEditing && (
+        <div className="text-center py-4 text-gray-500">
+          로딩 중...
+        </div>
+      )}
 
       {isEditing && !isEmployee ? (
         <div className="bg-white rounded-lg shadow p-4">
@@ -326,6 +444,22 @@ function AdminProjects() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                상태
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none bg-white"
+              >
+                <option value="planned">예정</option>
+                <option value="inProgress">진행 중</option>
+                <option value="completed">완료</option>
+                <option value="onHold">보류</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 메모 (어드민 전용)
               </label>
               <textarea
@@ -354,16 +488,27 @@ function AdminProjects() {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={handleSave}
-                className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
+                disabled={loading}
+                className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                저장
+                {loading ? '저장 중...' : '저장'}
               </button>
               <button
                 onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
+                disabled={loading}
+                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>
+              {selectedProject && (
+                <button
+                  onClick={() => handleDelete(selectedProject.id)}
+                  disabled={loading}
+                  className="px-6 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  삭제
+                </button>
+              )}
             </div>
           </div>
         </div>

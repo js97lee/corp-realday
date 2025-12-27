@@ -186,3 +186,109 @@ export const deleteMember = async (id) => {
   }
 }
 
+// 프로젝트 목록 조회 API (랜딩페이지용: visible=true, 관리자용: visible 없음)
+export const fetchProjects = async (visible = false) => {
+  try {
+    const url = visible 
+      ? `${API_BASE_URL}/projects?visible=true`
+      : `${API_BASE_URL}/projects`
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 프로젝트 추가 API
+export const addProject = async (projectData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(projectData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 프로젝트 수정 API
+export const updateProject = async (id, projectData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(projectData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 프로젝트 삭제 API
+export const deleteProject = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+

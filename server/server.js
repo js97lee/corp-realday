@@ -62,6 +62,22 @@ async function initDatabase() {
       )
     `
 
+    // projects 테이블 생성
+    await sql`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        image TEXT,
+        memo TEXT,
+        is_visible BOOLEAN DEFAULT true,
+        status VARCHAR(50) DEFAULT 'planned',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sql`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
@@ -385,6 +401,168 @@ app.delete('/api/members/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Member delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 프로젝트 목록 조회 (랜딩페이지용 - is_visible=true만)
+app.get('/api/projects', async (req, res) => {
+  try {
+    const { visible } = req.query
+    let projects
+    
+    if (visible === 'true') {
+      // 랜딩페이지용: 노출된 프로젝트만
+      projects = await sql`
+        SELECT id, title, description, category, image, created_at
+        FROM projects
+        WHERE is_visible = true
+        ORDER BY created_at DESC
+      `
+    } else {
+      // 관리자용: 모든 프로젝트
+      projects = await sql`
+        SELECT id, title, description, category, image, memo, is_visible, status, created_at, updated_at
+        FROM projects
+        ORDER BY created_at DESC
+      `
+    }
+    
+    res.json({
+      success: true,
+      projects
+    })
+  } catch (error) {
+    console.error('Projects fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 프로젝트 추가
+app.post('/api/projects', async (req, res) => {
+  try {
+    const { title, description, category, image, memo, isVisible, status } = req.body
+
+    if (!title) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '프로젝트 제목을 입력해주세요.' 
+      })
+    }
+
+    const result = await sql`
+      INSERT INTO projects (title, description, category, image, memo, is_visible, status)
+      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${status || 'planned'})
+      RETURNING *
+    `
+
+    res.json({
+      success: true,
+      message: '프로젝트가 추가되었습니다.',
+      project: result[0]
+    })
+
+  } catch (error) {
+    console.error('Project add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 프로젝트 수정
+app.put('/api/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, description, category, image, memo, isVisible, status } = req.body
+
+    const existing = await sql`
+      SELECT * FROM projects WHERE id = ${id}
+    `
+    
+    if (existing.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '프로젝트를 찾을 수 없습니다.' 
+      })
+    }
+
+    // 업데이트
+    if (title) {
+      await sql`UPDATE projects SET title = ${title} WHERE id = ${id}`
+    }
+    if (description !== undefined) {
+      await sql`UPDATE projects SET description = ${description} WHERE id = ${id}`
+    }
+    if (category !== undefined) {
+      await sql`UPDATE projects SET category = ${category} WHERE id = ${id}`
+    }
+    if (image !== undefined) {
+      await sql`UPDATE projects SET image = ${image} WHERE id = ${id}`
+    }
+    if (memo !== undefined) {
+      await sql`UPDATE projects SET memo = ${memo} WHERE id = ${id}`
+    }
+    if (isVisible !== undefined) {
+      await sql`UPDATE projects SET is_visible = ${isVisible} WHERE id = ${id}`
+    }
+    if (status !== undefined) {
+      await sql`UPDATE projects SET status = ${status} WHERE id = ${id}`
+    }
+    
+    await sql`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`
+
+    const result = await sql`
+      SELECT * FROM projects WHERE id = ${id}
+    `
+
+    res.json({
+      success: true,
+      message: '프로젝트가 수정되었습니다.',
+      project: result[0]
+    })
+
+  } catch (error) {
+    console.error('Project update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 프로젝트 삭제
+app.delete('/api/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const project = await sql`
+      SELECT * FROM projects WHERE id = ${id}
+    `
+    
+    if (project.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '프로젝트를 찾을 수 없습니다.' 
+      })
+    }
+
+    await sql`DELETE FROM projects WHERE id = ${id}`
+
+    res.json({
+      success: true,
+      message: '프로젝트가 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Project delete error:', error)
     res.status(500).json({ 
       success: false, 
       message: '서버 오류가 발생했습니다.' 

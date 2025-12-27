@@ -67,6 +67,22 @@ export async function initDatabase() {
       )
     `
 
+    // projects 테이블 생성
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        category VARCHAR(100),
+        image TEXT,
+        memo TEXT,
+        is_visible BOOLEAN DEFAULT true,
+        status VARCHAR(50) DEFAULT 'planned',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sqlFunc`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}

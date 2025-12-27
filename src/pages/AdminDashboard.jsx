@@ -71,8 +71,13 @@ function AdminDashboard() {
         <div className="h-full flex flex-col">
           {/* Logo/Header */}
           <div className="p-6 border-b border-gray-800">
-            <h1 className="text-xl font-bold text-white">REAL DAY</h1>
-            <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="text-left w-full hover:opacity-80 transition-opacity"
+            >
+              <h1 className="text-xl font-bold text-white">REAL DAY</h1>
+              <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+            </button>
           </div>
 
           {/* Navigation Menu */}
