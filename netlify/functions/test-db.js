@@ -1,13 +1,39 @@
 import { getSql, initDatabase } from './db.js'
 
 export const handler = async (event, context) => {
+  // CORS 헤더 설정
   const headers = {
     'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json',
+  }
+
+  // OPTIONS 요청 처리 (CORS preflight)
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: '',
+    }
+  }
+
+  // GET 요청만 허용
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ 
+        success: false, 
+        message: 'Method not allowed. Use GET method.' 
+      }),
+    }
   }
 
   try {
     console.log('=== DB 테스트 시작 ===')
+    console.log('HTTP Method:', event.httpMethod)
+    console.log('Path:', event.path)
     console.log('환경 변수 확인:')
     console.log('DATABASE_URL:', process.env.DATABASE_URL ? '설정됨' : '없음')
     console.log('NETLIFY_DATABASE_URL:', process.env.NETLIFY_DATABASE_URL ? '설정됨' : '없음')
@@ -50,7 +76,7 @@ export const handler = async (event, context) => {
         success: false,
         message: '데이터베이스 연결 실패',
         error: error.message,
-        stack: error.stack,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         env: {
           DATABASE_URL: process.env.DATABASE_URL ? '설정됨' : '없음',
           NETLIFY_DATABASE_URL: process.env.NETLIFY_DATABASE_URL ? '설정됨' : '없음',
