@@ -39,9 +39,17 @@ async function initDatabase() {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) DEFAULT 'employee',
+        name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // name 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)`
+    } catch (e) {
+      // 컬럼이 이미 존재하면 무시
+    }
 
     // contacts 테이블 생성
     await sql`
@@ -77,7 +85,7 @@ async function initDatabase() {
 initDatabase()
 
 // Admin 로그인 API
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin-login', async (req, res) => {
   try {
     const { email, password } = req.body
 
@@ -203,6 +211,180 @@ app.get('/api/contacts', async (req, res) => {
     })
   } catch (error) {
     console.error('Contacts fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 멤버 목록 조회 (관리자용)
+app.get('/api/members', async (req, res) => {
+  try {
+    const users = await sql`
+      SELECT id, email, role, name, created_at
+      FROM users
+      ORDER BY created_at DESC
+    `
+    
+    res.json({
+      success: true,
+      members: users
+    })
+  } catch (error) {
+    console.error('Members fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 멤버 추가 (관리자용)
+app.post('/api/members', async (req, res) => {
+  try {
+    const { email, password, role, name } = req.body
+
+    // 입력 검증
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이메일과 비밀번호를 입력해주세요.' 
+      })
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '올바른 이메일 형식을 입력해주세요.' 
+      })
+    }
+
+    // 중복 이메일 확인
+    const existing = await sql`
+      SELECT * FROM users WHERE email = ${email}
+    `
+    if (existing.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이미 존재하는 이메일입니다.' 
+      })
+    }
+
+    // 멤버 추가
+    const result = await sql`
+      INSERT INTO users (email, password, role, name)
+      VALUES (${email}, ${password}, ${role || 'employee'}, ${name || null})
+      RETURNING id, email, role, name, created_at
+    `
+
+    res.json({
+      success: true,
+      message: '멤버가 추가되었습니다.',
+      member: result[0]
+    })
+
+  } catch (error) {
+    console.error('Member add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 멤버 수정 (관리자용)
+app.put('/api/members/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { password, role, name } = req.body
+
+    // 기존 사용자 확인
+    const existing = await sql`
+      SELECT * FROM users WHERE id = ${id}
+    `
+    
+    if (existing.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '멤버를 찾을 수 없습니다.' 
+      })
+    }
+
+    // 업데이트할 필드만 업데이트
+    if (password) {
+      await sql`
+        UPDATE users SET password = ${password} WHERE id = ${id}
+      `
+    }
+    if (role) {
+      await sql`
+        UPDATE users SET role = ${role} WHERE id = ${id}
+      `
+    }
+    if (name !== undefined) {
+      await sql`
+        UPDATE users SET name = ${name} WHERE id = ${id}
+      `
+    }
+
+    // 업데이트된 사용자 정보 조회
+    const result = await sql`
+      SELECT id, email, role, name, created_at FROM users WHERE id = ${id}
+    `
+
+    res.json({
+      success: true,
+      message: '멤버 정보가 수정되었습니다.',
+      member: result[0]
+    })
+
+  } catch (error) {
+    console.error('Member update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 멤버 삭제 (관리자용)
+app.delete('/api/members/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // 최고관리자 계정은 삭제 불가
+    const user = await sql`
+      SELECT email FROM users WHERE id = ${id}
+    `
+    
+    if (user.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '멤버를 찾을 수 없습니다.' 
+      })
+    }
+
+    if (user[0].email === 'studio.realday@gmail.com') {
+      return res.status(400).json({ 
+        success: false, 
+        message: '최고관리자 계정은 삭제할 수 없습니다.' 
+      })
+    }
+
+    await sql`
+      DELETE FROM users WHERE id = ${id}
+    `
+
+    res.json({
+      success: true,
+      message: '멤버가 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Member delete error:', error)
     res.status(500).json({ 
       success: false, 
       message: '서버 오류가 발생했습니다.' 

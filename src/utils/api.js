@@ -84,3 +84,105 @@ export const fetchContacts = async () => {
   }
 }
 
+// 멤버 목록 조회 API
+export const fetchMembers = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/members`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 멤버 추가 API
+export const addMember = async (memberData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(memberData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 멤버 수정 API
+export const updateMember = async (id, memberData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/members/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(memberData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 멤버 삭제 API
+export const deleteMember = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/members/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+

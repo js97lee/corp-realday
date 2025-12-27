@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getUserRole, USER_ROLES } from '../utils/auth'
+import { fetchMembers, addMember, updateMember, deleteMember } from '../utils/api'
 
 function AdminMembers() {
   const [members, setMembers] = useState([])
   const [selectedMember, setSelectedMember] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -14,6 +17,28 @@ function AdminMembers() {
   })
   const navigate = useNavigate()
   const userRole = getUserRole()
+
+  // 멤버 목록 불러오기
+  const loadMembers = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const response = await fetchMembers()
+      if (response.success) {
+        // created_at을 createdAt으로 변환
+        const formattedMembers = response.members.map(m => ({
+          ...m,
+          createdAt: m.created_at ? new Date(m.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        }))
+        setMembers(formattedMembers)
+      }
+    } catch (err) {
+      console.error('멤버 목록 불러오기 실패:', err)
+      setError(err.message || '멤버 목록을 불러올 수 없습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('authToken')
@@ -28,57 +53,8 @@ function AdminMembers() {
       return
     }
 
-    // 현재 로그인한 사용자 정보 가져오기
-    const currentUserData = localStorage.getItem('user')
-    let currentUser = null
-    if (currentUserData) {
-      try {
-        currentUser = JSON.parse(currentUserData)
-      } catch (e) {
-        console.error('Failed to parse user data:', e)
-      }
-    }
-
-    // 임시 멤버 데이터 (실제로는 API에서 가져옴)
-    const initialMembers = [
-      {
-        id: 1,
-        email: 'studio.realday@gmail.com',
-        name: '최고관리자',
-        role: USER_ROLES.SUPER_ADMIN,
-        createdAt: '2024-01-01',
-      },
-      {
-        id: 2,
-        email: 'manager@real-day.com',
-        name: '중간관리자',
-        role: USER_ROLES.MANAGER,
-        createdAt: '2024-01-15',
-      },
-      {
-        id: 3,
-        email: 'employee@real-day.com',
-        name: '직원',
-        role: USER_ROLES.EMPLOYEE,
-        createdAt: '2024-02-01',
-      },
-    ]
-
-    // 현재 로그인한 사용자가 목록에 없으면 추가
-    if (currentUser && currentUser.email) {
-      const exists = initialMembers.some(m => m.email === currentUser.email)
-      if (!exists) {
-        initialMembers.push({
-          id: initialMembers.length + 1,
-          email: currentUser.email,
-          name: currentUser.name || currentUser.email.split('@')[0],
-          role: currentUser.role || USER_ROLES.SUPER_ADMIN,
-          createdAt: new Date().toISOString().split('T')[0],
-        })
-      }
-    }
-
-    setMembers(initialMembers)
+    // 멤버 목록 불러오기
+    loadMembers()
   }, [navigate, userRole])
 
   const handleMemberClick = (member) => {
@@ -103,42 +79,55 @@ function AdminMembers() {
     setIsEditing(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.email || (!selectedMember && !formData.password)) {
       alert('이메일과 비밀번호를 입력해주세요.')
       return
     }
 
-    if (selectedMember) {
-      // 수정
-      setMembers(
-        members.map((m) =>
-          m.id === selectedMember.id
-            ? {
-                ...m,
-                email: formData.email,
-                role: formData.role,
-                name: formData.name,
-                ...(formData.password && { password: formData.password }),
-              }
-            : m
-        )
-      )
-    } else {
-      // 추가
-      const newMember = {
-        id: members.length + 1,
-        email: formData.email,
-        name: formData.name || formData.email.split('@')[0],
-        role: formData.role,
-        createdAt: new Date().toISOString().split('T')[0],
-      }
-      setMembers([...members, newMember])
-    }
+    try {
+      setLoading(true)
+      setError('')
 
-    setIsEditing(false)
-    setSelectedMember(null)
-    setFormData({ email: '', password: '', role: USER_ROLES.EMPLOYEE, name: '' })
+      if (selectedMember) {
+        // 수정
+        const updateData = {
+          role: formData.role,
+          name: formData.name || null,
+        }
+        if (formData.password) {
+          updateData.password = formData.password
+        }
+        
+        const response = await updateMember(selectedMember.id, updateData)
+        if (response.success) {
+          await loadMembers() // 목록 다시 불러오기
+          setIsEditing(false)
+          setSelectedMember(null)
+          setFormData({ email: '', password: '', role: USER_ROLES.EMPLOYEE, name: '' })
+        }
+      } else {
+        // 추가
+        const response = await addMember({
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          name: formData.name || null,
+        })
+        if (response.success) {
+          await loadMembers() // 목록 다시 불러오기
+          setIsEditing(false)
+          setSelectedMember(null)
+          setFormData({ email: '', password: '', role: USER_ROLES.EMPLOYEE, name: '' })
+        }
+      }
+    } catch (err) {
+      console.error('멤버 저장 실패:', err)
+      setError(err.message || '멤버 저장에 실패했습니다.')
+      alert(err.message || '멤버 저장에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCancel = () => {
@@ -147,13 +136,28 @@ function AdminMembers() {
     setFormData({ email: '', password: '', role: USER_ROLES.EMPLOYEE, name: '' })
   }
 
-  const handleDelete = (memberId) => {
-    if (window.confirm('정말 이 멤버를 삭제하시겠습니까?')) {
-      setMembers(members.filter((m) => m.id !== memberId))
-      if (selectedMember?.id === memberId) {
-        setIsEditing(false)
-        setSelectedMember(null)
+  const handleDelete = async (memberId) => {
+    if (!window.confirm('정말 이 멤버를 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      const response = await deleteMember(memberId)
+      if (response.success) {
+        await loadMembers() // 목록 다시 불러오기
+        if (selectedMember?.id === memberId) {
+          setIsEditing(false)
+          setSelectedMember(null)
+        }
       }
+    } catch (err) {
+      console.error('멤버 삭제 실패:', err)
+      setError(err.message || '멤버 삭제에 실패했습니다.')
+      alert(err.message || '멤버 삭제에 실패했습니다.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -195,11 +199,24 @@ function AdminMembers() {
           <button
             onClick={handleAddNew}
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
+            disabled={loading}
           >
             새 멤버 추가
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
+      {loading && !isEditing && (
+        <div className="text-center py-4 text-gray-500">
+          로딩 중...
+        </div>
+      )}
 
       {isEditing ? (
         <div className="bg-white rounded-lg shadow p-4">
@@ -269,13 +286,15 @@ function AdminMembers() {
             <div className="flex gap-4 pt-4">
               <button
                 onClick={handleSave}
-                className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
+                disabled={loading}
+                className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                저장
+                {loading ? '저장 중...' : '저장'}
               </button>
               <button
                 onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
+                disabled={loading}
+                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>

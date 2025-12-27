@@ -44,9 +44,17 @@ export async function initDatabase() {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) DEFAULT 'employee',
+        name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // name 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
+    try {
+      await sqlFunc`ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)`
+    } catch (e) {
+      // 컬럼이 이미 존재하면 무시
+    }
 
     // contacts 테이블 생성
     await sqlFunc`
