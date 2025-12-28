@@ -4,6 +4,9 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD ? '/api' : 'http://localhost:5001/api')
 
+// 캐싱 유틸리티 import
+import { cachedFetch, clearCache } from './cache'
+
 // Admin 로그인 API
 export const adminLogin = async (email, password) => {
   try {
@@ -58,58 +61,62 @@ export const submitContact = async (formData) => {
   }
 }
 
-// Contacts 목록 조회 API
+// Contacts 목록 조회 API (캐싱 적용)
 export const fetchContacts = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/contacts`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+  return cachedFetch('contacts', async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/contacts`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `서버 오류 (${response.status})`)
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `서버 오류 (${response.status})`)
+      }
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    // 네트워크 에러 처리
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      const data = await response.json()
+      return data
+    } catch (error) {
+      // 네트워크 에러 처리
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      }
+      throw error
     }
-    throw error
-  }
+  })
 }
 
-// 멤버 목록 조회 API
+// 멤버 목록 조회 API (캐싱 적용)
 export const fetchMembers = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/members`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+  return cachedFetch('members', async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/members`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `서버 오류 (${response.status})`)
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `서버 오류 (${response.status})`)
+      }
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      const data = await response.json()
+      return data
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      }
+      throw error
     }
-    throw error
-  }
+  })
 }
 
-// 멤버 추가 API
+// 멤버 추가 API (캐시 무효화)
 export const addMember = async (memberData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/members`, {
@@ -126,6 +133,8 @@ export const addMember = async (memberData) => {
     }
 
     const data = await response.json()
+    // 멤버 목록 캐시 무효화
+    clearCache('members')
     return data
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -135,7 +144,7 @@ export const addMember = async (memberData) => {
   }
 }
 
-// 멤버 수정 API
+// 멤버 수정 API (캐시 무효화)
 export const updateMember = async (id, memberData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/members/${id}`, {
@@ -152,6 +161,8 @@ export const updateMember = async (id, memberData) => {
     }
 
     const data = await response.json()
+    // 멤버 목록 캐시 무효화
+    clearCache('members')
     return data
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -186,36 +197,39 @@ export const deleteMember = async (id) => {
   }
 }
 
-// 프로젝트 목록 조회 API (랜딩페이지용: featured=true, Projects 페이지용: visible=true, 관리자용: 파라미터 없음)
+// 프로젝트 목록 조회 API (캐싱 적용)
 export const fetchProjects = async (visible = false, featured = false) => {
-  try {
-    let url = `${API_BASE_URL}/projects`
-    if (featured) {
-      url += '?featured=true'
-    } else if (visible) {
-      url += '?visible=true'
-    }
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+  const cacheKey = `projects_${visible}_${featured}`
+  return cachedFetch(cacheKey, async () => {
+    try {
+      let url = `${API_BASE_URL}/projects`
+      if (featured) {
+        url += '?featured=true'
+      } else if (visible) {
+        url += '?visible=true'
+      }
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `서버 오류 (${response.status})`)
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `서버 오류 (${response.status})`)
+      }
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      const data = await response.json()
+      return data
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      }
+      throw error
     }
-    throw error
-  }
+  })
 }
 
 // 프로젝트 추가 API
@@ -503,29 +517,31 @@ export const deletePortfolioItem = async (id) => {
   }
 }
 
-// 재무 내역 목록 조회 API
+// 재무 내역 목록 조회 API (캐싱 적용)
 export const fetchFinances = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/finances`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+  return cachedFetch('finances', async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/finances`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `서버 오류 (${response.status})`)
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `서버 오류 (${response.status})`)
+      }
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      const data = await response.json()
+      return data
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+      }
+      throw error
     }
-    throw error
-  }
+  })
 }
 
 // 재무 내역 추가 API

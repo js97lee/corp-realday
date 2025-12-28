@@ -75,12 +75,16 @@ function AdminDashboard() {
     }
   }, [navigate])
 
-  // 대시보드 데이터 로드 (대시보드 메뉴일 때만)
+  // 대시보드 데이터 로드 (대시보드 메뉴일 때만, 한 번만)
+  const [dashboardDataLoaded, setDashboardDataLoaded] = useState(false)
+  
   useEffect(() => {
-    if (user && activeMenu === 'dashboard') {
+    if (user && activeMenu === 'dashboard' && !dashboardDataLoaded) {
       loadDashboardData()
+      setDashboardDataLoaded(true)
     }
-  }, [user, activeMenu])
+    // 다른 메뉴로 이동했다가 다시 돌아오면 리셋하지 않음 (캐싱 활용)
+  }, [user, activeMenu, dashboardDataLoaded])
 
   const loadDashboardData = useCallback(async () => {
     try {
