@@ -1,32 +1,32 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { fetchPortfolioItems } from '../utils/api'
+import { fetchProjects } from '../utils/api'
 
 function ProjectDetail() {
   const { projectName } = useParams()
   const navigate = useNavigate()
-  const [portfolioItem, setPortfolioItem] = useState(null)
+  const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadProject = async () => {
       try {
         setLoading(true)
-        const response = await fetchPortfolioItems()
+        const response = await fetchProjects(false, true) // featured=true: 랜딩페이지용
         if (response.success) {
           // 프로젝트 이름을 URL-friendly slug로 변환하여 매칭
-          const item = response.items?.find(item => {
-            const slug = item.title
+          const foundProject = response.projects?.find(proj => {
+            const slug = proj.title
               .toLowerCase()
               .replace(/[^a-z0-9가-힣]+/g, '-')
               .replace(/^-+|-+$/g, '')
-            return slug === projectName || item.title === decodeURIComponent(projectName)
+            return slug === projectName || proj.title === decodeURIComponent(projectName)
           })
-          setPortfolioItem(item || null)
+          setProject(foundProject || null)
         }
       } catch (err) {
         console.error('프로젝트 불러오기 실패:', err)
-        setPortfolioItem(null)
+        setProject(null)
       } finally {
         setLoading(false)
       }
@@ -47,7 +47,7 @@ function ProjectDetail() {
     )
   }
 
-  if (!portfolioItem) {
+  if (!project) {
     return (
       <div className="min-h-screen bg-white pt-20 md:pt-24">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
@@ -82,11 +82,11 @@ function ProjectDetail() {
 
         <div className="mb-16 md:mb-24">
           <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-black leading-[0.9] tracking-tight mb-6 md:mb-8">
-            {portfolioItem.title}
+            {project.title}
           </h1>
-          {portfolioItem.description && (
+          {project.description && (
             <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-3xl leading-relaxed">
-              {portfolioItem.description}
+              {project.description}
             </p>
           )}
         </div>
