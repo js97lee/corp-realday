@@ -13,7 +13,7 @@ export const handler = async (event, context) => {
     // GET: 멤버 목록 조회
     if (event.httpMethod === 'GET') {
       const users = await sqlFunc`
-        SELECT id, email, password, role, name, created_at
+        SELECT id, email, password, role, name, profile_image_url, join_date, created_at
         FROM users
         ORDER BY created_at DESC
       `
@@ -30,7 +30,7 @@ export const handler = async (event, context) => {
 
     // POST: 멤버 추가
     if (event.httpMethod === 'POST') {
-      const { email, password, role, name } = JSON.parse(event.body || '{}')
+      const { email, password, role, name, profileImageUrl, joinDate } = JSON.parse(event.body || '{}')
 
       if (!email || !password) {
         return {
@@ -71,9 +71,9 @@ export const handler = async (event, context) => {
       }
 
       const result = await sqlFunc`
-        INSERT INTO users (email, password, role, name)
-        VALUES (${email}, ${password}, ${role || 'employee'}, ${name || null})
-        RETURNING id, email, role, name, created_at
+        INSERT INTO users (email, password, role, name, profile_image_url, join_date)
+        VALUES (${email}, ${password}, ${role || 'pro'}, ${name || null}, ${profileImageUrl || null}, ${joinDate || null})
+        RETURNING id, email, role, name, profile_image_url, join_date, created_at
       `
 
       return {
@@ -105,7 +105,7 @@ export const handler = async (event, context) => {
         id = event.queryStringParameters.id
       }
       
-      const { password, role, name } = JSON.parse(event.body || '{}')
+      const { password, role, name, profileImageUrl, joinDate } = JSON.parse(event.body || '{}')
 
       if (!id) {
         return {
@@ -149,9 +149,19 @@ export const handler = async (event, context) => {
           UPDATE users SET name = ${name} WHERE id = ${parseInt(id)}
         `
       }
+      if (profileImageUrl !== undefined) {
+        await sqlFunc`
+          UPDATE users SET profile_image_url = ${profileImageUrl || null} WHERE id = ${parseInt(id)}
+        `
+      }
+      if (joinDate !== undefined) {
+        await sqlFunc`
+          UPDATE users SET join_date = ${joinDate || null} WHERE id = ${parseInt(id)}
+        `
+      }
 
       const result = await sqlFunc`
-        SELECT id, email, role, name, created_at FROM users WHERE id = ${parseInt(id)}
+        SELECT id, email, role, name, profile_image_url, join_date, created_at FROM users WHERE id = ${parseInt(id)}
       `
 
       return {

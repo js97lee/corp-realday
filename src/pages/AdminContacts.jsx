@@ -1,79 +1,39 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { isSuperAdmin, USER_ROLES } from '../utils/auth'
+import { useState, useEffect, useCallback } from 'react'
+import { USER_ROLES } from '../utils/auth'
 import { fetchContacts } from '../utils/api'
 import AdminEmailComposer from '../components/AdminEmailComposer'
+import { useAuth } from '../hooks/useAuth'
+import { formatDate } from '../utils/date'
+import { ErrorMessage, LoadingSpinner, PageHeader, Button } from '../components/common'
 
 function AdminContacts() {
   const [contacts, setContacts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false)
   const [selectedContactEmail, setSelectedContactEmail] = useState('')
-  const navigate = useNavigate()
+  
+  // 인증 체크
+  useAuth(USER_ROLES.CEO)
 
-  useEffect(() => {
-    // 로그인 상태 확인
-    const token = localStorage.getItem('authToken')
-    if (!token) {
-      navigate('/admin')
-      return
-    }
-
-    // 권한 확인 (최고관리자만 접근 가능)
-    const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role : null
-    if (userRole !== USER_ROLES.SUPER_ADMIN) {
-      navigate('/admin/dashboard')
-      return
-    }
-
-    // 문의 목록 가져오기
-    loadContacts()
-  }, [navigate])
-
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     try {
       setLoading(true)
+      setError('')
       const response = await fetchContacts()
       setContacts(response.contacts || [])
-    } catch (error) {
-      console.error('문의 목록 가져오기 실패:', error)
-      // 에러 발생 시 빈 배열로 설정 (에러 메시지는 콘솔에만 표시)
+    } catch (err) {
+      console.error('문의 목록 가져오기 실패:', err)
+      setError(err.message || '문의 목록을 불러오는데 실패했습니다.')
       setContacts([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '날짜 없음'
-    try {
-      // ISO 문자열 또는 타임스탬프 형식 처리
-      let date
-      if (typeof dateString === 'string') {
-        // PostgreSQL 타임스탬프 형식 처리
-        date = new Date(dateString.replace(' ', 'T'))
-      } else {
-        date = new Date(dateString)
-      }
-      
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date:', dateString)
-        return '날짜 없음'
-      }
-      
-      return date.toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    } catch (error) {
-      console.error('Date formatting error:', error, dateString)
-      return '날짜 없음'
-    }
-  }
+  useEffect(() => {
+    loadContacts()
+  }, [loadContacts])
 
   const handleEmailReply = (email) => {
     setSelectedContactEmail(email)
@@ -87,39 +47,43 @@ function AdminContacts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">문의하기 관리</h2>
-        <div className="text-sm text-gray-600">
-          총 {contacts.length}건
-        </div>
-      </div>
+      <PageHeader
+        title="문의하기 관리"
+        action={
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-600">총 {contacts.length}건</div>
+            <Button
+              onClick={() => handleEmailReply('')}
+              className="flex items-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              <span>메일 쓰기</span>
+            </Button>
+          </div>
+        }
+      />
+
+      <ErrorMessage message={error} />
 
       <div className="bg-white rounded-lg shadow">
         <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-semibold">문의 목록</h3>
-          <button
-            onClick={() => handleEmailReply('')}
-            className="flex items-center gap-2 px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
-            <span>메일 쓰기</span>
-          </button>
         </div>
         <div className="p-4">
           {loading ? (
-            <p className="text-gray-500 text-center py-8">로딩 중...</p>
+            <LoadingSpinner />
           ) : contacts.length === 0 ? (
             <p className="text-gray-500 text-center py-8">문의가 없습니다.</p>
           ) : (
@@ -144,17 +108,18 @@ function AdminContacts() {
                     <p className="text-gray-700 whitespace-pre-wrap">{contact.message}</p>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <button
+                    <Button
                       onClick={() => handleEmailReply(contact.email)}
-                      className="px-4 py-2 bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors rounded-lg"
+                      size="sm"
                     >
                       이메일 답장
-                    </button>
-                    <button
-                      className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors rounded-lg"
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                     >
                       삭제
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}

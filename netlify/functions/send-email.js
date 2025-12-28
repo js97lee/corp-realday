@@ -61,7 +61,7 @@ const verifySuperAdmin = async (event) => {
     }
 
     const user = users[0]
-    if (user.role !== 'super_admin') {
+    if (user.role !== 'ceo' && user.role !== 'super_admin') {
       return { authorized: false, message: '최고관리자 권한이 필요합니다.' }
     }
 

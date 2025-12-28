@@ -50,6 +50,16 @@ async function initDatabase() {
     } catch (e) {
       // 컬럼이 이미 존재하면 무시
     }
+    
+    // profile_image_url 컬럼이 없으면 추가
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT`
+    } catch (e) {}
+    
+    // join_date 컬럼이 없으면 추가
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS join_date DATE`
+    } catch (e) {}
 
     // contacts 테이블 생성
     await sql`
@@ -183,7 +193,7 @@ async function initDatabase() {
     if (existingAdmin.length === 0) {
       await sql`
         INSERT INTO users (email, password, role)
-        VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'super_admin'})
+        VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'ceo'})
       `
       console.log('초기 관리자 계정이 생성되었습니다.')
     }
@@ -335,7 +345,7 @@ app.get('/api/contacts', async (req, res) => {
 app.get('/api/members', async (req, res) => {
   try {
     const users = await sql`
-      SELECT id, email, password, role, name, created_at
+      SELECT id, email, password, role, name, profile_image_url, join_date, created_at
       FROM users
       ORDER BY created_at DESC
     `
@@ -356,7 +366,7 @@ app.get('/api/members', async (req, res) => {
 // 멤버 추가 (관리자용)
 app.post('/api/members', async (req, res) => {
   try {
-    const { email, password, role, name } = req.body
+    const { email, password, role, name, profileImageUrl, joinDate } = req.body
 
     // 입력 검증
     if (!email || !password) {
@@ -388,9 +398,9 @@ app.post('/api/members', async (req, res) => {
 
     // 멤버 추가
     const result = await sql`
-      INSERT INTO users (email, password, role, name)
-      VALUES (${email}, ${password}, ${role || 'employee'}, ${name || null})
-      RETURNING id, email, role, name, created_at
+      INSERT INTO users (email, password, role, name, profile_image_url, join_date)
+      VALUES (${email}, ${password}, ${role || 'pro'}, ${name || null}, ${profileImageUrl || null}, ${joinDate || null})
+      RETURNING id, email, role, name, profile_image_url, join_date, created_at
     `
 
     res.json({
@@ -412,7 +422,7 @@ app.post('/api/members', async (req, res) => {
 app.put('/api/members/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { password, role, name } = req.body
+    const { password, role, name, profileImageUrl, joinDate } = req.body
 
     // 기존 사용자 확인
     const existing = await sql`
@@ -442,10 +452,20 @@ app.put('/api/members/:id', async (req, res) => {
         UPDATE users SET name = ${name} WHERE id = ${id}
       `
     }
+    if (profileImageUrl !== undefined) {
+      await sql`
+        UPDATE users SET profile_image_url = ${profileImageUrl || null} WHERE id = ${id}
+      `
+    }
+    if (joinDate !== undefined) {
+      await sql`
+        UPDATE users SET join_date = ${joinDate || null} WHERE id = ${id}
+      `
+    }
 
     // 업데이트된 사용자 정보 조회
     const result = await sql`
-      SELECT id, email, role, name, created_at FROM users WHERE id = ${id}
+      SELECT id, email, role, name, profile_image_url, join_date, created_at FROM users WHERE id = ${id}
     `
 
     res.json({

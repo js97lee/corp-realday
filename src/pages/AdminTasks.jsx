@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchTasks, addTask, updateTask, deleteTask } from '../utils/api'
 import { fetchMembers, fetchProjects } from '../utils/api'
+import { isSuperAdmin } from '../utils/auth'
 
 // 담당자 Chip 컴포넌트
 function AssigneeChip({ name, email, id, onRemove, getAssigneeColor, getAssigneeInitials }) {
@@ -176,6 +177,7 @@ function AssigneeSelector({ members, selectedNames = [], onChange, onAddMember }
 
 function AdminTasks() {
   const [tasks, setTasks] = useState([])
+  const [deletedTasks, setDeletedTasks] = useState([]) // 삭제된 항목
   const [members, setMembers] = useState([])
   const [projects, setProjects] = useState([])
   const [filteredTasks, setFilteredTasks] = useState([])
@@ -184,6 +186,8 @@ function AdminTasks() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMyTasks, setFilterMyTasks] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -193,6 +197,7 @@ function AdminTasks() {
     status: 'backlog',
     projectId: '',
     projectKey: 'APP',
+    taskKey: '', // task_key 수정용
     startDate: '',
     endDate: '',
   })
@@ -206,9 +211,17 @@ function AdminTasks() {
   const loadTasks = async () => {
     try {
       setLoading(true)
-      const response = await fetchTasks()
+      // 최고관리자는 삭제된 항목도 함께 가져오기
+      const response = await fetchTasks(isSuperAdmin())
       if (response.success) {
-        setTasks(response.tasks || [])
+        const allTasks = response.tasks || []
+        // 삭제되지 않은 항목과 삭제된 항목 분리
+        const activeTasks = allTasks.filter(task => !task.is_deleted)
+        const deleted = allTasks.filter(task => task.is_deleted === true)
+        setTasks(activeTasks)
+        if (isSuperAdmin()) {
+          setDeletedTasks(deleted)
+        }
       }
     } catch (err) {
       console.error('업무 목록 불러오기 실패:', err)
@@ -291,34 +304,65 @@ function AdminTasks() {
   // 컬럼별로 업무 분류
   const columns = [
     { id: 'backlog', title: '백로그', count: 0 },
-    { id: 'selected', title: '개발하기로 선택된', count: 0 },
-    { id: 'inProgress', title: '진행 중', count: 0 },
+    { id: 'design', title: '디자인', count: 0 },
+    { id: 'development', title: '개발', count: 0 },
     { id: 'done', title: '완료', count: 0 },
   ]
 
+  // 최고관리자만 삭제 컬럼 추가
+  if (isSuperAdmin()) {
+    columns.push({ id: 'deleted', title: '삭제', count: 0 })
+  }
+
   const getTasksByStatus = (status) => {
-    return filteredTasks.filter(task => {
-      if (status === 'backlog') return task.status === 'backlog'
-      if (status === 'selected') return task.status === 'selected'
-      if (status === 'inProgress') return task.status === 'inProgress'
-      if (status === 'done') return task.status === 'done'
-      return false
-    })
+    let tasks = []
+    
+    if (status === 'backlog') {
+      tasks = filteredTasks.filter(task => task.status === 'backlog')
+    } else if (status === 'design') {
+      tasks = filteredTasks.filter(task => task.status === 'design')
+    } else if (status === 'development') {
+      tasks = filteredTasks.filter(task => task.status === 'development')
+    } else if (status === 'done') {
+      // 완료된 항목은 시간순으로 정렬 (최신순)
+      tasks = filteredTasks
+        .filter(task => task.status === 'done')
+        .sort((a, b) => {
+          const dateA = new Date(a.updated_at || a.created_at || 0)
+          const dateB = new Date(b.updated_at || b.created_at || 0)
+          return dateB - dateA // 최신순
+        })
+    } else if (status === 'deleted' && isSuperAdmin()) {
+      // 삭제된 항목 (최고관리자만)
+      tasks = deletedTasks.sort((a, b) => {
+        const dateA = new Date(a.deleted_at || 0)
+        const dateB = new Date(b.deleted_at || 0)
+        return dateB - dateA // 최신순
+      })
+    }
+    
+    return tasks
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       setLoading(true)
+      // task_key가 수정되었으면 포함
+      const taskData = { ...formData }
+      if (selectedTask && formData.taskKey && formData.taskKey !== selectedTask.task_key) {
+        taskData.taskKey = formData.taskKey
+      }
+      
       const response = selectedTask
-        ? await updateTask(selectedTask.id, formData)
-        : await addTask(formData)
+        ? await updateTask(selectedTask.id, taskData)
+        : await addTask(taskData)
       
       if (response.success) {
         await loadTasks()
         setIsAdding(false)
         setSelectedTask(null)
-        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
+        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', taskKey: '', startDate: '', endDate: '' })
       }
     } catch (err) {
       console.error('업무 저장 실패:', err)
@@ -328,20 +372,25 @@ function AdminTasks() {
     }
   }
 
-  const handleDelete = async (taskId) => {
-    if (!window.confirm('정말 이 업무를 삭제하시겠습니까?')) {
-      return
-    }
+  const handleDeleteClick = (task) => {
+    setTaskToDelete(task)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!taskToDelete) return
 
     try {
       setLoading(true)
-      const response = await deleteTask(taskId)
+      const response = await deleteTask(taskToDelete.id)
       if (response.success) {
         await loadTasks()
-        if (selectedTask?.id === taskId) {
+        if (selectedTask?.id === taskToDelete.id) {
           setSelectedTask(null)
           setIsAdding(false)
         }
+        setShowDeleteConfirm(false)
+        setTaskToDelete(null)
       }
     } catch (err) {
       console.error('업무 삭제 실패:', err)
@@ -349,6 +398,11 @@ function AdminTasks() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false)
+    setTaskToDelete(null)
   }
 
   const handleDragStart = (task) => {
@@ -361,6 +415,11 @@ function AdminTasks() {
 
   const handleDrop = async (targetStatus) => {
     if (!draggedTask) return
+    
+    // 삭제 컬럼으로는 드래그 불가
+    if (targetStatus === 'deleted') {
+      return
+    }
 
     if (draggedTask.status === targetStatus) {
       setDraggedTask(null)
@@ -528,11 +587,11 @@ function AdminTasks() {
               </h3>
               <button
                 type="button"
-                onClick={() => {
-                  setIsAdding(false)
-                  setSelectedTask(null)
-                  setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
-                }}
+              onClick={() => {
+                setIsAdding(false)
+                setSelectedTask(null)
+                setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', taskKey: '', startDate: '', endDate: '' })
+              }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
                 aria-label="닫기"
               >
@@ -546,6 +605,19 @@ function AdminTasks() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 왼쪽 컬럼: 제목, 설명 */}
                 <div className="space-y-4">
+                  {selectedTask && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">업무 키 (APP-1, APP-2 등)</label>
+                      <input
+                        type="text"
+                        value={formData.taskKey || selectedTask.task_key || ''}
+                        onChange={(e) => setFormData({ ...formData, taskKey: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        placeholder="예: APP-1"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">업무 키를 수정할 수 있습니다.</p>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
                     <input
@@ -677,9 +749,8 @@ function AdminTasks() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   >
                     <option value="backlog">백로그</option>
-                    <option value="selected">개발하기로 선택된</option>
-                    <option value="inProgress">진행 중</option>
-                    <option value="review">검토</option>
+                    <option value="design">디자인</option>
+                    <option value="development">개발</option>
                     <option value="done">완료</option>
                   </select>
                 </div>
@@ -689,7 +760,7 @@ function AdminTasks() {
                   {selectedTask && (
                     <button
                       type="button"
-                      onClick={() => handleDelete(selectedTask.id)}
+                      onClick={() => handleDeleteClick(selectedTask)}
                       disabled={loading}
                       className="text-red-600 hover:text-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -707,11 +778,11 @@ function AdminTasks() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsAdding(false)
-                      setSelectedTask(null)
-                      setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
-                    }}
+              onClick={() => {
+                setIsAdding(false)
+                setSelectedTask(null)
+                setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', taskKey: '', startDate: '', endDate: '' })
+              }}
                     className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
                   >
                     취소
@@ -724,15 +795,17 @@ function AdminTasks() {
       )}
 
       {/* 칸반 보드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${isSuperAdmin() ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         {columns.map((column) => {
           const columnTasks = getTasksByStatus(column.id)
           return (
             <div
               key={column.id}
-              className="bg-white rounded-lg border border-gray-200 min-h-[600px]"
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(column.id)}
+              className={`bg-white rounded-lg border border-gray-200 min-h-[600px] ${
+                column.id === 'deleted' ? 'opacity-75' : ''
+              }`}
+              onDragOver={column.id !== 'deleted' ? handleDragOver : undefined}
+              onDrop={column.id !== 'deleted' ? () => handleDrop(column.id) : undefined}
             >
               <div className="p-4 border-b border-gray-200 bg-white rounded-t-lg">
                 <h3 className="font-semibold text-base text-gray-700">
@@ -743,8 +816,8 @@ function AdminTasks() {
                 {columnTasks.map((task) => (
                   <div
                     key={task.id}
-                    draggable
-                    onDragStart={() => handleDragStart(task)}
+                    draggable={column.id !== 'deleted'}
+                    onDragStart={column.id !== 'deleted' ? () => handleDragStart(task) : undefined}
                     onClick={() => {
                       setSelectedTask(task)
                       setIsAdding(false)
@@ -757,6 +830,7 @@ function AdminTasks() {
                         status: task.status || 'backlog',
                         projectId: task.project_id || '',
                         projectKey: task.project_key || 'APP',
+                        taskKey: task.task_key || '',
                         startDate: task.start_date ? new Date(task.start_date).toISOString().split('T')[0] : '',
                         endDate: task.end_date ? new Date(task.end_date).toISOString().split('T')[0] : '',
                       })
@@ -790,7 +864,7 @@ function AdminTasks() {
                 ))}
                 {columnTasks.length === 0 && (
                   <div className="text-center text-gray-400 text-sm py-8">
-                    {column.id === 'done' ? '최근에 수정된 이슈만 표시하고 있습니다.' : '업무가 없습니다'}
+                    {column.id === 'done' ? '완료된 항목이 여기에 표시됩니다.' : column.id === 'deleted' ? '삭제된 항목이 여기에 표시됩니다.' : '업무가 없습니다'}
                   </div>
                 )}
               </div>
@@ -798,6 +872,43 @@ function AdminTasks() {
           )
         })}
       </div>
+
+      {/* 삭제 확인 팝업 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">업무 삭제 확인</h3>
+            <p className="text-gray-700 mb-2">
+              정말 이 업무를 삭제하시겠습니까?
+            </p>
+            {taskToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <p className="text-sm font-medium text-gray-900">{taskToDelete.task_key}</p>
+                <p className="text-sm text-gray-700">{taskToDelete.title}</p>
+              </div>
+            )}
+            <p className="text-sm text-red-600 mb-6">
+              삭제된 항목은 최고관리자의 "삭제" 컬럼에서 확인할 수 있습니다.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={loading}
+                className="px-4 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={loading}
+                className="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

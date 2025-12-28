@@ -1,14 +1,42 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback, Suspense, lazy } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import AdminProjects from './AdminProjects'
-import AdminContacts from './AdminContacts'
-import AdminFinance from './AdminFinance'
-import AdminTasks from './AdminTasks'
-import AdminMembers from './AdminMembers'
-import AdminPortfolio from './AdminPortfolio'
 import LunchRoulette from '../components/LunchRoulette'
 import { getUserRole, USER_ROLES, isSuperAdmin, isManagerOrAbove } from '../utils/auth'
 import { fetchContacts, fetchProjects, fetchMembers, fetchFinances } from '../utils/api'
+
+// 코드 스플리팅: 필요한 컴포넌트만 로드
+const AdminProjects = lazy(() => import('./AdminProjects'))
+const AdminContacts = lazy(() => import('./AdminContacts'))
+const AdminFinance = lazy(() => import('./AdminFinance'))
+const AdminTasks = lazy(() => import('./AdminTasks'))
+const AdminMembers = lazy(() => import('./AdminMembers'))
+const AdminPortfolio = lazy(() => import('./AdminPortfolio'))
+
+// 로딩 컴포넌트
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center py-12">
+    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+  </div>
+)
+
+// 날짜 포맷 함수 (컴포넌트 외부로 이동하여 재생성 방지)
+const formatContactDate = (dateString) => {
+  if (!dateString) return '날짜 없음'
+  try {
+    const date = new Date(dateString.replace(' ', 'T'))
+    if (isNaN(date.getTime())) return '날짜 없음'
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+  } catch (error) {
+    return '날짜 없음'
+  }
+}
 
 function AdminDashboard() {
   const [user, setUser] = useState(null)
@@ -47,14 +75,14 @@ function AdminDashboard() {
     }
   }, [navigate])
 
-  // 대시보드 데이터 로드
+  // 대시보드 데이터 로드 (대시보드 메뉴일 때만)
   useEffect(() => {
-    if (user) {
+    if (user && activeMenu === 'dashboard') {
       loadDashboardData()
     }
-  }, [user])
+  }, [user, activeMenu])
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -108,13 +136,13 @@ function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
     navigate('/admin')
-  }
+  }, [navigate])
 
   const [userRole, setUserRole] = useState(null)
 
@@ -132,40 +160,42 @@ function AdminDashboard() {
     {
       category: '관리',
       items: [
-        { id: 'dashboard', label: '대시보드', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
+        { id: 'dashboard', label: '대시보드', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: [USER_ROLES.CEO, USER_ROLES.CTO, USER_ROLES.CMO, USER_ROLES.DIRECTOR, USER_ROLES.PRO, USER_ROLES.PRO1, USER_ROLES.PRO2, USER_ROLES.PRO3, USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
       ]
     },
     {
       category: '콘텐츠',
       items: [
-        { id: 'portfolio', label: '랜딩페이지 관리', icon: 'M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER] },
-        { id: 'projects', label: '프로젝트 관리', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
+        { id: 'portfolio', label: '랜딩페이지 관리', icon: 'M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z', roles: [USER_ROLES.CEO, USER_ROLES.CTO, USER_ROLES.CMO, USER_ROLES.DIRECTOR, USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER] },
+        { id: 'projects', label: '프로젝트 관리', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', roles: [USER_ROLES.CEO, USER_ROLES.CTO, USER_ROLES.CMO, USER_ROLES.DIRECTOR, USER_ROLES.PRO, USER_ROLES.PRO1, USER_ROLES.PRO2, USER_ROLES.PRO3, USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
       ]
     },
     {
       category: '업무',
       items: [
-        { id: 'tasks', label: '업무 진행상황', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
+        { id: 'tasks', label: '업무 진행상황', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', roles: [USER_ROLES.CEO, USER_ROLES.CTO, USER_ROLES.CMO, USER_ROLES.DIRECTOR, USER_ROLES.PRO, USER_ROLES.PRO1, USER_ROLES.PRO2, USER_ROLES.PRO3, USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
       ]
     },
     {
       category: '시스템',
       items: [
-        { id: 'contacts', label: '문의하기 관리', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: [USER_ROLES.SUPER_ADMIN] },
-        { id: 'finance', label: '재무 관리', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', roles: [USER_ROLES.SUPER_ADMIN] },
-        { id: 'members', label: '멤버 관리', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: [USER_ROLES.SUPER_ADMIN] },
+        { id: 'contacts', label: '문의하기 관리', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
+        { id: 'finance', label: '재무 관리', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
+        { id: 'members', label: '멤버 관리', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
       ]
     },
   ]
 
-  // 권한에 따라 메뉴 필터링
-  const filteredCategories = menuCategories.map(category => ({
-    ...category,
-    items: category.items.filter(item => {
-      if (!userRole) return false
-      return item.roles.includes(userRole)
-    })
-  })).filter(category => category.items.length > 0) // 빈 카테고리는 제외
+  // 권한에 따라 메뉴 필터링 (메모이제이션)
+  const filteredCategories = useMemo(() => {
+    return menuCategories.map(category => ({
+      ...category,
+      items: category.items.filter(item => {
+        if (!userRole) return false
+        return item.roles.includes(userRole)
+      })
+    })).filter(category => category.items.length > 0) // 빈 카테고리는 제외
+  }, [userRole])
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -261,6 +291,20 @@ function AdminDashboard() {
             </div>
           </nav>
 
+          {/* 점메추 버튼 */}
+          <div className="px-3 py-2 border-t border-gray-800">
+            <button
+              onClick={() => setShowLunchRoulette(true)}
+              className="w-full flex items-center px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              title="오늘의 점메추"
+            >
+              <svg className="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              <span className="font-medium text-sm">점메추</span>
+            </button>
+          </div>
+
           {/* User Info & Logout */}
           <div className="px-4 py-3 border-t border-gray-800">
             <div className="mb-3">
@@ -288,17 +332,6 @@ function AdminDashboard() {
               <h2 className="text-xl font-bold text-black">
                 {filteredCategories.flatMap(cat => cat.items).find(item => item.id === activeMenu)?.label || '대시보드'}
               </h2>
-              {/* 점심 메뉴 추천 버튼 */}
-              <button
-                onClick={() => setShowLunchRoulette(true)}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5"
-                title="오늘의 점메추"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                점메추
-              </button>
             </div>
             <div className="h-px bg-black"></div>
           </div>
@@ -373,11 +406,11 @@ function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 mb-1">잔액</p>
-                        <p className="text-3xl font-bold text-black">
+                        <p className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-black' : 'text-gray-600'}`}>
                           {loading ? '...' : `${stats.balance >= 0 ? '+' : ''}${stats.balance.toLocaleString()}`}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          <span className="text-black">수익: {stats.totalIncome.toLocaleString()}</span> / <span className="text-gray-600">지출: {stats.totalExpense.toLocaleString()}</span>
+                          <span className="text-red-600">수익: {stats.totalIncome.toLocaleString()}</span> / <span className="text-blue-600">지출: {stats.totalExpense.toLocaleString()}</span>
                         </p>
                       </div>
                       <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
@@ -405,26 +438,7 @@ function AdminDashboard() {
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        {recentContacts.map((contact) => {
-                          const formatContactDate = (dateString) => {
-                            if (!dateString) return '날짜 없음'
-                            try {
-                              const date = new Date(dateString.replace(' ', 'T'))
-                              if (isNaN(date.getTime())) return '날짜 없음'
-                              return date.toLocaleString('ko-KR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false,
-                              })
-                            } catch (error) {
-                              return '날짜 없음'
-                            }
-                          }
-                          
-                          return (
+                        {recentContacts.map((contact) => (
                             <div
                               key={contact.id}
                               className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -444,8 +458,7 @@ function AdminDashboard() {
                                 </div>
                               </div>
                             </div>
-                          )
-                        })}
+                        ))}
                       </div>
                     )}
                   </div>
@@ -454,12 +467,36 @@ function AdminDashboard() {
             </>
           )}
           
-          {activeMenu === 'tasks' && <AdminTasks />}
-          {activeMenu === 'portfolio' && <AdminPortfolio />}
-          {activeMenu === 'projects' && <AdminProjects />}
-          {activeMenu === 'contacts' && <AdminContacts />}
-          {activeMenu === 'finance' && <AdminFinance />}
-          {activeMenu === 'members' && <AdminMembers />}
+          {activeMenu === 'tasks' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminTasks />
+            </Suspense>
+          )}
+          {activeMenu === 'portfolio' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminPortfolio />
+            </Suspense>
+          )}
+          {activeMenu === 'projects' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminProjects />
+            </Suspense>
+          )}
+          {activeMenu === 'contacts' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminContacts />
+            </Suspense>
+          )}
+          {activeMenu === 'finance' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminFinance />
+            </Suspense>
+          )}
+          {activeMenu === 'members' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminMembers />
+            </Suspense>
+          )}
           </div>
         </main>
 

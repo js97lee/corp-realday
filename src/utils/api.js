@@ -296,9 +296,13 @@ export const deleteProject = async (id) => {
 }
 
 // 업무 목록 조회 API
-export const fetchTasks = async () => {
+export const fetchTasks = async (includeDeleted = false) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/tasks`, {
+    const url = includeDeleted 
+      ? `${API_BASE_URL}/tasks?includeDeleted=true`
+      : `${API_BASE_URL}/tasks`
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

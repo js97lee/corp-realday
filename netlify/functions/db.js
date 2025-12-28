@@ -45,6 +45,8 @@ export async function initDatabase() {
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) DEFAULT 'employee',
         name VARCHAR(255),
+        profile_image_url TEXT,
+        join_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
@@ -55,6 +57,16 @@ export async function initDatabase() {
     } catch (e) {
       // 컬럼이 이미 존재하면 무시
     }
+    
+    // profile_image_url 컬럼이 없으면 추가
+    try {
+      await sqlFunc`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT`
+    } catch (e) {}
+    
+    // join_date 컬럼이 없으면 추가
+    try {
+      await sqlFunc`ALTER TABLE users ADD COLUMN IF NOT EXISTS join_date DATE`
+    } catch (e) {}
 
     // contacts 테이블 생성
     await sqlFunc`
@@ -128,6 +140,8 @@ export async function initDatabase() {
         project_key VARCHAR(50) DEFAULT 'APP',
         start_date DATE,
         end_date DATE,
+        is_deleted BOOLEAN DEFAULT false,
+        deleted_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -144,6 +158,14 @@ export async function initDatabase() {
     } catch (e) {}
     try {
       await sqlFunc`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS end_date DATE`
+    } catch (e) {}
+    
+    // is_deleted, deleted_at 컬럼이 없으면 추가 (soft delete)
+    try {
+      await sqlFunc`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`
+    } catch (e) {}
+    try {
+      await sqlFunc`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`
     } catch (e) {}
 
     // portfolio_items 테이블 생성 (랜딩페이지 포트폴리오 항목)
@@ -188,7 +210,7 @@ export async function initDatabase() {
     if (existingAdmin.length === 0) {
       await sqlFunc`
         INSERT INTO users (email, password, role)
-        VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'super_admin'})
+        VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'ceo'})
       `
       console.log('초기 관리자 계정이 생성되었습니다.')
     }

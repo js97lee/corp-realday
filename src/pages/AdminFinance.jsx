@@ -166,19 +166,19 @@ function AdminFinance() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 mb-1">총 수익</p>
-          <p className="text-2xl font-bold text-black">
+          <p className="text-2xl font-bold text-red-600">
             {totalIncome.toLocaleString()}원
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 mb-1">총 지출</p>
-          <p className="text-2xl font-bold text-gray-600">
+          <p className="text-2xl font-bold text-blue-600">
             {totalExpense.toLocaleString()}원
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 mb-1">잔액</p>
-          <p className="text-2xl font-bold text-black">
+          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-black' : 'text-gray-600'}`}>
             {balance.toLocaleString()}원
           </p>
         </div>
@@ -317,8 +317,8 @@ function AdminFinance() {
                     <div className="flex items-center gap-3 mb-1">
                       <span className={`px-2 py-1 text-xs rounded ${
                         item.type === 'income' 
-                          ? 'bg-black text-white' 
-                          : 'bg-gray-200 text-gray-700'
+                          ? 'bg-red-100 text-red-700' 
+                          : 'bg-blue-100 text-blue-700'
                       }`}>
                         {item.type === 'income' ? '수익' : '지출'}
                       </span>
@@ -334,7 +334,7 @@ function AdminFinance() {
                   </div>
                   <div className="flex items-center gap-3">
                     <p className={`text-lg font-semibold ${
-                      item.type === 'income' ? 'text-black' : 'text-gray-600'
+                      item.type === 'income' ? 'text-red-600' : 'text-blue-600'
                     }`}>
                       {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString()}원
                     </p>

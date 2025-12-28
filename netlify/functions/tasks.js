@@ -40,24 +40,45 @@ export const handler = async (event, context) => {
 
     // GET: 업무 목록 조회
     if (event.httpMethod === 'GET') {
-      const { projectId } = event.queryStringParameters || {}
+      const { projectId, includeDeleted } = event.queryStringParameters || {}
       let tasks
       
+      // includeDeleted가 true면 삭제된 항목도 포함, 아니면 삭제되지 않은 항목만 조회
       if (projectId) {
-        tasks = await sqlFunc`
-          SELECT t.*, u.name as assignee_name, u.email as assignee_email
-          FROM tasks t
-          LEFT JOIN users u ON t.assignee_id = u.id
-          WHERE t.project_id = ${parseInt(projectId)}
-          ORDER BY t.created_at DESC
-        `
+        if (includeDeleted === 'true') {
+          tasks = await sqlFunc`
+            SELECT t.*, u.name as assignee_name, u.email as assignee_email
+            FROM tasks t
+            LEFT JOIN users u ON t.assignee_id = u.id
+            WHERE t.project_id = ${parseInt(projectId)}
+            ORDER BY t.is_deleted ASC, t.created_at DESC
+          `
+        } else {
+          tasks = await sqlFunc`
+            SELECT t.*, u.name as assignee_name, u.email as assignee_email
+            FROM tasks t
+            LEFT JOIN users u ON t.assignee_id = u.id
+            WHERE t.project_id = ${parseInt(projectId)} AND (t.is_deleted = false OR t.is_deleted IS NULL)
+            ORDER BY t.created_at DESC
+          `
+        }
       } else {
-        tasks = await sqlFunc`
-          SELECT t.*, u.name as assignee_name, u.email as assignee_email
-          FROM tasks t
-          LEFT JOIN users u ON t.assignee_id = u.id
-          ORDER BY t.created_at DESC
-        `
+        if (includeDeleted === 'true') {
+          tasks = await sqlFunc`
+            SELECT t.*, u.name as assignee_name, u.email as assignee_email
+            FROM tasks t
+            LEFT JOIN users u ON t.assignee_id = u.id
+            ORDER BY t.is_deleted ASC, t.created_at DESC
+          `
+        } else {
+          tasks = await sqlFunc`
+            SELECT t.*, u.name as assignee_name, u.email as assignee_email
+            FROM tasks t
+            LEFT JOIN users u ON t.assignee_id = u.id
+            WHERE (t.is_deleted = false OR t.is_deleted IS NULL)
+            ORDER BY t.created_at DESC
+          `
+        }
       }
 
       return {
@@ -122,7 +143,7 @@ export const handler = async (event, context) => {
         id = event.queryStringParameters.id
       }
       
-      const { title, description, status, priority, assigneeId, assigneeName, projectId, startDate, endDate, assigneeIds, assigneeNames } = JSON.parse(event.body || '{}')
+      const { title, description, status, priority, assigneeId, assigneeName, projectId, startDate, endDate, assigneeIds, assigneeNames, taskKey } = JSON.parse(event.body || '{}')
       
       // 다중 담당자 지원: assigneeNames가 있으면 첫 번째 담당자 사용
       const finalAssigneeId = assigneeIds && assigneeIds.length > 0 ? assigneeIds[0] : assigneeId
@@ -185,6 +206,9 @@ export const handler = async (event, context) => {
       if (endDate !== undefined) {
         await sqlFunc`UPDATE tasks SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`
       }
+      if (taskKey !== undefined && taskKey !== null && taskKey !== '') {
+        await sqlFunc`UPDATE tasks SET task_key = ${taskKey} WHERE id = ${parseInt(id)}`
+      }
       
       await sqlFunc`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`
 
@@ -206,7 +230,7 @@ export const handler = async (event, context) => {
       }
     }
 
-    // DELETE: 업무 삭제
+    // DELETE: 업무 삭제 (soft delete)
     if (event.httpMethod === 'DELETE') {
       // 경로에서 ID 추출
       let id = event.pathParameters?.id || event.pathParameters?.splat
@@ -246,7 +270,12 @@ export const handler = async (event, context) => {
         }
       }
 
-      await sqlFunc`DELETE FROM tasks WHERE id = ${parseInt(id)}`
+      // Soft delete: is_deleted를 true로 설정하고 deleted_at에 현재 시간 저장
+      await sqlFunc`
+        UPDATE tasks 
+        SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${parseInt(id)}
+      `
 
       return {
         statusCode: 200,
