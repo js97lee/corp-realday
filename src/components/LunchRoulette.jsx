@@ -24,7 +24,7 @@ function LunchRoulette({ isOpen, onClose }) {
     // 선택된 메뉴의 각도 계산 (각 메뉴는 360/24 = 15도씩 차지)
     const menuAngle = (360 / lunchMenus.length) * randomIndex
     // 포인터는 위쪽(0도)에 있으므로, 선택된 메뉴가 포인터 위치로 오려면
-    // 270도(위쪽) - 메뉴의 중앙 각도 + 추가 회전
+    // 270도(위쪽) - 메뉴의 중앙 각도
     const targetAngle = 270 - (menuAngle + 360 / lunchMenus.length / 2)
     
     // 최소 5바퀴 이상 회전하도록 (1800도 + 목표 각도)
@@ -32,11 +32,11 @@ function LunchRoulette({ isOpen, onClose }) {
     
     setRotation(finalRotation)
     
-    // 회전 애니메이션 시간 (3초)
+    // 회전 애니메이션 시간 (4초)
     setTimeout(() => {
       setSelectedMenu(selected)
       setIsSpinning(false)
-    }, 3000)
+    }, 4000)
   }
 
   useEffect(() => {
@@ -78,7 +78,9 @@ function LunchRoulette({ isOpen, onClose }) {
         {/* 룰렛 */}
         <div className="relative w-full aspect-square mb-6">
           <div 
-            className="w-full h-full rounded-full border-8 border-gray-200 relative overflow-hidden transition-transform duration-3000 ease-out"
+            className={`w-full h-full rounded-full border-8 border-gray-200 relative overflow-hidden ${
+              isSpinning ? 'transition-transform duration-[4000ms] ease-out' : ''
+            }`}
             style={{ 
               transform: `rotate(${rotation}deg)`,
               background: `conic-gradient(
@@ -100,7 +102,9 @@ function LunchRoulette({ isOpen, onClose }) {
               return (
                 <div
                   key={index}
-                  className="absolute text-xs font-bold text-white"
+                  className={`absolute text-xs font-bold text-white ${
+                    isSpinning ? 'opacity-80' : 'opacity-100'
+                  }`}
                   style={{
                     left: `${x}%`,
                     top: `${y}%`,
@@ -117,14 +121,22 @@ function LunchRoulette({ isOpen, onClose }) {
           </div>
           
           {/* 포인터 */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2">
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 z-10">
             <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-black"></div>
           </div>
         </div>
 
+        {/* 회전 중 표시 */}
+        {isSpinning && (
+          <div className="text-center mb-4">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-2"></div>
+            <p className="text-sm text-gray-600">룰렛을 돌리는 중...</p>
+          </div>
+        )}
+
         {/* 결과 표시 */}
         {selectedMenu && !isSpinning && (
-          <div className="text-center mb-4">
+          <div className="text-center mb-4 animate-fade-in">
             <p className="text-sm text-gray-600 mb-2">오늘의 점심은...</p>
             <p className="text-3xl font-bold text-black">{selectedMenu}</p>
           </div>

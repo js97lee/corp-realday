@@ -23,7 +23,7 @@ function AdminDashboard() {
   })
   const [recentContacts, setRecentContacts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [collapsedCategories, setCollapsedCategories] = useState({}) // 카테고리 접기/펼치기 상태
+  const [collapsedCategories, setCollapsedCategories] = useState({}) // 카테고리 접기/펼치기 상태 (undefined/false = 접힘, true = 펼쳐짐)
   const [showLunchRoulette, setShowLunchRoulette] = useState(false) // 점심 메뉴 룰렛 팝업
   const navigate = useNavigate()
   const location = useLocation()
@@ -191,22 +191,25 @@ function AdminDashboard() {
           <nav className="flex-1 px-3 py-3 overflow-y-auto">
             <div className="space-y-4">
               {filteredCategories.map((category, categoryIndex) => {
+                // collapsedCategories[category.category]가 false면 접힘, true/undefined면 펼쳐짐
                 const isCollapsed = collapsedCategories[category.category] === false
                 return (
                   <div key={category.category}>
                     {/* 카테고리 제목 (클릭 가능) */}
                     <button
-                      onClick={() => setCollapsedCategories({
-                        ...collapsedCategories,
-                        [category.category]: !isCollapsed
-                      })}
-                      className="w-full px-3 mb-1.5 flex items-center justify-between hover:bg-gray-800 rounded transition-colors group"
+                      onClick={() => {
+                        setCollapsedCategories(prev => ({
+                          ...prev,
+                          [category.category]: prev[category.category] === false ? true : false
+                        }))
+                      }}
+                      className="w-full px-3 py-1.5 mb-1.5 flex items-center justify-between rounded transition-colors group"
                     >
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider transition-colors group-hover:text-gray-300">
                         {category.category}
                       </h3>
                       <svg
-                        className={`w-3 h-3 text-gray-500 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+                        className={`w-3 h-3 text-gray-500 transition-all duration-200 group-hover:text-gray-300 ${isCollapsed ? 'rotate-180' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
