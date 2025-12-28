@@ -107,11 +107,27 @@ async function initDatabase() {
         priority VARCHAR(50) DEFAULT 'medium',
         assignee_id INTEGER REFERENCES users(id),
         assignee_name VARCHAR(255),
+        project_id INTEGER REFERENCES projects(id),
         project_key VARCHAR(50) DEFAULT 'APP',
+        start_date DATE,
+        end_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // project_id 컬럼이 없으면 추가
+    try {
+      await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id)`
+    } catch (e) {}
+    
+    // start_date, end_date 컬럼이 없으면 추가
+    try {
+      await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS start_date DATE`
+    } catch (e) {}
+    try {
+      await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS end_date DATE`
+    } catch (e) {}
 
     // portfolio_items 테이블 생성 (랜딩페이지 포트폴리오 항목)
     await sql`
@@ -691,7 +707,11 @@ app.get('/api/tasks', async (req, res) => {
 // 업무 추가
 app.post('/api/tasks', async (req, res) => {
   try {
-    const { title, description, status, priority, assigneeId, assigneeName, projectKey, projectId } = req.body
+    const { title, description, status, priority, assigneeId, assigneeName, projectKey, projectId, startDate, endDate, assigneeIds, assigneeNames } = req.body
+    
+    // 다중 담당자 지원: assigneeNames가 있으면 첫 번째 담당자 사용
+    const finalAssigneeId = assigneeIds && assigneeIds.length > 0 ? assigneeIds[0] : assigneeId
+    const finalAssigneeName = assigneeNames && assigneeNames.length > 0 ? assigneeNames[0] : assigneeName
 
     if (!title) {
       return res.status(400).json({ 
@@ -703,8 +723,8 @@ app.post('/api/tasks', async (req, res) => {
     const taskKey = await generateTaskKey(projectKey || 'APP')
 
     const result = await sql`
-      INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key)
-      VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectId || null}, ${projectKey || 'APP'})
+      INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key, start_date, end_date)
+      VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${finalAssigneeId || null}, ${finalAssigneeName || null}, ${projectId || null}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
       RETURNING *
     `
 
@@ -727,7 +747,11 @@ app.post('/api/tasks', async (req, res) => {
 app.put('/api/tasks/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { title, description, status, priority, assigneeId, assigneeName } = req.body
+    const { title, description, status, priority, assigneeId, assigneeName, projectId, startDate, endDate, assigneeIds, assigneeNames } = req.body
+    
+    // 다중 담당자 지원: assigneeNames가 있으면 첫 번째 담당자 사용
+    const finalAssigneeId = assigneeIds && assigneeIds.length > 0 ? assigneeIds[0] : assigneeId
+    const finalAssigneeName = assigneeNames && assigneeNames.length > 0 ? assigneeNames[0] : assigneeName
 
     const existing = await sql`
       SELECT * FROM tasks WHERE id = ${id}
@@ -753,14 +777,20 @@ app.put('/api/tasks/:id', async (req, res) => {
     if (priority !== undefined) {
       await sql`UPDATE tasks SET priority = ${priority} WHERE id = ${id}`
     }
-    if (assigneeId !== undefined) {
-      await sql`UPDATE tasks SET assignee_id = ${assigneeId} WHERE id = ${id}`
+    if (finalAssigneeId !== undefined) {
+      await sql`UPDATE tasks SET assignee_id = ${finalAssigneeId || null} WHERE id = ${id}`
     }
-    if (assigneeName !== undefined) {
-      await sql`UPDATE tasks SET assignee_name = ${assigneeName} WHERE id = ${id}`
+    if (finalAssigneeName !== undefined) {
+      await sql`UPDATE tasks SET assignee_name = ${finalAssigneeName || null} WHERE id = ${id}`
     }
     if (projectId !== undefined) {
       await sql`UPDATE tasks SET project_id = ${projectId || null} WHERE id = ${id}`
+    }
+    if (startDate !== undefined) {
+      await sql`UPDATE tasks SET start_date = ${startDate || null} WHERE id = ${id}`
+    }
+    if (endDate !== undefined) {
+      await sql`UPDATE tasks SET end_date = ${endDate || null} WHERE id = ${id}`
     }
     
     await sql`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`

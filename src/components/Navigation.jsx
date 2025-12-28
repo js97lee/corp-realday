@@ -35,9 +35,6 @@ function Navigation() {
             />
           </Link>
           
-          {/* 중앙: 포트폴리오 제목 */}
-          <div className="font-medium text-black hidden md:block">UX/UI Design Portfolio</div>
-          
           {/* 오른쪽: 계정 및 메뉴 */}
           <div className="flex items-center gap-4 md:gap-6">
             <div className="font-medium text-black hidden md:block">@realday</div>

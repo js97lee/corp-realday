@@ -72,7 +72,11 @@ export const handler = async (event, context) => {
 
     // POST: 업무 추가
     if (event.httpMethod === 'POST') {
-      const { title, description, status, priority, assigneeId, assigneeName, projectKey, projectId } = JSON.parse(event.body || '{}')
+      const { title, description, status, priority, assigneeId, assigneeName, projectKey, projectId, startDate, endDate, assigneeIds, assigneeNames } = JSON.parse(event.body || '{}')
+      
+      // 다중 담당자 지원: assigneeNames가 있으면 첫 번째 담당자 사용
+      const finalAssigneeId = assigneeIds && assigneeIds.length > 0 ? assigneeIds[0] : assigneeId
+      const finalAssigneeName = assigneeNames && assigneeNames.length > 0 ? assigneeNames[0] : assigneeName
 
       if (!title) {
         return {
@@ -88,8 +92,8 @@ export const handler = async (event, context) => {
       const taskKey = await generateTaskKey(sqlFunc, projectKey || 'APP')
 
       const result = await sqlFunc`
-        INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key)
-        VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectId || null}, ${projectKey || 'APP'})
+        INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key, start_date, end_date)
+        VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${finalAssigneeId || null}, ${finalAssigneeName || null}, ${projectId || null}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
         RETURNING *
       `
 
@@ -118,7 +122,11 @@ export const handler = async (event, context) => {
         id = event.queryStringParameters.id
       }
       
-      const { title, description, status, priority, assigneeId, assigneeName, projectId } = JSON.parse(event.body || '{}')
+      const { title, description, status, priority, assigneeId, assigneeName, projectId, startDate, endDate, assigneeIds, assigneeNames } = JSON.parse(event.body || '{}')
+      
+      // 다중 담당자 지원: assigneeNames가 있으면 첫 번째 담당자 사용
+      const finalAssigneeId = assigneeIds && assigneeIds.length > 0 ? assigneeIds[0] : assigneeId
+      const finalAssigneeName = assigneeNames && assigneeNames.length > 0 ? assigneeNames[0] : assigneeName
 
       if (!id) {
         return {
@@ -162,11 +170,20 @@ export const handler = async (event, context) => {
       if (assigneeId !== undefined) {
         await sqlFunc`UPDATE tasks SET assignee_id = ${assigneeId} WHERE id = ${parseInt(id)}`
       }
-      if (assigneeName !== undefined) {
-        await sqlFunc`UPDATE tasks SET assignee_name = ${assigneeName} WHERE id = ${parseInt(id)}`
+      if (finalAssigneeId !== undefined) {
+        await sqlFunc`UPDATE tasks SET assignee_id = ${finalAssigneeId || null} WHERE id = ${parseInt(id)}`
+      }
+      if (finalAssigneeName !== undefined) {
+        await sqlFunc`UPDATE tasks SET assignee_name = ${finalAssigneeName || null} WHERE id = ${parseInt(id)}`
       }
       if (projectId !== undefined) {
         await sqlFunc`UPDATE tasks SET project_id = ${projectId || null} WHERE id = ${parseInt(id)}`
+      }
+      if (startDate !== undefined) {
+        await sqlFunc`UPDATE tasks SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`
+      }
+      if (endDate !== undefined) {
+        await sqlFunc`UPDATE tasks SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`
       }
       
       await sqlFunc`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`

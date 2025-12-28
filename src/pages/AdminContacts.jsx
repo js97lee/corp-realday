@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isManagerOrAbove } from '../utils/auth'
+import { isSuperAdmin, USER_ROLES } from '../utils/auth'
 import { fetchContacts } from '../utils/api'
 
 function AdminContacts() {
@@ -16,8 +16,9 @@ function AdminContacts() {
       return
     }
 
-    // 권한 확인 (중간관리자 이상만 접근 가능)
-    if (!isManagerOrAbove()) {
+    // 권한 확인 (최고관리자만 접근 가능)
+    const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role : null
+    if (userRole !== USER_ROLES.SUPER_ADMIN) {
       navigate('/admin/dashboard')
       return
     }

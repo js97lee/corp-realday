@@ -3,45 +3,66 @@ import { useNavigate } from 'react-router-dom'
 import { fetchTasks, addTask, updateTask, deleteTask } from '../utils/api'
 import { fetchMembers, fetchProjects } from '../utils/api'
 
-// 담당자 선택 컴포넌트 (@로 새 담당자 추가 가능)
-function AssigneeSelector({ members, value, onChange, onAddMember }) {
+// 담당자 Chip 컴포넌트
+function AssigneeChip({ name, email, id, onRemove, getAssigneeColor, getAssigneeInitials }) {
+  return (
+    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
+      <div className={`w-5 h-5 rounded-full ${getAssigneeColor(id || 0)} text-white flex items-center justify-center text-xs font-medium flex-shrink-0`}>
+        {getAssigneeInitials(name, email)}
+      </div>
+      <span className="text-gray-700">{name || email}</span>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(name || email)}
+          className="ml-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
+// 담당자 선택 컴포넌트 (다중 선택 가능, Chip UI)
+function AssigneeSelector({ members, selectedNames = [], onChange, onAddMember }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(value || '')
+  const [inputValue, setInputValue] = useState('')
   const [filteredMembers, setFilteredMembers] = useState(members)
   const [showNewOption, setShowNewOption] = useState(false)
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
 
   useEffect(() => {
-    setInputValue(value || '')
-  }, [value])
-
-  useEffect(() => {
     if (inputValue.startsWith('@')) {
       const searchTerm = inputValue.substring(1).toLowerCase()
       if (searchTerm) {
-        const filtered = members.filter(m => 
-          (m.name || m.email).toLowerCase().includes(searchTerm)
-        )
+        const filtered = members.filter(m => {
+          const name = (m.name || m.email).toLowerCase()
+          return name.includes(searchTerm) && !selectedNames.includes(m.name || m.email)
+        })
         setFilteredMembers(filtered)
         setShowNewOption(!filtered.some(m => (m.name || m.email).toLowerCase() === searchTerm))
       } else {
-        setFilteredMembers(members)
+        setFilteredMembers(members.filter(m => !selectedNames.includes(m.name || m.email)))
         setShowNewOption(false)
       }
       setIsOpen(true)
     } else if (inputValue) {
-      const filtered = members.filter(m => 
-        (m.name || m.email).toLowerCase().includes(inputValue.toLowerCase())
-      )
+      const filtered = members.filter(m => {
+        const name = (m.name || m.email).toLowerCase()
+        return name.includes(inputValue.toLowerCase()) && !selectedNames.includes(m.name || m.email)
+      })
       setFilteredMembers(filtered)
       setShowNewOption(false)
       setIsOpen(true)
     } else {
-      setFilteredMembers(members)
+      setFilteredMembers(members.filter(m => !selectedNames.includes(m.name || m.email)))
       setIsOpen(false)
     }
-  }, [inputValue, members])
+  }, [inputValue, members, selectedNames])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -60,17 +81,19 @@ function AssigneeSelector({ members, value, onChange, onAddMember }) {
 
   const handleSelectMember = (member) => {
     const name = member.name || member.email
-    setInputValue(name)
-    onChange(name)
+    if (!selectedNames.includes(name)) {
+      onChange([...selectedNames, name])
+    }
+    setInputValue('')
     setIsOpen(false)
   }
 
   const handleAddNew = () => {
     const newName = inputValue.startsWith('@') ? inputValue.substring(1) : inputValue
-    if (newName.trim()) {
-      setInputValue(newName.trim())
-      onChange(newName.trim())
+    if (newName.trim() && !selectedNames.includes(newName.trim())) {
+      onChange([...selectedNames, newName.trim()])
       onAddMember(newName.trim())
+      setInputValue('')
       setIsOpen(false)
     }
   }
@@ -93,15 +116,33 @@ function AssigneeSelector({ members, value, onChange, onAddMember }) {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputValue}
-        onChange={handleInputChange}
-        onFocus={() => setIsOpen(true)}
-        placeholder="@로 검색하거나 새 담당자 추가"
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-      />
+      <div className="min-h-[42px] px-4 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent outline-none flex flex-wrap gap-2 items-center">
+        {selectedNames.map((name) => {
+          const member = members.find(m => (m.name || m.email) === name)
+          return (
+            <AssigneeChip
+              key={name}
+              name={member?.name}
+              email={member?.email || name}
+              id={member?.id}
+              onRemove={(nameToRemove) => {
+                onChange(selectedNames.filter(n => n !== nameToRemove))
+              }}
+              getAssigneeColor={getAssigneeColor}
+              getAssigneeInitials={getAssigneeInitials}
+            />
+          )
+        })}
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+          placeholder={selectedNames.length === 0 ? "@로 검색하거나 새 담당자 추가" : "담당자 추가..."}
+          className="flex-1 min-w-[120px] outline-none bg-transparent"
+        />
+      </div>
       {isOpen && (filteredMembers.length > 0 || showNewOption) && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
           {filteredMembers.map((member) => {
@@ -146,11 +187,13 @@ function AdminTasks() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    assigneeId: '',
-    assigneeName: '',
+    assigneeIds: [],
+    assigneeNames: [],
     priority: 'medium',
     status: 'backlog',
     projectId: '',
+    startDate: '',
+    endDate: '',
   })
   const [draggedTask, setDraggedTask] = useState(null)
   const navigate = useNavigate()
@@ -210,6 +253,19 @@ function AdminTasks() {
     loadProjects()
   }, [navigate])
 
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && (isAdding || selectedTask)) {
+        setIsAdding(false)
+        setSelectedTask(null)
+        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isAdding, selectedTask])
+
   // 필터링된 업무 업데이트
   useEffect(() => {
     let filtered = tasks
@@ -261,7 +317,7 @@ function AdminTasks() {
         await loadTasks()
         setIsAdding(false)
         setSelectedTask(null)
-        setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog', projectId: '' })
+        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
       }
     } catch (err) {
       console.error('업무 저장 실패:', err)
@@ -380,7 +436,7 @@ function AdminTasks() {
           <button
             onClick={() => {
               setIsAdding(true)
-              setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog', projectId: '' })
+              setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
             }}
             className="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg"
           >
@@ -429,13 +485,44 @@ function AdminTasks() {
         </div>
       </div>
 
-      {/* 업무 추가/수정 폼 */}
+      {/* 업무 추가/수정 모달 */}
       {(isAdding || selectedTask) && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">
-            {selectedTask ? '업무 수정' : '새 업무 추가'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsAdding(false)
+              setSelectedTask(null)
+              setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+            }
+          }}
+        >
+          {/* 딤 배경 */}
+          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+          
+          {/* 모달 컨텐츠 */}
+          <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <h3 className="text-xl font-semibold">
+                {selectedTask ? '업무 수정' : '새 업무 추가'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdding(false)
+                  setSelectedTask(null)
+                  setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="닫기"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
               <input
@@ -457,44 +544,67 @@ function AdminTasks() {
                 placeholder="업무 설명"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">담당자</label>
+              <AssigneeSelector
+                members={members}
+                selectedNames={formData.assigneeNames || []}
+                onChange={(names) => {
+                  const memberIds = names.map(name => {
+                    const member = members.find(m => (m.name || m.email) === name)
+                    return member ? member.id : null
+                  }).filter(id => id !== null)
+                  setFormData({
+                    ...formData,
+                    assigneeIds: memberIds,
+                    assigneeNames: names
+                  })
+                }}
+                onAddMember={(name) => {
+                  // 새 담당자 추가
+                  const currentNames = formData.assigneeNames || []
+                  if (!currentNames.includes(name)) {
+                    setFormData({
+                      ...formData,
+                      assigneeNames: [...currentNames, name]
+                    })
+                  }
+                }}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">담당자</label>
-                <AssigneeSelector
-                  members={members}
-                  value={formData.assigneeName}
-                  onChange={(name) => {
-                    const member = members.find(m => (m.name || m.email) === name)
-                    setFormData({
-                      ...formData,
-                      assigneeId: member ? member.id : '',
-                      assigneeName: name
-                    })
-                  }}
-                  onAddMember={(name) => {
-                    // 새 담당자 추가 (임시로 이름만 저장)
-                    setFormData({
-                      ...formData,
-                      assigneeId: '',
-                      assigneeName: name
-                    })
-                  }}
+                <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="lowest">가장 낮음</option>
-                  <option value="low">낮음</option>
-                  <option value="medium">보통</option>
-                  <option value="high">높음</option>
-                  <option value="highest">가장 높음</option>
-                </select>
+                />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
+              <select
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="lowest">가장 낮음</option>
+                <option value="low">낮음</option>
+                <option value="medium">보통</option>
+                <option value="high">높음</option>
+                <option value="highest">가장 높음</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트</label>
@@ -526,37 +636,38 @@ function AdminTasks() {
                 </select>
               </div>
             )}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? '저장 중...' : '저장'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAdding(false)
-                  setSelectedTask(null)
-                  setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog' })
-                }}
-                className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
-              >
-                취소
-              </button>
-              {selectedTask && (
+              <div className="flex gap-4 pt-4 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? '저장 중...' : '저장'}
+                </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete(selectedTask.id)}
-                  disabled={loading}
-                  className="px-6 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    setIsAdding(false)
+                    setSelectedTask(null)
+                    setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+                  }}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
                 >
-                  삭제
+                  취소
                 </button>
-              )}
-            </div>
-          </form>
+                {selectedTask && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(selectedTask.id)}
+                    disabled={loading}
+                    className="px-6 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    삭제
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -588,11 +699,13 @@ function AdminTasks() {
                       setFormData({
                         title: task.title,
                         description: task.description || '',
-                        assigneeId: task.assignee_id || '',
-                        assigneeName: task.assignee_name || '',
+                        assigneeIds: task.assignee_id ? [task.assignee_id] : [],
+                        assigneeNames: task.assignee_name ? [task.assignee_name] : [],
                         priority: task.priority || 'medium',
                         status: task.status || 'backlog',
                         projectId: task.project_id || '',
+                        startDate: task.start_date ? new Date(task.start_date).toISOString().split('T')[0] : '',
+                        endDate: task.end_date ? new Date(task.end_date).toISOString().split('T')[0] : '',
                       })
                     }}
                     className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-move hover:shadow-md transition-all hover:border-blue-300"
