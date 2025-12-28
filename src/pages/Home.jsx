@@ -4,51 +4,52 @@ import { fetchProjects } from '../utils/api'
 import { getCached } from '../utils/cache'
 
 function Home() {
-  const [projects, setProjects] = useState([])
-  const [loading, setLoading] = useState(true)
+  // 초기 상태를 캐시에서 즉시 설정하여 첫 렌더링 최적화
+  const cached = getCached('projects_false_true')
+  const [projects, setProjects] = useState(() => {
+    // 캐시가 있으면 즉시 사용, 없으면 빈 배열
+    return (cached && cached.success && cached.projects) ? cached.projects : []
+  })
+  const [loading, setLoading] = useState(() => {
+    // 캐시가 있으면 로딩 상태 건너뛰기
+    return !(cached && cached.success && cached.projects && cached.projects.length > 0)
+  })
 
   useEffect(() => {
-    const loadFeaturedProjects = async () => {
-      try {
-        // 캐시 확인 (동기적으로)
-        const cached = getCached('projects_false_true')
-        
-        // 캐시된 데이터가 있으면 즉시 표시하고 로딩 상태 건너뛰기
-        if (cached && cached.success && cached.projects && cached.projects.length > 0) {
-          // 데이터 복제 (임시로 더 많이 보여주기)
-          const duplicatedProjects = [...cached.projects]
-          for (let i = 0; i < 3; i++) {
-            duplicatedProjects.push(...cached.projects.map(p => ({ ...p, id: `${p.id}_dup_${i}` })))
-          }
-          setProjects(duplicatedProjects)
-          setLoading(false)
-          // 백그라운드에서 최신 데이터 확인 (조용히 업데이트)
+    // 캐시가 이미 있으면 백그라운드 업데이트만 수행
+    if (cached && cached.success && cached.projects && cached.projects.length > 0) {
+      // requestIdleCallback으로 백그라운드 업데이트 지연 (브라우저가 여유있을 때 실행)
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => {
           fetchProjects(false, true).then(response => {
             if (response.success && response.projects) {
-              // 데이터 복제
-              const duplicated = [...response.projects]
-              for (let i = 0; i < 3; i++) {
-                duplicated.push(...response.projects.map(p => ({ ...p, id: `${p.id}_dup_${i}` })))
-              }
-              setProjects(duplicated)
+              setProjects(response.projects)
             }
           }).catch(() => {
             // 백그라운드 업데이트 실패는 무시
           })
-          return
-        }
-        
-        // 캐시가 없으면 로딩 표시
-        setLoading(true)
+        }, { timeout: 2000 })
+      } else {
+        // requestIdleCallback을 지원하지 않는 브라우저는 setTimeout 사용
+        setTimeout(() => {
+          fetchProjects(false, true).then(response => {
+            if (response.success && response.projects) {
+              setProjects(response.projects)
+            }
+          }).catch(() => {
+            // 백그라운드 업데이트 실패는 무시
+          })
+        }, 100)
+      }
+      return
+    }
+    
+    // 캐시가 없으면 즉시 로드
+    const loadFeaturedProjects = async () => {
+      try {
         const response = await fetchProjects(false, true) // featured=true: 랜딩페이지용
         if (response.success) {
-          const projects = response.projects || []
-          // 데이터 복제 (임시로 더 많이 보여주기)
-          const duplicatedProjects = [...projects]
-          for (let i = 0; i < 3; i++) {
-            duplicatedProjects.push(...projects.map(p => ({ ...p, id: `${p.id}_dup_${i}` })))
-          }
-          setProjects(duplicatedProjects)
+          setProjects(response.projects || [])
         }
       } catch (err) {
         console.error('랜딩페이지 프로젝트 불러오기 실패:', err)
@@ -106,12 +107,13 @@ function Home() {
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           loading="lazy"
                           decoding="async"
+                          fetchPriority={index < 2 ? "high" : "low"}
                         />
                       </div>
                     )}
                     
                     {/* Content */}
-                    <div className="flex-1 px-2 group-hover:px-4 transition-all duration-500">
+                    <div className="flex-1 px-2">
                       <div className="flex items-baseline gap-3 mb-2">
                         <span className="text-sm md:text-base font-medium text-gray-400 group-hover:text-black transition-colors duration-300">
                           {String(index + 1).padStart(2, '0')}

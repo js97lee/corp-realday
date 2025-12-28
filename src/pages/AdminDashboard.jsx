@@ -451,41 +451,56 @@ function AdminDashboard() {
           {activeMenu === 'dashboard' && (
             <>
               {/* 공지사항 Section */}
-              <div className="bg-white rounded-lg shadow p-4 mb-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    {announcement ? (
-                      <>
-                        <h2 className="text-xl font-semibold mb-2">{announcement.title}</h2>
-                        <p className="text-gray-600 whitespace-pre-wrap">{announcement.content}</p>
-                        {announcement.created_at && (
-                          <p className="text-xs text-gray-400 mt-2">
-                            {new Date(announcement.created_at).toLocaleDateString('ko-KR', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <h2 className="text-xl font-semibold mb-2">환영합니다!</h2>
-                        <p className="text-gray-600">
-                          관리자 대시보드에 오신 것을 환영합니다.
-                        </p>
-                      </>
-                    )}
-                  </div>
+              <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">공지사항</h3>
                   {isSuperAdmin() && (
                     <button
                       onClick={() => {
                         setShowAnnouncementModal(true)
                       }}
-                      className="ml-4 px-3 py-1.5 text-sm bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                      className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
                     >
-                      {announcement ? '수정' : '공지 작성'}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      {announcement ? '수정하기' : '공지 작성하기'}
                     </button>
+                  )}
+                </div>
+                <div className="border-t border-gray-200 pt-4">
+                  {announcement ? (
+                    <>
+                      <h2 className="text-xl font-semibold mb-3 text-gray-900">{announcement.title}</h2>
+                      <p className="text-gray-600 whitespace-pre-wrap leading-relaxed mb-4">{announcement.content}</p>
+                      {announcement.created_at && (
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span>
+                            {new Date(announcement.created_at).toLocaleDateString('ko-KR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </span>
+                          {announcement.created_by_name && (
+                            <>
+                              <span>•</span>
+                              <span>작성자: {announcement.created_by_name}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <p className="text-sm">공지사항</p>
+                      {isSuperAdmin() && (
+                        <p className="text-xs mt-1 text-gray-500">위의 '공지 작성하기' 버튼을 클릭하여 공지사항을 작성하세요.</p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

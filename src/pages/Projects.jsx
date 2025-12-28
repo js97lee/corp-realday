@@ -32,20 +32,19 @@ function Projects() {
 
   const viewModes = [
     { id: 'grid', label: 'Grid' },
-    { id: 'list', label: 'List' },
     { id: 'feed', label: 'Feed' },
     { id: 'full', label: 'Full' }
   ]
 
   return (
-    <div className="min-h-screen bg-white pt-20 md:pt-24">
-      <section className="max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-16">
+    <div className="min-h-screen bg-white pt-10 md:pt-12">
+      <section className="max-w-7xl mx-auto px-6 md:px-12 py-8 md:py-12">
         {/* Header Section */}
-        <div className="mb-12 md:mb-16">
+        <div className="mb-6 md:mb-8">
           {/* Brand Name */}
-          <div className="mb-6 md:mb-8">
-            <div className="flex items-baseline gap-2 mb-4 md:mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-black">
+          <div className="mb-4 md:mb-6">
+            <div className="flex items-baseline gap-2 mb-2">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black">
                 Works
               </h2>
               <span className="text-base md:text-lg text-gray-500 align-super">
@@ -99,7 +98,6 @@ function Projects() {
         ) : (
           <div className={`grid gap-4 md:gap-6 ${
             viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-4' :
-            viewMode === 'list' ? 'grid-cols-1' :
             viewMode === 'feed' ? 'grid-cols-1 md:grid-cols-2' :
             'grid-cols-1'
           }`}>
@@ -118,7 +116,6 @@ function Projects() {
                 >
                   <div className={`w-full overflow-hidden bg-gray-100 transition-all duration-500 ease-out group-hover:[clip-path:circle(85%_at_50%_50%)] ${
                     viewMode === 'grid' ? 'aspect-square' :
-                    viewMode === 'list' ? 'aspect-[16/9]' :
                     viewMode === 'feed' ? 'aspect-[4/3]' :
                     'aspect-[21/9]'
                   }`}>

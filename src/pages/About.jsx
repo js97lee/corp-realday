@@ -1,8 +1,8 @@
 function About() {
   return (
-    <div className="min-h-screen bg-white pt-20 md:pt-24">
+    <div className="min-h-screen bg-white">
       {/* Top Section - Navy Blue Background */}
-      <section className="bg-[#1e3a8a] text-white py-16 md:py-24">
+      <section className="bg-[#1e3a8a] text-white py-16 md:py-24 pt-[calc(1px+3rem+1px)] md:pt-[calc(1px+4rem+1px)]">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="text-center space-y-4 md:space-y-6 max-w-4xl mx-auto">
             <p className="text-lg md:text-xl leading-relaxed">

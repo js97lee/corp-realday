@@ -223,6 +223,38 @@ function AdminProjects() {
     }
   }
 
+  const handleCopy = async (project) => {
+    try {
+      setLoading(true)
+      setError('')
+      
+      const copyData = {
+        title: `${project.title} (복사본)`,
+        description: project.description || null,
+        category: project.category || null,
+        image: project.image || null,
+        memo: project.memo || null,
+        isVisible: false, // 복사본은 기본적으로 숨김
+        isFeatured: false,
+        status: 'planned', // 복사본은 기본적으로 계획됨 상태
+        projectKey: project.projectKey || 'APP',
+        startDate: null, // 날짜는 초기화
+        endDate: null,
+      }
+      
+      const response = await addProject(copyData)
+      if (response.success) {
+        await loadProjects() // 목록 다시 불러오기
+        alert('프로젝트가 복사되었습니다.')
+      }
+    } catch (err) {
+      console.error('프로젝트 복사 실패:', err)
+      alert(err.message || '프로젝트 복사에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleDelete = async (projectId) => {
     if (!window.confirm('정말 이 프로젝트를 삭제하시겠습니까?')) {
       return
@@ -706,19 +738,31 @@ function AdminProjects() {
                           {project.category}
                         </span>
                         {!isEmployee && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleVisibility(project.id)
-                            }}
-                            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                              project.isVisible
-                                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                : 'bg-black text-white hover:bg-gray-800'
-                            }`}
-                          >
-                            {project.isVisible ? '숨기기' : '노출하기'}
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleCopy(project)
+                              }}
+                              className="px-3 py-1 text-xs font-medium rounded transition-colors bg-blue-500 text-white hover:bg-blue-600"
+                              title="프로젝트 복사"
+                            >
+                              복사
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleVisibility(project.id)
+                              }}
+                              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                                project.isVisible
+                                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  : 'bg-black text-white hover:bg-gray-800'
+                              }`}
+                            >
+                              {project.isVisible ? '숨기기' : '노출하기'}
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>

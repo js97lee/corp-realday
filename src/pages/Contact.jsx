@@ -44,11 +44,11 @@ function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-white pt-20 md:pt-24">
+    <div className="min-h-screen bg-white pt-10 md:pt-12">
       {/* Hero Section - 랜딩페이지와 동일한 스타일 */}
-      <section className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
-        <div className="mb-16 md:mb-24">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight tracking-tight mb-6 md:mb-8">
+      <section className="max-w-7xl mx-auto px-6 md:px-12 py-8 md:py-12">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight tracking-tight mb-2">
             CONTACT
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-2xl">
@@ -57,7 +57,7 @@ function Contact() {
         </div>
 
         {/* Contact Form Section */}
-        <div className="border-t border-black pt-16 md:pt-24">
+        <div className="pt-8 md:pt-12">
           <div className="max-w-2xl">
           <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
             <div>
@@ -128,26 +128,6 @@ function Contact() {
               {loading ? '전송 중...' : '전송하기'}
             </button>
           </form>
-          </div>
-        </div>
-
-        {/* Contact Info Section */}
-        <div className="border-t border-black pt-16 md:pt-24 mt-16 md:mt-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
-            <div>
-              <h3 className="text-xl md:text-2xl font-semibold mb-4 text-black">이메일</h3>
-              <a href="mailto:studio.realday@gmail.com" className="text-gray-600 hover:text-black transition-colors text-base md:text-lg">
-                studio.realday@gmail.com
-              </a>
-            </div>
-            <div>
-              <h3 className="text-xl md:text-2xl font-semibold mb-4 text-black">위치</h3>
-              <p className="text-gray-600 text-base md:text-lg">서울, 대한민국</p>
-            </div>
-            <div>
-              <h3 className="text-xl md:text-2xl font-semibold mb-4 text-black">응답 시간</h3>
-              <p className="text-gray-600 text-base md:text-lg">24시간 이내</p>
-            </div>
           </div>
         </div>
       </section>
