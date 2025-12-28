@@ -35,10 +35,8 @@ function Navigation() {
             />
           </Link>
           
-          {/* 오른쪽: 계정 및 메뉴 */}
+          {/* 오른쪽: 메뉴 */}
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="font-medium text-black hidden md:block">@realday</div>
-            
             {/* 데스크톱 메뉴 */}
             <div className="hidden md:flex items-center gap-6">
               {navItems.map((item) => (

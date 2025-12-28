@@ -21,11 +21,24 @@ export const handler = async (event, context) => {
     // GET: 재무 내역 목록 조회
     if (event.httpMethod === 'GET') {
       try {
-        const finances = await sqlFunc`
-          SELECT id, date, category, description, amount, type, payment_method, created_at, updated_at
-          FROM finances
-          ORDER BY date DESC, created_at DESC
-        `
+        // 쿼리 파라미터에서 projectId 추출
+        const projectId = event.queryStringParameters?.projectId
+        
+        let finances
+        if (projectId) {
+          finances = await sqlFunc`
+            SELECT id, date, category, description, amount, type, payment_method, project_id, created_at, updated_at
+            FROM finances
+            WHERE project_id = ${projectId}
+            ORDER BY date DESC, created_at DESC
+          `
+        } else {
+          finances = await sqlFunc`
+            SELECT id, date, category, description, amount, type, payment_method, project_id, created_at, updated_at
+            FROM finances
+            ORDER BY date DESC, created_at DESC
+          `
+        }
         
         return {
           statusCode: 200,
@@ -42,11 +55,22 @@ export const handler = async (event, context) => {
         // 테이블이 없으면 초기화 후 재시도
         if (error.message && error.message.includes('does not exist')) {
           await initDatabase()
-          const finances = await sqlFunc`
-            SELECT id, date, category, description, amount, type, payment_method, created_at, updated_at
-            FROM finances
-            ORDER BY date DESC, created_at DESC
-          `
+          const projectId = event.queryStringParameters?.projectId
+          let finances
+          if (projectId) {
+            finances = await sqlFunc`
+              SELECT id, date, category, description, amount, type, payment_method, project_id, created_at, updated_at
+              FROM finances
+              WHERE project_id = ${projectId}
+              ORDER BY date DESC, created_at DESC
+            `
+          } else {
+            finances = await sqlFunc`
+              SELECT id, date, category, description, amount, type, payment_method, project_id, created_at, updated_at
+              FROM finances
+              ORDER BY date DESC, created_at DESC
+            `
+          }
           return {
             statusCode: 200,
             headers,
@@ -66,7 +90,7 @@ export const handler = async (event, context) => {
     // POST: 재무 내역 추가
     if (event.httpMethod === 'POST') {
       await initDatabase()
-      const { date, category, description, amount, type, paymentMethod } = JSON.parse(event.body || '{}')
+      const { date, category, description, amount, type, paymentMethod, projectId } = JSON.parse(event.body || '{}')
 
       if (!date || !category || !amount || !type) {
         return {
@@ -91,8 +115,8 @@ export const handler = async (event, context) => {
       }
 
       const result = await sqlFunc`
-        INSERT INTO finances (date, category, description, amount, type, payment_method)
-        VALUES (${date}, ${category}, ${description || null}, ${amount}, ${type}, ${paymentMethod || null})
+        INSERT INTO finances (date, category, description, amount, type, payment_method, project_id)
+        VALUES (${date}, ${category}, ${description || null}, ${amount}, ${type}, ${paymentMethod || null}, ${projectId || null})
         RETURNING *
       `
 
@@ -139,7 +163,7 @@ export const handler = async (event, context) => {
         }
       }
 
-      const { date, category, description, amount, type, paymentMethod } = JSON.parse(event.body || '{}')
+      const { date, category, description, amount, type, paymentMethod, projectId } = JSON.parse(event.body || '{}')
 
       if (!date || !category || !amount || !type) {
         return {
@@ -171,6 +195,7 @@ export const handler = async (event, context) => {
             amount = ${amount},
             type = ${type},
             payment_method = ${paymentMethod || null},
+            project_id = ${projectId || null},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *

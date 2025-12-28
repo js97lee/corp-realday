@@ -1,15 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { sendEmail } from '../utils/api'
 
-function AdminEmailComposer({ isOpen, onClose }) {
+function AdminEmailComposer({ isOpen, onClose, initialTo = '' }) {
   const [formData, setFormData] = useState({
-    to: 'studio.realday@gmail.com',
+    to: initialTo || 'studio.realday@gmail.com',
     subject: '',
     body: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  // initialTo가 변경되면 formData 업데이트
+  useEffect(() => {
+    if (isOpen && initialTo) {
+      setFormData(prev => ({
+        ...prev,
+        to: initialTo
+      }))
+    } else if (isOpen && !initialTo) {
+      setFormData(prev => ({
+        ...prev,
+        to: 'studio.realday@gmail.com'
+      }))
+    }
+  }, [isOpen, initialTo])
 
   const handleChange = (e) => {
     const { name, value } = e.target

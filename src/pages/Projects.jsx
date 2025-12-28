@@ -29,101 +29,72 @@ function Projects() {
   }, [])
 
   return (
-    <div className="pt-16 md:pt-20">
-      {/* Hero Section */}
-      <section className="py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black mb-6 md:mb-8">
+    <div className="min-h-screen bg-white pt-20 md:pt-24">
+      {/* Hero Section - 랜딩페이지와 동일한 스타일 */}
+      <section className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <div className="mb-16 md:mb-24">
+          <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-black leading-[0.9] tracking-tight mb-6 md:mb-8">
             PROJECTS
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-2xl">
             우리가 진행한 프로젝트들을 소개합니다.
           </p>
         </div>
-      </section>
 
-      {/* Projects Grid */}
-      <section className="py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
+        {/* Projects Grid */}
+        <div className="border-t border-black">
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-              <p className="mt-4 text-gray-500">프로젝트를 불러오는 중...</p>
+            <div className="py-20 text-center text-gray-400">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-4"></div>
+              <p className="text-sm">로딩 중...</p>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg inline-block">
+            <div className="py-20 text-center">
+              <div className="text-red-600 text-sm">
                 {error}
               </div>
             </div>
           ) : projects.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <p className="text-lg">등록된 프로젝트가 없습니다.</p>
+            <div className="py-20 text-center text-gray-400">
+              <p className="text-sm">등록된 프로젝트가 없습니다.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div className="space-y-0">
               {projects.map((project, index) => (
                 <div
                   key={project.id}
-                  className="group cursor-pointer transition-all hover:scale-[1.02] animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="border-b border-black py-8 md:py-10 hover:bg-gray-50 transition-colors group"
                 >
-                  <div className="bg-gray-100 aspect-video mb-4 md:mb-6 overflow-hidden rounded-lg">
-                    {project.image ? (
-                      <img
-                        src={project.image}
-                        alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        onError={(e) => {
-                          e.target.style.display = 'none'
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                  <div className="flex items-start gap-6 md:gap-8">
+                    {/* Number */}
+                    <div className="flex-shrink-0 w-12 md:w-16">
+                      <div className="text-xl md:text-2xl font-medium text-black mb-2">
+                        {String(index + 1).padStart(2, '0')}
                       </div>
-                    )}
-                  </div>
-                  {project.category && (
-                    <div className="text-sm md:text-base text-gray-500 mb-2">
-                      {project.category}
+                      <div className="w-full h-px bg-black"></div>
                     </div>
-                  )}
-                  <h3 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-black">
-                    {project.title}
-                  </h3>
-                  {project.description && (
-                    <p className="text-gray-600 text-base md:text-lg leading-relaxed">
-                      {project.description}
-                    </p>
-                  )}
+                    
+                    {/* Content */}
+                    <div className="flex-1">
+                      {project.category && (
+                        <div className="text-sm text-gray-500 mb-2">
+                          {project.category}
+                        </div>
+                      )}
+                      <h2 className="text-2xl md:text-3xl font-bold text-black mb-3 md:mb-4 group-hover:text-gray-700 transition-colors">
+                        {project.title}
+                      </h2>
+                      {project.description && (
+                        <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+                          {project.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-12 md:py-20 bg-black text-white">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8">
-            프로젝트를 시작하고 싶으신가요?
-          </h2>
-          <p className="text-lg md:text-xl mb-8 md:mb-12 text-gray-300">
-            함께 멋진 프로젝트를 만들어보세요.
-          </p>
-          <a
-            href="/contact"
-            className="inline-block px-8 py-3 bg-white text-black font-medium hover:bg-gray-200 transition-colors"
-          >
-            문의하기
-          </a>
         </div>
       </section>
     </div>

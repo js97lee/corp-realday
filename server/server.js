@@ -58,9 +58,15 @@ async function initDatabase() {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
+        project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // contacts 테이블에 project_id 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sql`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL`
+    } catch (e) {}
 
     // projects 테이블 생성
     await sql`
@@ -74,12 +80,18 @@ async function initDatabase() {
         is_visible BOOLEAN DEFAULT true,
         is_featured BOOLEAN DEFAULT false,
         status VARCHAR(50) DEFAULT 'planned',
+        project_key VARCHAR(50) DEFAULT 'APP',
         start_date DATE,
         end_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // projects 테이블에 project_key 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_key VARCHAR(50) DEFAULT 'APP'`
+    } catch (e) {}
     
     // is_featured 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
     try {
@@ -152,10 +164,16 @@ async function initDatabase() {
         amount DECIMAL(15, 2) NOT NULL,
         type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
         payment_method VARCHAR(50),
+        project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // finances 테이블에 project_id 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sql`ALTER TABLE finances ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL`
+    } catch (e) {}
 
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sql`
@@ -512,7 +530,7 @@ app.get('/api/projects', async (req, res) => {
     } else {
       // 관리자용: 모든 프로젝트
       projects = await sql`
-        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date, created_at, updated_at
+        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
         FROM projects
         ORDER BY created_at DESC
       `
@@ -534,7 +552,7 @@ app.get('/api/projects', async (req, res) => {
 // 프로젝트 추가
 app.post('/api/projects', async (req, res) => {
   try {
-    const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = req.body
 
     if (!title) {
       return res.status(400).json({ 
@@ -544,8 +562,8 @@ app.post('/api/projects', async (req, res) => {
     }
 
     const result = await sql`
-      INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date)
-      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${startDate || null}, ${endDate || null})
+      INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date)
+      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
       RETURNING *
     `
 
@@ -568,7 +586,7 @@ app.post('/api/projects', async (req, res) => {
 app.put('/api/projects/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = req.body
 
     const existing = await sql`
       SELECT * FROM projects WHERE id = ${id}
@@ -605,6 +623,9 @@ app.put('/api/projects/:id', async (req, res) => {
     }
     if (status !== undefined) {
       await sql`UPDATE projects SET status = ${status} WHERE id = ${id}`
+    }
+    if (projectKey !== undefined) {
+      await sql`UPDATE projects SET project_key = ${projectKey || 'APP'} WHERE id = ${id}`
     }
     
     await sql`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`
@@ -1005,11 +1026,22 @@ app.delete('/api/portfolio-items/:id', async (req, res) => {
 // 재무 내역 목록 조회
 app.get('/api/finances', async (req, res) => {
   try {
-    const finances = await sql`
-      SELECT id, date, category, description, amount, type, payment_method, created_at, updated_at
-      FROM finances
-      ORDER BY date DESC, created_at DESC
-    `
+    const { projectId } = req.query
+    let finances
+    if (projectId) {
+      finances = await sql`
+        SELECT id, date, category, description, amount, type, payment_method, project_id, created_at, updated_at
+        FROM finances
+        WHERE project_id = ${projectId}
+        ORDER BY date DESC, created_at DESC
+      `
+    } else {
+      finances = await sql`
+        SELECT id, date, category, description, amount, type, payment_method, project_id, created_at, updated_at
+        FROM finances
+        ORDER BY date DESC, created_at DESC
+      `
+    }
     
     res.json({
       success: true,
@@ -1030,7 +1062,7 @@ app.get('/api/finances', async (req, res) => {
 // 재무 내역 추가
 app.post('/api/finances', async (req, res) => {
   try {
-    const { date, category, description, amount, type, paymentMethod } = req.body
+    const { date, category, description, amount, type, paymentMethod, projectId } = req.body
 
     if (!date || !category || !amount || !type) {
       return res.status(400).json({ 
@@ -1047,8 +1079,8 @@ app.post('/api/finances', async (req, res) => {
     }
 
     const result = await sql`
-      INSERT INTO finances (date, category, description, amount, type, payment_method)
-      VALUES (${date}, ${category}, ${description || null}, ${amount}, ${type}, ${paymentMethod || null})
+      INSERT INTO finances (date, category, description, amount, type, payment_method, project_id)
+      VALUES (${date}, ${category}, ${description || null}, ${amount}, ${type}, ${paymentMethod || null}, ${projectId || null})
       RETURNING *
     `
 
@@ -1074,7 +1106,7 @@ app.post('/api/finances', async (req, res) => {
 app.put('/api/finances/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { date, category, description, amount, type, paymentMethod } = req.body
+    const { date, category, description, amount, type, paymentMethod, projectId } = req.body
 
     if (!date || !category || !amount || !type) {
       return res.status(400).json({ 
@@ -1098,6 +1130,7 @@ app.put('/api/finances/:id', async (req, res) => {
           amount = ${amount},
           type = ${type},
           payment_method = ${paymentMethod || null},
+          project_id = ${projectId || null},
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *

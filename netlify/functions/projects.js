@@ -34,7 +34,7 @@ export const handler = async (event, context) => {
         } else {
           // 관리자용: 모든 프로젝트
           projects = await sqlFunc`
-            SELECT id, title, description, category, image, memo, is_visible, is_featured, status, created_at, updated_at
+            SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
             FROM projects
             ORDER BY created_at DESC
           `
@@ -71,7 +71,7 @@ export const handler = async (event, context) => {
             `
           } else {
             projects = await sqlFunc`
-              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date, created_at, updated_at
+              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
               FROM projects
               ORDER BY created_at DESC
             `
@@ -94,7 +94,7 @@ export const handler = async (event, context) => {
 
     // POST: 프로젝트 추가
     if (event.httpMethod === 'POST') {
-      const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = JSON.parse(event.body || '{}')
 
       if (!title) {
         return {
@@ -108,8 +108,8 @@ export const handler = async (event, context) => {
       }
 
       const result = await sqlFunc`
-        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date)
-        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${startDate || null}, ${endDate || null})
+        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date)
+        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
         RETURNING *
       `
 
@@ -138,7 +138,7 @@ export const handler = async (event, context) => {
         id = event.queryStringParameters.id
       }
       
-      const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = JSON.parse(event.body || '{}')
 
       if (!id) {
         return {
@@ -190,6 +190,9 @@ export const handler = async (event, context) => {
       }
       if (status !== undefined) {
         await sqlFunc`UPDATE projects SET status = ${status} WHERE id = ${parseInt(id)}`
+      }
+      if (projectKey !== undefined) {
+        await sqlFunc`UPDATE projects SET project_key = ${projectKey || 'APP'} WHERE id = ${parseInt(id)}`
       }
       if (startDate !== undefined) {
         await sqlFunc`UPDATE projects SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`

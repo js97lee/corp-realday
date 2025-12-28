@@ -22,6 +22,7 @@ function AdminProjects() {
     isVisible: true,
     isFeatured: false,
     status: 'planned',
+    projectKey: 'APP',
     startDate: '',
     endDate: '',
   })
@@ -54,6 +55,7 @@ function AdminProjects() {
           isVisible: p.is_visible !== false,
           isFeatured: p.is_featured === true,
           status: p.status || 'planned',
+          projectKey: p.project_key || 'APP',
           startDate: p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '',
           endDate: p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '',
           createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
@@ -100,6 +102,7 @@ function AdminProjects() {
       isVisible: project.isVisible,
       isFeatured: project.isFeatured || false,
       status: project.status || 'planned',
+      projectKey: project.projectKey || 'APP',
       startDate: project.startDate || '',
       endDate: project.endDate || '',
     })
@@ -139,6 +142,7 @@ function AdminProjects() {
           isVisible: formData.isVisible,
           isFeatured: formData.isFeatured,
           status: formData.status || 'planned',
+          projectKey: formData.projectKey || 'APP',
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
         }
@@ -150,7 +154,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', startDate: '', endDate: '' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '' })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -165,6 +169,7 @@ function AdminProjects() {
           isVisible: formData.isVisible,
           isFeatured: formData.isFeatured,
           status: formData.status || 'planned',
+          projectKey: formData.projectKey || 'APP',
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
         })
@@ -174,7 +179,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', startDate: '', endDate: '' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '' })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -264,7 +269,7 @@ function AdminProjects() {
           <button
             onClick={() => {
               setSelectedProject(null)
-              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', startDate: '', endDate: '' })
+              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '' })
               setIsEditing(true)
             }}
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
@@ -318,6 +323,23 @@ function AdminProjects() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none"
                 placeholder="프로젝트 설명을 입력하세요"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                프로젝트 키 (업무 키 접두사)
+              </label>
+              <input
+                type="text"
+                value={formData.projectKey}
+                onChange={(e) => setFormData({ ...formData, projectKey: e.target.value.toUpperCase() })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                placeholder="예: APP, K-POP, WEB 등"
+                maxLength={20}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                이 프로젝트의 업무는 "{formData.projectKey || 'APP'}-1", "{formData.projectKey || 'APP'}-2" 형식으로 생성됩니다.
+              </p>
             </div>
 
             <div>

@@ -51,7 +51,7 @@ function AdminFinance() {
         date: formData.date,
         category: formData.category,
         description: formData.description || null,
-        amount: parseFloat(formData.amount),
+        amount: parseFloat(parseAmount(formData.amount)),
         type: formData.type,
         paymentMethod: formData.paymentMethod || null,
       }
@@ -81,13 +81,31 @@ function AdminFinance() {
     }
   }
 
+  const formatAmount = (value) => {
+    // 숫자만 추출
+    const numericValue = value.replace(/[^0-9]/g, '')
+    // 천 단위 구분자 추가
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  }
+
+  const parseAmount = (value) => {
+    // 콤마 제거 후 숫자만 반환
+    return value.replace(/,/g, '')
+  }
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value
+    const formatted = formatAmount(value)
+    setFormData({ ...formData, amount: formatted })
+  }
+
   const handleEdit = (finance) => {
     setSelectedFinance(finance)
     setFormData({
       date: finance.date,
       category: finance.category,
       description: finance.description || '',
-      amount: finance.amount.toString(),
+      amount: finance.amount.toLocaleString(),
       type: finance.type,
       paymentMethod: finance.payment_method || '',
     })
@@ -148,19 +166,19 @@ function AdminFinance() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 mb-1">총 수익</p>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-2xl font-bold text-red-600">
             {totalIncome.toLocaleString()}원
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 mb-1">총 지출</p>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-2xl font-bold text-blue-600">
             {totalExpense.toLocaleString()}원
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600 mb-1">잔액</p>
-          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-2xl font-bold ${balance >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
             {balance.toLocaleString()}원
           </p>
         </div>
@@ -222,12 +240,12 @@ function AdminFinance() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">금액 *</label>
                 <input
-                  type="number"
+                  type="text"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onChange={handleAmountChange}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
-                  placeholder="금액 입력"
+                  placeholder="금액 입력 (예: 1,000,000)"
                 />
               </div>
               <div>
@@ -299,8 +317,8 @@ function AdminFinance() {
                     <div className="flex items-center gap-3 mb-1">
                       <span className={`px-2 py-1 text-xs rounded ${
                         item.type === 'income' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
+                          ? 'bg-red-100 text-red-700' 
+                          : 'bg-blue-100 text-blue-700'
                       }`}>
                         {item.type === 'income' ? '수익' : '지출'}
                       </span>
@@ -316,7 +334,7 @@ function AdminFinance() {
                   </div>
                   <div className="flex items-center gap-3">
                     <p className={`text-lg font-semibold ${
-                      item.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      item.type === 'income' ? 'text-red-600' : 'text-blue-600'
                     }`}>
                       {item.type === 'income' ? '+' : '-'}{item.amount.toLocaleString()}원
                     </p>

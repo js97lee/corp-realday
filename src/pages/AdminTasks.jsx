@@ -192,6 +192,7 @@ function AdminTasks() {
     priority: 'medium',
     status: 'backlog',
     projectId: '',
+    projectKey: 'APP',
     startDate: '',
     endDate: '',
   })
@@ -259,7 +260,7 @@ function AdminTasks() {
       if (e.key === 'Escape' && (isAdding || selectedTask)) {
         setIsAdding(false)
         setSelectedTask(null)
-        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
       }
     }
     document.addEventListener('keydown', handleEscape)
@@ -317,7 +318,7 @@ function AdminTasks() {
         await loadTasks()
         setIsAdding(false)
         setSelectedTask(null)
-        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+        setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
       }
     } catch (err) {
       console.error('업무 저장 실패:', err)
@@ -436,7 +437,7 @@ function AdminTasks() {
           <button
             onClick={() => {
               setIsAdding(true)
-              setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+              setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
             }}
             className="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg"
           >
@@ -493,7 +494,7 @@ function AdminTasks() {
             if (e.target === e.currentTarget) {
               setIsAdding(false)
               setSelectedTask(null)
-              setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+              setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
             }
           }}
         >
@@ -501,7 +502,7 @@ function AdminTasks() {
           <div className="absolute inset-0 bg-black bg-opacity-50"></div>
           
           {/* 모달 컨텐츠 */}
-          <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
               <h3 className="text-xl font-semibold">
                 {selectedTask ? '업무 수정' : '새 업무 추가'}
@@ -511,7 +512,7 @@ function AdminTasks() {
                 onClick={() => {
                   setIsAdding(false)
                   setSelectedTask(null)
-                  setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+                  setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
                 aria-label="닫기"
@@ -522,120 +523,148 @@ function AdminTasks() {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="업무 제목"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows="3"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
-                placeholder="업무 설명"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">담당자</label>
-              <AssigneeSelector
-                members={members}
-                selectedNames={formData.assigneeNames || []}
-                onChange={(names) => {
-                  const memberIds = names.map(name => {
-                    const member = members.find(m => (m.name || m.email) === name)
-                    return member ? member.id : null
-                  }).filter(id => id !== null)
-                  setFormData({
-                    ...formData,
-                    assigneeIds: memberIds,
-                    assigneeNames: names
-                  })
-                }}
-                onAddMember={(name) => {
-                  // 새 담당자 추가
-                  const currentNames = formData.assigneeNames || []
-                  if (!currentNames.includes(name)) {
-                    setFormData({
-                      ...formData,
-                      assigneeNames: [...currentNames, name]
-                    })
-                  }
-                }}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">시작일</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 왼쪽 컬럼: 제목, 설명 */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      placeholder="업무 제목"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows="8"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                      placeholder="업무 설명"
+                    />
+                  </div>
+                </div>
+
+                {/* 오른쪽 컬럼: 담당자, 일정, 연관 프로젝트, 우선순위 */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">담당자</label>
+                    <AssigneeSelector
+                      members={members}
+                      selectedNames={formData.assigneeNames || []}
+                      onChange={(names) => {
+                        const memberIds = names.map(name => {
+                          const member = members.find(m => (m.name || m.email) === name)
+                          return member ? member.id : null
+                        }).filter(id => id !== null)
+                        setFormData({
+                          ...formData,
+                          assigneeIds: memberIds,
+                          assigneeNames: names
+                        })
+                      }}
+                      onAddMember={(name) => {
+                        // 새 담당자 추가
+                        const currentNames = formData.assigneeNames || []
+                        if (!currentNames.includes(name)) {
+                          setFormData({
+                            ...formData,
+                            assigneeNames: [...currentNames, name]
+                          })
+                        }
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">일정</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">시작일</label>
+                        <input
+                          type="date"
+                          value={formData.startDate}
+                          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">종료일</label>
+                        <input
+                          type="date"
+                          value={formData.endDate}
+                          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">연관 프로젝트</label>
+                    <select
+                      value={formData.projectId}
+                      onChange={(e) => {
+                        const selectedProjectId = e.target.value
+                        const selectedProject = projects.find(p => p.id.toString() === selectedProjectId)
+                        setFormData({ 
+                          ...formData, 
+                          projectId: selectedProjectId,
+                          projectKey: selectedProject ? (selectedProject.project_key || 'APP') : 'APP'
+                        })
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                      <option value="">프로젝트 선택 (선택사항)</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.title} {project.project_key ? `(${project.project_key})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {formData.projectId && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        선택한 프로젝트의 키: <span className="font-medium">{formData.projectKey || 'APP'}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                      <option value="lowest">가장 낮음</option>
+                      <option value="low">낮음</option>
+                      <option value="medium">보통</option>
+                      <option value="high">높음</option>
+                      <option value="highest">가장 높음</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">종료일</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              >
-                <option value="lowest">가장 낮음</option>
-                <option value="low">낮음</option>
-                <option value="medium">보통</option>
-                <option value="high">높음</option>
-                <option value="highest">가장 높음</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트</label>
-              <select
-                value={formData.projectId}
-                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              >
-                <option value="">프로젝트 선택 (선택사항)</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {!selectedTask && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="backlog">백로그</option>
-                  <option value="selected">개발하기로 선택된</option>
-                  <option value="inProgress">진행 중</option>
-                  <option value="done">완료</option>
-                </select>
-              </div>
-            )}
+              
+              {/* 상태 선택 (새 업무 추가 시에만 표시) */}
+              {!selectedTask && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="backlog">백로그</option>
+                    <option value="selected">개발하기로 선택된</option>
+                    <option value="inProgress">진행 중</option>
+                    <option value="review">검토</option>
+                    <option value="done">완료</option>
+                  </select>
+                </div>
+              )}
               <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                 <div className="flex gap-4">
                   {selectedTask && (
@@ -662,7 +691,7 @@ function AdminTasks() {
                     onClick={() => {
                       setIsAdding(false)
                       setSelectedTask(null)
-                      setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+                      setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', projectKey: 'APP', startDate: '', endDate: '' })
                     }}
                     className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
                   >
@@ -708,6 +737,7 @@ function AdminTasks() {
                         priority: task.priority || 'medium',
                         status: task.status || 'backlog',
                         projectId: task.project_id || '',
+                        projectKey: task.project_key || 'APP',
                         startDate: task.start_date ? new Date(task.start_date).toISOString().split('T')[0] : '',
                         endDate: task.end_date ? new Date(task.end_date).toISOString().split('T')[0] : '',
                       })

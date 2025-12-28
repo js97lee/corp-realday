@@ -63,9 +63,15 @@ export async function initDatabase() {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
+        project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // contacts 테이블에 project_id 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sqlFunc`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL`
+    } catch (e) {}
 
     // projects 테이블 생성
     await sqlFunc`
@@ -79,12 +85,18 @@ export async function initDatabase() {
         is_visible BOOLEAN DEFAULT true,
         is_featured BOOLEAN DEFAULT false,
         status VARCHAR(50) DEFAULT 'planned',
+        project_key VARCHAR(50) DEFAULT 'APP',
         start_date DATE,
         end_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // projects 테이블에 project_key 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_key VARCHAR(50) DEFAULT 'APP'`
+    } catch (e) {}
     
     // is_featured 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
     try {
@@ -157,10 +169,16 @@ export async function initDatabase() {
         amount DECIMAL(15, 2) NOT NULL,
         type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
         payment_method VARCHAR(50),
+        project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // finances 테이블에 project_id 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sqlFunc`ALTER TABLE finances ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL`
+    } catch (e) {}
 
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sqlFunc`

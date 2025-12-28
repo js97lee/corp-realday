@@ -44,23 +44,21 @@ function Contact() {
   }
 
   return (
-    <div className="pt-16 md:pt-20">
-      {/* Hero Section */}
-      <section className="py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black mb-6 md:mb-8">
+    <div className="min-h-screen bg-white pt-20 md:pt-24">
+      {/* Hero Section - 랜딩페이지와 동일한 스타일 */}
+      <section className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <div className="mb-16 md:mb-24">
+          <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-black leading-[0.9] tracking-tight mb-6 md:mb-8">
             CONTACT
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-2xl">
             궁금한 점이 있으시거나 프로젝트를 논의하고 싶으시다면 언제든지 연락주세요.
           </p>
         </div>
-      </section>
 
-      {/* Contact Form Section */}
-      <section className="py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="max-w-2xl mx-auto">
+        {/* Contact Form Section */}
+        <div className="border-t border-black pt-16 md:pt-24">
+          <div className="max-w-2xl">
           <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
             <div>
               <label htmlFor="name" className="block text-sm md:text-base font-medium text-gray-700 mb-2">
@@ -132,41 +130,23 @@ function Contact() {
           </form>
           </div>
         </div>
-      </section>
 
-      {/* Contact Info Section */}
-      <section className="py-12 md:py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
+        {/* Contact Info Section */}
+        <div className="border-t border-black pt-16 md:pt-24 mt-16 md:mt-24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
             <div>
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg md:text-xl font-semibold mb-2">이메일</h3>
-              <a href="mailto:studio.realday@gmail.com" className="text-gray-600 hover:text-black transition-colors">
+              <h3 className="text-xl md:text-2xl font-semibold mb-4 text-black">이메일</h3>
+              <a href="mailto:studio.realday@gmail.com" className="text-gray-600 hover:text-black transition-colors text-base md:text-lg">
                 studio.realday@gmail.com
               </a>
             </div>
             <div>
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg md:text-xl font-semibold mb-2">위치</h3>
-              <p className="text-gray-600">서울, 대한민국</p>
+              <h3 className="text-xl md:text-2xl font-semibold mb-4 text-black">위치</h3>
+              <p className="text-gray-600 text-base md:text-lg">서울, 대한민국</p>
             </div>
             <div>
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg md:text-xl font-semibold mb-2">응답 시간</h3>
-              <p className="text-gray-600">24시간 이내</p>
+              <h3 className="text-xl md:text-2xl font-semibold mb-4 text-black">응답 시간</h3>
+              <p className="text-gray-600 text-base md:text-lg">24시간 이내</p>
             </div>
           </div>
         </div>

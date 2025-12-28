@@ -6,14 +6,12 @@ import AdminFinance from './AdminFinance'
 import AdminTasks from './AdminTasks'
 import AdminMembers from './AdminMembers'
 import AdminPortfolio from './AdminPortfolio'
-import AdminEmailComposer from '../components/AdminEmailComposer'
 import { getUserRole, USER_ROLES, isSuperAdmin, isManagerOrAbove } from '../utils/auth'
 import { fetchContacts, fetchProjects, fetchMembers, fetchFinances } from '../utils/api'
 
 function AdminDashboard() {
   const [user, setUser] = useState(null)
   const [activeMenu, setActiveMenu] = useState('dashboard')
-  const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false)
   const [stats, setStats] = useState({
     contactsCount: 0,
     projectsCount: 0,
@@ -222,27 +220,6 @@ function AdminDashboard() {
               <h2 className="text-xl font-bold text-black">
                 {menuItems.find(item => item.id === activeMenu)?.label || '대시보드'}
               </h2>
-              {isSuperAdmin() && (
-                <button
-                  onClick={() => setIsEmailComposerOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
-                >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>메일 쓰기</span>
-              </button>
-            )}
             </div>
             <div className="h-px bg-black"></div>
           </div>
@@ -317,11 +294,11 @@ function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 mb-1">잔액</p>
-                        <p className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <p className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
                           {loading ? '...' : `${stats.balance >= 0 ? '+' : ''}${stats.balance.toLocaleString()}`}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          수익: {stats.totalIncome.toLocaleString()} / 지출: {stats.totalExpense.toLocaleString()}
+                          <span className="text-red-600">수익: {stats.totalIncome.toLocaleString()}</span> / <span className="text-blue-600">지출: {stats.totalExpense.toLocaleString()}</span>
                         </p>
                       </div>
                       <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -334,43 +311,67 @@ function AdminDashboard() {
                 )}
               </div>
 
-              {/* Recent Contacts */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-4 py-3 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold">최근 문의</h2>
-                </div>
-                <div className="p-4">
-                  {loading ? (
-                    <p className="text-gray-500 text-center py-8">로딩 중...</p>
-                  ) : recentContacts.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
-                      아직 문의가 없습니다.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {recentContacts.map((contact) => (
-                        <div
-                          key={contact.id}
-                          className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900">{contact.name}</p>
-                              <p className="text-sm text-gray-600 mt-1">{contact.email}</p>
-                              <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-                                {contact.message}
-                              </p>
+              {/* Recent Contacts (최고관리자만) */}
+              {isSuperAdmin() && (
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold">최근 문의</h2>
+                  </div>
+                  <div className="p-4">
+                    {loading ? (
+                      <p className="text-gray-500 text-center py-8">로딩 중...</p>
+                    ) : recentContacts.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">
+                        아직 문의가 없습니다.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {recentContacts.map((contact) => {
+                          const formatContactDate = (dateString) => {
+                            if (!dateString) return '날짜 없음'
+                            try {
+                              const date = new Date(dateString.replace(' ', 'T'))
+                              if (isNaN(date.getTime())) return '날짜 없음'
+                              return date.toLocaleString('ko-KR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false,
+                              })
+                            } catch (error) {
+                              return '날짜 없음'
+                            }
+                          }
+                          
+                          return (
+                            <div
+                              key={contact.id}
+                              className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-medium text-gray-900">{contact.name}</p>
+                                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                                      {formatContactDate(contact.created_at || contact.createdAt)}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600">{contact.email}</p>
+                                  <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                                    {contact.message}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <span className="text-xs text-gray-400 ml-4">
-                              {new Date(contact.created_at).toLocaleDateString('ko-KR')}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
           
@@ -383,12 +384,6 @@ function AdminDashboard() {
           </div>
         </main>
       </div>
-      
-      {/* Email Composer Modal */}
-      <AdminEmailComposer
-        isOpen={isEmailComposerOpen}
-        onClose={() => setIsEmailComposerOpen(false)}
-      />
     </div>
   )
 }

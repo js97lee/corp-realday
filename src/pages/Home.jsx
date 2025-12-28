@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { fetchPortfolioItems } from '../utils/api'
 
 function Home() {
@@ -48,32 +49,41 @@ function Home() {
           </div>
         ) : (
           <div className="space-y-0 border-t border-black">
-            {portfolioItems.map((item, index) => (
-              <div 
-                key={item.id} 
-                className="border-b border-black py-8 md:py-10 hover:bg-gray-50 transition-colors group"
-              >
-                <div className="flex items-start gap-6 md:gap-8">
-                  {/* Number */}
-                  <div className="flex-shrink-0 w-12 md:w-16">
-                    <div className="text-xl md:text-2xl font-medium text-black mb-2">
-                      {String(item.number || index + 1).padStart(2, '0')}
+            {portfolioItems.map((item, index) => {
+              // 프로젝트 이름을 URL-friendly slug로 변환
+              const projectSlug = item.title
+                .toLowerCase()
+                .replace(/[^a-z0-9가-힣]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+              
+              return (
+                <Link
+                  key={item.id}
+                  to={`/project/${projectSlug}`}
+                  className="block border-b border-black py-8 md:py-10 hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="flex items-start gap-6 md:gap-8">
+                    {/* Number */}
+                    <div className="flex-shrink-0 w-12 md:w-16">
+                      <div className="text-xl md:text-2xl font-medium text-black mb-2">
+                        {String(item.number || index + 1).padStart(2, '0')}
+                      </div>
+                      <div className="w-full h-px bg-black"></div>
                     </div>
-                    <div className="w-full h-px bg-black"></div>
+                    
+                    {/* Content */}
+                    <div className="flex-1">
+                      <h2 className="text-2xl md:text-3xl font-bold text-black mb-3 md:mb-4 group-hover:text-gray-700 transition-colors">
+                        {item.title}
+                      </h2>
+                      <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1">
-                    <h2 className="text-2xl md:text-3xl font-bold text-black mb-3 md:mb-4 group-hover:text-gray-700 transition-colors">
-                      {item.title}
-                    </h2>
-                    <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>
