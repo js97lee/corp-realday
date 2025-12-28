@@ -28,11 +28,14 @@ function Home() {
     <div className="min-h-screen bg-white pt-20 md:pt-24">
       {/* Hero Section - 디자인 에이전시 스타일 */}
       <section className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
-        <div className="mb-16 md:mb-24">
-          <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-black leading-[0.9] tracking-tight">
-            INDEX
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-2xl">
+        <div className="mb-12 md:mb-16">
+          <div className="flex items-baseline gap-4 mb-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight tracking-tight">
+              INDEX
+            </h1>
+            <span className="text-xs md:text-sm text-gray-400 font-light">2025</span>
+          </div>
+          <p className="text-sm md:text-base text-gray-500 max-w-xl">
             FROM VISION TO INFINITE CREATION
           </p>
         </div>

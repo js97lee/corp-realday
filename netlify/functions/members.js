@@ -13,7 +13,7 @@ export const handler = async (event, context) => {
     // GET: 멤버 목록 조회
     if (event.httpMethod === 'GET') {
       const users = await sqlFunc`
-        SELECT id, email, role, name, created_at
+        SELECT id, email, password, role, name, created_at
         FROM users
         ORDER BY created_at DESC
       `

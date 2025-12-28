@@ -335,7 +335,7 @@ app.get('/api/contacts', async (req, res) => {
 app.get('/api/members', async (req, res) => {
   try {
     const users = await sql`
-      SELECT id, email, role, name, created_at
+      SELECT id, email, password, role, name, created_at
       FROM users
       ORDER BY created_at DESC
     `

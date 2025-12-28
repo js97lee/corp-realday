@@ -170,7 +170,7 @@ function AdminDashboard() {
       <aside className="w-64 bg-black border-r border-gray-800 flex-shrink-0">
         <div className="h-full flex flex-col">
           {/* Logo/Header */}
-          <div className="p-6 border-b border-gray-800">
+          <div className="px-4 py-3 border-b border-gray-800">
             <button
               onClick={() => window.location.href = '/'}
               className="text-left w-full hover:opacity-80 transition-opacity"
@@ -178,38 +178,38 @@ function AdminDashboard() {
               <img 
                 src="/logo-white.svg" 
                 alt="REAL DAY" 
-                className="h-8 w-auto mb-2"
+                className="h-7 w-auto mb-1"
               />
               <p className="text-xs text-gray-400">Admin Panel</p>
             </button>
           </div>
 
           {/* Navigation Menu */}
-          <nav className="flex-1 p-4 overflow-y-auto">
-            <div className="space-y-6">
+          <nav className="flex-1 px-3 py-3 overflow-y-auto">
+            <div className="space-y-4">
               {filteredCategories.map((category, categoryIndex) => (
                 <div key={category.category}>
                   {/* 카테고리 제목 */}
-                  <div className="px-4 mb-2">
+                  <div className="px-3 mb-1.5">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       {category.category}
                     </h3>
                   </div>
                   
                   {/* 카테고리 메뉴 아이템 */}
-                  <ul className="space-y-2">
+                  <ul className="space-y-1">
                     {category.items.map((item) => (
                       <li key={item.id}>
                         <button
                           onClick={() => setActiveMenu(item.id)}
-                          className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                          className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
                             activeMenu === item.id
                               ? 'bg-white text-black'
                               : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                           }`}
                         >
                           <svg
-                            className="w-5 h-5 mr-3"
+                            className="w-4 h-4 mr-2.5"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -221,7 +221,7 @@ function AdminDashboard() {
                               d={item.icon}
                             />
                           </svg>
-                          <span className="font-medium">{item.label}</span>
+                          <span className="font-medium text-sm">{item.label}</span>
                         </button>
                       </li>
                     ))}
@@ -229,7 +229,7 @@ function AdminDashboard() {
                   
                   {/* 카테고리 구분선 (마지막 카테고리가 아닐 때만) */}
                   {categoryIndex < filteredCategories.length - 1 && (
-                    <div className="mt-6 border-t border-gray-800"></div>
+                    <div className="mt-4 border-t border-gray-800"></div>
                   )}
                 </div>
               ))}
@@ -237,7 +237,7 @@ function AdminDashboard() {
           </nav>
 
           {/* User Info & Logout */}
-          <div className="p-4 border-t border-gray-800">
+          <div className="px-4 py-3 border-t border-gray-800">
             <div className="mb-3">
               <p className="text-sm font-medium text-white">
                 {user?.email || 'Admin'}
