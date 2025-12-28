@@ -202,17 +202,129 @@ export async function initDatabase() {
       await sqlFunc`ALTER TABLE finances ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL`
     } catch (e) {}
 
+    // events 테이블 생성 (캘린더 일정)
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS events (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        date DATE NOT NULL,
+        start_time TIME,
+        end_time TIME,
+        color VARCHAR(50) DEFAULT 'blue',
+        is_private BOOLEAN DEFAULT false,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+    
+    // events 테이블에 is_private 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sqlFunc`ALTER TABLE events ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT false`
+    } catch (e) {}
+
+    // event_invitations 테이블 생성 (일정 초대)
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS event_invitations (
+        id SERIAL PRIMARY KEY,
+        event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(event_id, user_id)
+      )
+    `
+
+    // announcements 테이블 생성 (공지사항)
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sqlFunc`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
     `
     
+    let adminId = null
     if (existingAdmin.length === 0) {
-      await sqlFunc`
+      const adminResult = await sqlFunc`
         INSERT INTO users (email, password, role)
         VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'ceo'})
+        RETURNING id
       `
+      adminId = adminResult[0].id
       console.log('초기 관리자 계정이 생성되었습니다.')
+    } else {
+      adminId = existingAdmin[0].id
+    }
+
+    // 더미 프로젝트 데이터 추가 (프로젝트가 없을 때만)
+    const existingProjects = await sqlFunc`SELECT COUNT(*) as count FROM projects`
+    if (existingProjects[0].count === 0) {
+      const dummyProjects = [
+        {
+          title: 'LE SSERAFIM Brand Identity',
+          description: 'LE SSERAFIM is a K-pop girl group produced by Source Music. Brand identity design that expresses fearless confidence and authentic self-expression.',
+          category: 'Brand Identity',
+          image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'BRAND'
+        },
+        {
+          title: 'Modern Web Platform',
+          description: 'A cutting-edge web platform designed for seamless user experience. Clean interface with intuitive navigation and responsive design.',
+          category: 'Web Design',
+          image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'WEB'
+        },
+        {
+          title: 'Creative Studio Portfolio',
+          description: 'Portfolio website showcasing creative works and design projects. Minimalist design with focus on visual storytelling.',
+          category: 'Portfolio',
+          image: 'https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'PORT'
+        },
+        {
+          title: 'Mobile App Interface',
+          description: 'User-friendly mobile application interface design. Modern UI/UX with smooth interactions and engaging visual elements.',
+          category: 'Mobile Design',
+          image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'MOBILE'
+        }
+      ]
+
+      for (const project of dummyProjects) {
+        try {
+          await sqlFunc`
+            INSERT INTO projects (title, description, category, image, is_visible, is_featured, status, project_key)
+            VALUES (${project.title}, ${project.description}, ${project.category}, ${project.image}, ${project.is_visible}, ${project.is_featured}, ${project.status}, ${project.project_key})
+          `
+        } catch (e) {
+          console.error('더미 프로젝트 추가 실패:', e)
+        }
+      }
+      console.log(`${dummyProjects.length}개의 더미 프로젝트가 추가되었습니다.`)
     }
 
     console.log('데이터베이스 초기화 완료')

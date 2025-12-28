@@ -61,7 +61,8 @@ export async function cachedFetch(key, fetchFn) {
   // 캐시 확인
   const cached = getCached(key)
   if (cached) {
-    return cached
+    // 캐시된 데이터가 있으면 즉시 반환 (동기적으로)
+    return Promise.resolve(cached)
   }
   
   // API 호출

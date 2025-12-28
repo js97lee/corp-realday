@@ -24,8 +24,8 @@ function Navigation() {
       <div className="h-px bg-black"></div>
       
       {/* 회색 배경 헤더 */}
-      <div className="bg-gray-50 border-b border-black px-6 md:px-12 py-3 md:py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm md:text-base">
+      <div className="bg-gray-50 border-b border-black py-3 md:py-4">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center text-sm md:text-base">
           {/* 왼쪽: 회사 로고 */}
           <Link to="/" className="flex items-center">
             <img 
@@ -82,7 +82,7 @@ function Navigation() {
         {/* 모바일 메뉴 */}
         {isOpen && (
           <div className="md:hidden mt-4 pb-2 border-t border-gray-300 pt-4">
-            <div className="flex flex-col space-y-3 px-6 md:px-12">
+            <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col space-y-3">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
@@ -101,9 +101,6 @@ function Navigation() {
           </div>
         )}
       </div>
-      
-      {/* 하단 검은색 선 */}
-      <div className="h-px bg-black"></div>
     </nav>
   )
 }

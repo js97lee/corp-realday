@@ -12,7 +12,7 @@ const __dirname = dirname(__filename)
 dotenv.config({ path: join(__dirname, '.env') })
 
 const app = express()
-const PORT = process.env.PORT || 5001
+const PORT = process.env.PORT || 3001
 
 // 미들웨어
 app.use(cors())
@@ -185,17 +185,177 @@ async function initDatabase() {
       await sql`ALTER TABLE finances ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL`
     } catch (e) {}
 
+    // events 테이블 생성 (캘린더 일정)
+    await sql`
+      CREATE TABLE IF NOT EXISTS events (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        date DATE NOT NULL,
+        start_time TIME,
+        end_time TIME,
+        color VARCHAR(50) DEFAULT 'blue',
+        is_private BOOLEAN DEFAULT false,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+    
+    // events 테이블에 is_private 컬럼 추가 (기존 테이블 마이그레이션)
+    try {
+      await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT false`
+    } catch (e) {}
+
+    // event_invitations 테이블 생성 (일정 초대)
+    await sql`
+      CREATE TABLE IF NOT EXISTS event_invitations (
+        id SERIAL PRIMARY KEY,
+        event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(event_id, user_id)
+      )
+    `
+
+    // announcements 테이블 생성 (공지사항)
+    await sql`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sql`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
     `
     
+    let adminId = null
     if (existingAdmin.length === 0) {
-      await sql`
+      const adminResult = await sql`
         INSERT INTO users (email, password, role)
         VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'ceo'})
+        RETURNING id
       `
+      adminId = adminResult[0].id
       console.log('초기 관리자 계정이 생성되었습니다.')
+    } else {
+      adminId = existingAdmin[0].id
+    }
+
+    // 더미 프로젝트 데이터 추가 (정확히 8개 보장)
+    const existingProjects = await sql`SELECT COUNT(*) as count FROM projects`
+    const currentCount = parseInt(existingProjects[0].count) || 0
+    
+    // 8개 미만이면 기존 프로젝트 삭제 후 더미 프로젝트 추가
+    if (currentCount < 8) {
+      // 기존 프로젝트가 있으면 모두 삭제하고 새로 추가
+      if (currentCount > 0) {
+        await sql`DELETE FROM projects`
+      }
+      
+      const dummyProjects = [
+        {
+          title: 'LE SSERAFIM Brand Identity',
+          description: 'LE SSERAFIM is a K-pop girl group produced by Source Music. Brand identity design that expresses fearless confidence and authentic self-expression.',
+          category: 'Brand Identity',
+          image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'BRAND'
+        },
+        {
+          title: 'Modern Web Platform',
+          description: 'A cutting-edge web platform designed for seamless user experience. Clean interface with intuitive navigation and responsive design.',
+          category: 'Web Design',
+          image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'WEB'
+        },
+        {
+          title: 'Creative Studio Portfolio',
+          description: 'Portfolio website showcasing creative works and design projects. Minimalist design with focus on visual storytelling.',
+          category: 'Portfolio',
+          image: 'https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'PORT'
+        },
+        {
+          title: 'Mobile App Interface',
+          description: 'User-friendly mobile application interface design. Modern UI/UX with smooth interactions and engaging visual elements.',
+          category: 'Mobile Design',
+          image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'MOBILE'
+        },
+        {
+          title: 'LE SSERAFIM Brand Identity',
+          description: 'LE SSERAFIM is a K-pop girl group produced by Source Music. Brand identity design that expresses fearless confidence and authentic self-expression.',
+          category: 'Brand Identity',
+          image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'BRAND'
+        },
+        {
+          title: 'Modern Web Platform',
+          description: 'A cutting-edge web platform designed for seamless user experience. Clean interface with intuitive navigation and responsive design.',
+          category: 'Web Design',
+          image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'WEB'
+        },
+        {
+          title: 'Creative Studio Portfolio',
+          description: 'Portfolio website showcasing creative works and design projects. Minimalist design with focus on visual storytelling.',
+          category: 'Portfolio',
+          image: 'https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'PORT'
+        },
+        {
+          title: 'Mobile App Interface',
+          description: 'User-friendly mobile application interface design. Modern UI/UX with smooth interactions and engaging visual elements.',
+          category: 'Mobile Design',
+          image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop',
+          is_visible: true,
+          is_featured: true,
+          status: 'completed',
+          project_key: 'MOBILE'
+        }
+      ]
+
+      for (const project of dummyProjects) {
+        try {
+          await sql`
+            INSERT INTO projects (title, description, category, image, is_visible, is_featured, status, project_key)
+            VALUES (${project.title}, ${project.description}, ${project.category}, ${project.image}, ${project.is_visible}, ${project.is_featured}, ${project.status}, ${project.project_key})
+          `
+        } catch (e) {
+          console.error('더미 프로젝트 추가 실패:', e)
+        }
+      }
+      console.log(`${dummyProjects.length}개의 더미 프로젝트가 추가되었습니다.`)
     }
 
     console.log('데이터베이스 초기화 완료')
@@ -1206,6 +1366,411 @@ app.delete('/api/finances/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Finance delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// ========== 캘린더 일정 API ==========
+
+// 일정 조회 (초대 정보 포함)
+app.get('/api/events', async (req, res) => {
+  try {
+    const events = await sql`
+      SELECT 
+        e.*,
+        u.name as created_by_name
+      FROM events e
+      LEFT JOIN users u ON e.created_by = u.id
+      ORDER BY e.date ASC, e.start_time ASC
+    `
+    
+    // 각 일정의 초대 정보 가져오기
+    const eventsWithInvitations = await Promise.all(events.map(async (evt) => {
+      const invitations = await sql`
+        SELECT 
+          ei.*,
+          u.name as user_name,
+          u.email as user_email
+        FROM event_invitations ei
+        LEFT JOIN users u ON ei.user_id = u.id
+        WHERE ei.event_id = ${evt.id}
+      `
+      return {
+        ...evt,
+        invitations: invitations
+      }
+    }))
+    
+    res.json(eventsWithInvitations)
+  } catch (error) {
+    console.error('Events fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 일정 추가
+app.post('/api/events', async (req, res) => {
+  try {
+    const { title, description, date, start_time, end_time, color, is_private, invited_user_ids } = req.body
+
+    if (!title || !date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '제목과 날짜는 필수입니다.' 
+      })
+    }
+
+    // 인증된 사용자 정보 가져오기 (간단한 예시)
+    const userId = req.user?.id || null
+
+    const result = await sql`
+      INSERT INTO events (title, description, date, start_time, end_time, color, is_private, created_by)
+      VALUES (${title}, ${description || null}, ${date}, ${start_time || null}, ${end_time || null}, ${color || 'blue'}, ${is_private || false}, ${userId})
+      RETURNING *
+    `
+    
+    const eventId = result[0].id
+    
+    // 초대할 사용자 추가
+    if (invited_user_ids && Array.isArray(invited_user_ids) && invited_user_ids.length > 0) {
+      for (const invitedUserId of invited_user_ids) {
+        if (invitedUserId !== userId) { // 자기 자신은 제외
+          try {
+            await sql`
+              INSERT INTO event_invitations (event_id, user_id, status)
+              VALUES (${eventId}, ${invitedUserId}, 'pending')
+              ON CONFLICT (event_id, user_id) DO NOTHING
+            `
+          } catch (e) {
+            console.error('초대 추가 실패:', e)
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: '일정이 추가되었습니다.',
+      event: result[0]
+    })
+
+  } catch (error) {
+    console.error('Event add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 일정 수정
+app.put('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, description, date, start_time, end_time, color, is_private, invited_user_ids } = req.body
+
+    if (!title || !date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '제목과 날짜는 필수입니다.' 
+      })
+    }
+
+    const result = await sql`
+      UPDATE events
+      SET 
+        title = ${title},
+        description = ${description || null},
+        date = ${date},
+        start_time = ${start_time || null},
+        end_time = ${end_time || null},
+        color = ${color || 'blue'},
+        is_private = ${is_private !== undefined ? is_private : false},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING *
+    `
+    
+    // 초대할 사용자 업데이트 (새로 추가만, 기존 초대는 유지)
+    if (invited_user_ids && Array.isArray(invited_user_ids)) {
+      const existingInvitations = await sql`
+        SELECT user_id FROM event_invitations WHERE event_id = ${id}
+      `
+      const existingUserIds = existingInvitations.map(i => i.user_id)
+      
+      for (const invitedUserId of invited_user_ids) {
+        if (!existingUserIds.includes(invitedUserId)) {
+          try {
+            await sql`
+              INSERT INTO event_invitations (event_id, user_id, status)
+              VALUES (${id}, ${invitedUserId}, 'pending')
+              ON CONFLICT (event_id, user_id) DO NOTHING
+            `
+          } catch (e) {
+            console.error('초대 추가 실패:', e)
+          }
+        }
+      }
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '일정을 찾을 수 없습니다.' 
+      })
+    }
+
+    res.json({
+      success: true,
+      message: '일정이 수정되었습니다.',
+      event: result[0]
+    })
+
+  } catch (error) {
+    console.error('Event update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 일정 삭제
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const event = await sql`
+      SELECT * FROM events WHERE id = ${id}
+    `
+    
+    if (event.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '일정을 찾을 수 없습니다.' 
+      })
+    }
+
+    await sql`DELETE FROM events WHERE id = ${id}`
+
+    res.json({
+      success: true,
+      message: '일정이 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Event delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// ========== 공지사항 API ==========
+
+// 공지사항 조회
+app.get('/api/announcements', async (req, res) => {
+  try {
+    // 인증 확인 (간단한 예시)
+    // const isSuperAdmin = req.user?.role === 'ceo' || req.user?.role === 'super_admin'
+    
+    // 슈퍼어드민은 모든 공지사항 조회, 일반 사용자는 활성 공지사항만 조회
+    // 여기서는 모든 사용자에게 활성 공지사항만 반환 (실제로는 권한에 따라 분기)
+    const announcements = await sql`
+      SELECT 
+        a.*,
+        u.name as created_by_name
+      FROM announcements a
+      LEFT JOIN users u ON a.created_by = u.id
+      WHERE a.is_active = true
+      ORDER BY a.created_at DESC
+      LIMIT 1
+    `
+    res.json(announcements)
+  } catch (error) {
+    console.error('Announcements fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 공지사항 추가 (슈퍼어드민만)
+app.post('/api/announcements', async (req, res) => {
+  try {
+    const { title, content, is_active } = req.body
+
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '제목과 내용은 필수입니다.' 
+      })
+    }
+
+    // 기존 활성 공지사항 비활성화 (하나만 활성화되도록)
+    if (is_active !== false) {
+      await sql`UPDATE announcements SET is_active = false WHERE is_active = true`
+    }
+
+    const userId = req.user?.id || null
+    const result = await sql`
+      INSERT INTO announcements (title, content, is_active, created_by)
+      VALUES (${title}, ${content}, ${is_active !== false}, ${userId})
+      RETURNING *
+    `
+
+    res.json({
+      success: true,
+      message: '공지사항이 추가되었습니다.',
+      announcement: result[0]
+    })
+
+  } catch (error) {
+    console.error('Announcement add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 공지사항 수정 (슈퍼어드민만)
+app.put('/api/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, content, is_active } = req.body
+
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '제목과 내용은 필수입니다.' 
+      })
+    }
+
+    // 활성화할 경우 기존 활성 공지사항 비활성화
+    if (is_active === true) {
+      await sql`UPDATE announcements SET is_active = false WHERE is_active = true AND id != ${id}`
+    }
+
+    const result = await sql`
+      UPDATE announcements
+      SET 
+        title = ${title},
+        content = ${content},
+        is_active = ${is_active !== false},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING *
+    `
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '공지사항을 찾을 수 없습니다.' 
+      })
+    }
+
+    res.json({
+      success: true,
+      message: '공지사항이 수정되었습니다.',
+      announcement: result[0]
+    })
+
+  } catch (error) {
+    console.error('Announcement update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 공지사항 삭제 (슈퍼어드민만)
+app.delete('/api/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const announcement = await sql`
+      SELECT * FROM announcements WHERE id = ${id}
+    `
+    
+    if (announcement.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '공지사항을 찾을 수 없습니다.' 
+      })
+    }
+
+    await sql`DELETE FROM announcements WHERE id = ${id}`
+
+    res.json({
+      success: true,
+      message: '공지사항이 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Announcement delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// ========== 일정 초대 API ==========
+
+// 초대 수락/거절
+app.put('/api/events/:eventId/invitations/:action', async (req, res) => {
+  try {
+    const { eventId, action } = req.params
+    
+    if (action !== 'accept' && action !== 'decline') {
+      return res.status(400).json({ 
+        success: false, 
+        message: '액션은 accept 또는 decline이어야 합니다.' 
+      })
+    }
+
+    const userId = req.user?.id || null
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '인증이 필요합니다.' 
+      })
+    }
+
+    const status = action === 'accept' ? 'accepted' : 'declined'
+
+    const result = await sql`
+      UPDATE event_invitations
+      SET status = ${status}, updated_at = CURRENT_TIMESTAMP
+      WHERE event_id = ${eventId} AND user_id = ${userId}
+      RETURNING *
+    `
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '초대를 찾을 수 없습니다.' 
+      })
+    }
+
+    res.json({
+      success: true,
+      message: `초대가 ${action === 'accept' ? '수락' : '거절'}되었습니다.`,
+      invitation: result[0]
+    })
+
+  } catch (error) {
+    console.error('Invitation update error:', error)
     res.status(500).json({ 
       success: false, 
       message: '서버 오류가 발생했습니다.' 

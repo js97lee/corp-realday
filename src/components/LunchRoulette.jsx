@@ -21,11 +21,15 @@ function LunchRoulette({ isOpen, onClose }) {
     const randomIndex = Math.floor(Math.random() * lunchMenus.length)
     const selected = lunchMenus[randomIndex]
     
-    // 선택된 메뉴의 각도 계산 (각 메뉴는 360/24 = 15도씩 차지)
-    const menuAngle = (360 / lunchMenus.length) * randomIndex
+    // 각 메뉴는 360/24 = 15도씩 차지
+    const segmentAngle = 360 / lunchMenus.length
+    // 선택된 메뉴의 중앙 각도 (0도가 위쪽)
+    const menuCenterAngle = (randomIndex * segmentAngle) + (segmentAngle / 2)
+    
     // 포인터는 위쪽(0도)에 있으므로, 선택된 메뉴가 포인터 위치로 오려면
-    // 270도(위쪽) - 메뉴의 중앙 각도
-    const targetAngle = 270 - (menuAngle + 360 / lunchMenus.length / 2)
+    // 현재 회전각 + 추가 회전각이 메뉴 중앙을 가리켜야 함
+    // 360 - menuCenterAngle을 회전하면 메뉴 중앙이 위쪽(0도)으로 옴
+    const targetAngle = 360 - menuCenterAngle
     
     // 최소 5바퀴 이상 회전하도록 (1800도 + 목표 각도)
     const finalRotation = rotation + 1800 + targetAngle
@@ -34,7 +38,13 @@ function LunchRoulette({ isOpen, onClose }) {
     
     // 회전 애니메이션 시간 (4초)
     setTimeout(() => {
-      setSelectedMenu(selected)
+      // 회전이 끝난 후 실제 포인터가 가리키는 메뉴 계산
+      const normalizedRotation = finalRotation % 360
+      const pointerAngle = (360 - normalizedRotation) % 360
+      const calculatedIndex = Math.floor(pointerAngle / segmentAngle) % lunchMenus.length
+      const actualSelected = lunchMenus[calculatedIndex]
+      
+      setSelectedMenu(actualSelected)
       setIsSpinning(false)
     }, 4000)
   }
@@ -85,8 +95,9 @@ function LunchRoulette({ isOpen, onClose }) {
               transform: `rotate(${rotation}deg)`,
               background: `conic-gradient(
                 ${lunchMenus.map((_, i) => {
-                  const hue = (i * 360) / lunchMenus.length
-                  return `hsl(${hue}, 70%, 60%) ${(i / lunchMenus.length) * 100}% ${((i + 1) / lunchMenus.length) * 100}%`
+                  // 흰색(짝수) - 검정(홀수) 패턴
+                  const isWhite = i % 2 === 0
+                  return `${isWhite ? '#FFFFFF' : '#000000'} ${(i / lunchMenus.length) * 100}% ${((i + 1) / lunchMenus.length) * 100}%`
                 }).join(', ')}
               )`
             }}
@@ -99,10 +110,14 @@ function LunchRoulette({ isOpen, onClose }) {
               const x = 50 + radius * Math.cos((labelAngle - 90) * Math.PI / 180)
               const y = 50 + radius * Math.sin((labelAngle - 90) * Math.PI / 180)
               
+              // 흰색 배경이면 검정 폰트, 검정 배경이면 흰색 폰트
+              const isWhite = index % 2 === 0
+              const textColor = isWhite ? '#000000' : '#FFFFFF'
+              
               return (
                 <div
                   key={index}
-                  className={`absolute text-xs font-bold text-white ${
+                  className={`absolute text-xs font-bold ${
                     isSpinning ? 'opacity-80' : 'opacity-100'
                   }`}
                   style={{
@@ -110,6 +125,7 @@ function LunchRoulette({ isOpen, onClose }) {
                     top: `${y}%`,
                     transform: `translate(-50%, -50%) rotate(${labelAngle}deg)`,
                     transformOrigin: 'center',
+                    color: textColor,
                   }}
                 >
                   <span style={{ transform: 'rotate(90deg)', display: 'inline-block' }}>

@@ -2,7 +2,7 @@
 // 프로덕션에서는 Netlify Functions 사용 (/api)
 // 로컬 개발 시에는 환경 변수로 백엔드 서버 URL 설정 가능
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.PROD ? '/api' : 'http://localhost:5001/api')
+  (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
 
 // 캐싱 유틸리티 import
 import { cachedFetch, clearCache } from './cache'
@@ -603,6 +603,295 @@ export const deleteFinance = async (id) => {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// ========== 캘린더 일정 API ==========
+
+// 일정 조회
+export const fetchEvents = async () => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/events`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 일정 추가
+export const addEvent = async (eventData) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(eventData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data.event || data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 일정 수정
+export const updateEvent = async (id, eventData) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/events/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(eventData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data.event || data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 일정 삭제
+export const deleteEvent = async (id) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// ========== 공지사항 API ==========
+
+// 공지사항 조회
+export const fetchAnnouncements = async () => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/announcements`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 공지사항 추가 (슈퍼어드민만)
+export const addAnnouncement = async (announcementData) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/announcements`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(announcementData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data.announcement || data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 공지사항 수정 (슈퍼어드민만)
+export const updateAnnouncement = async (id, announcementData) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(announcementData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data.announcement || data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 공지사항 삭제 (슈퍼어드민만)
+export const deleteAnnouncement = async (id) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/announcements/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// ========== 일정 초대 API ==========
+
+// 초대 수락/거절
+export const respondToInvitation = async (eventId, action) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}/invitations/${action}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     })
 

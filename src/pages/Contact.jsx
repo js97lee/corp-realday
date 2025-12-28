@@ -48,7 +48,7 @@ function Contact() {
       {/* Hero Section - 랜딩페이지와 동일한 스타일 */}
       <section className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
         <div className="mb-16 md:mb-24">
-          <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-black leading-[0.9] tracking-tight mb-6 md:mb-8">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight tracking-tight mb-6 md:mb-8">
             CONTACT
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-2xl">

@@ -1,8 +1,11 @@
 import { useEffect, useState, useMemo, useCallback, Suspense, lazy } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import LunchRoulette from '../components/LunchRoulette'
+import Calendar from '../components/Calendar'
+import EventModal from '../components/EventModal'
+import AnnouncementModal from '../components/AnnouncementModal'
 import { getUserRole, USER_ROLES, isSuperAdmin, isManagerOrAbove } from '../utils/auth'
-import { fetchContacts, fetchProjects, fetchMembers, fetchFinances } from '../utils/api'
+import { fetchContacts, fetchProjects, fetchMembers, fetchFinances, fetchEvents, addEvent, updateEvent, deleteEvent, fetchAnnouncements, addAnnouncement, updateAnnouncement, deleteAnnouncement } from '../utils/api'
 
 // 코드 스플리팅: 필요한 컴포넌트만 로드
 const AdminProjects = lazy(() => import('./AdminProjects'))
@@ -51,8 +54,13 @@ function AdminDashboard() {
   })
   const [recentContacts, setRecentContacts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [collapsedCategories, setCollapsedCategories] = useState({}) // 카테고리 접기/펼치기 상태 (undefined/false = 접힘, true = 펼쳐짐)
   const [showLunchRoulette, setShowLunchRoulette] = useState(false) // 점심 메뉴 룰렛 팝업
+  const [events, setEvents] = useState([]) // 캘린더 일정
+  const [showEventModal, setShowEventModal] = useState(false) // 일정 모달
+  const [selectedEvent, setSelectedEvent] = useState(null) // 선택된 일정
+  const [selectedDate, setSelectedDate] = useState(null) // 선택된 날짜
+  const [announcement, setAnnouncement] = useState(null) // 공지사항
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false) // 공지사항 모달
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -142,6 +150,113 @@ function AdminDashboard() {
     }
   }, [])
 
+  // 일정 데이터 로드
+  const loadEvents = useCallback(async () => {
+    try {
+      const eventsData = await fetchEvents()
+      setEvents(eventsData)
+    } catch (error) {
+      console.error('일정 데이터 로드 실패:', error)
+    }
+  }, [])
+
+  // 대시보드 진입 시 일정도 함께 로드
+  useEffect(() => {
+    if (user && activeMenu === 'dashboard') {
+      loadEvents()
+      loadAnnouncement()
+    }
+  }, [user, activeMenu, loadEvents])
+
+  // 공지사항 로드
+  const loadAnnouncement = useCallback(async () => {
+    try {
+      const announcements = await fetchAnnouncements()
+      // 활성 공지사항만 표시 (일반 사용자) 또는 최신 공지사항 (슈퍼어드민)
+      const activeAnnouncement = announcements.find(a => a.is_active) || announcements[0] || null
+      setAnnouncement(activeAnnouncement)
+    } catch (error) {
+      console.error('공지사항 로드 실패:', error)
+    }
+  }, [])
+
+  // 공지사항 저장 핸들러
+  const handleAnnouncementSave = useCallback(async (announcementData) => {
+    try {
+      if (announcement) {
+        // 수정
+        await updateAnnouncement(announcement.id, announcementData)
+      } else {
+        // 추가
+        await addAnnouncement(announcementData)
+      }
+      await loadAnnouncement()
+      setShowAnnouncementModal(false)
+    } catch (error) {
+      console.error('공지사항 저장 실패:', error)
+      alert(error.message || '공지사항 저장에 실패했습니다.')
+    }
+  }, [announcement, loadAnnouncement])
+
+  // 공지사항 삭제 핸들러
+  const handleAnnouncementDelete = useCallback(async (announcementId) => {
+    try {
+      await deleteAnnouncement(announcementId)
+      await loadAnnouncement()
+      setShowAnnouncementModal(false)
+    } catch (error) {
+      console.error('공지사항 삭제 실패:', error)
+      alert(error.message || '공지사항 삭제에 실패했습니다.')
+    }
+  }, [loadAnnouncement])
+
+  // 일정 저장 핸들러
+  const handleEventSave = useCallback(async (eventData) => {
+    try {
+      if (selectedEvent) {
+        // 수정
+        await updateEvent(selectedEvent.id, eventData)
+      } else {
+        // 추가
+        await addEvent(eventData)
+      }
+      await loadEvents()
+      setShowEventModal(false)
+      setSelectedEvent(null)
+      setSelectedDate(null)
+    } catch (error) {
+      console.error('일정 저장 실패:', error)
+      alert(error.message || '일정 저장에 실패했습니다.')
+    }
+  }, [selectedEvent, loadEvents])
+
+  // 일정 삭제 핸들러
+  const handleEventDelete = useCallback(async (eventId) => {
+    try {
+      await deleteEvent(eventId)
+      await loadEvents()
+      setShowEventModal(false)
+      setSelectedEvent(null)
+    } catch (error) {
+      console.error('일정 삭제 실패:', error)
+      alert(error.message || '일정 삭제에 실패했습니다.')
+    }
+  }, [loadEvents])
+
+  // 날짜 클릭 핸들러
+  const handleDateClick = useCallback((date) => {
+    setSelectedDate(date)
+    setSelectedEvent(null)
+    setShowEventModal(true)
+  }, [])
+
+  // 일정 클릭 핸들러
+  const handleEventClick = useCallback((event) => {
+    setSelectedEvent(event)
+    setSelectedDate(new Date(event.date))
+    setShowEventModal(true)
+  }, [])
+
   const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
@@ -152,9 +267,15 @@ function AdminDashboard() {
 
   useEffect(() => {
     if (user) {
-      setUserRole(user.role || 'employee')
+      let role = user.role
+      // 하위 호환성: 'employee' -> 'pro', 'manager' -> 'director', 'super_admin' -> 'ceo'
+      if (role === 'employee') role = USER_ROLES.PRO
+      else if (role === 'manager') role = USER_ROLES.DIRECTOR
+      else if (role === 'super_admin') role = USER_ROLES.CEO
+      
+      setUserRole(role || getUserRole() || USER_ROLES.PRO)
     } else {
-      const role = getUserRole()
+      const role = getUserRole() || USER_ROLES.PRO
       setUserRole(role)
     }
   }, [user])
@@ -192,10 +313,14 @@ function AdminDashboard() {
 
   // 권한에 따라 메뉴 필터링 (메모이제이션)
   const filteredCategories = useMemo(() => {
+    if (!userRole) {
+      // userRole이 없으면 빈 배열 반환
+      return []
+    }
+    
     return menuCategories.map(category => ({
       ...category,
       items: category.items.filter(item => {
-        if (!userRole) return false
         return item.roles.includes(userRole)
       })
     })).filter(category => category.items.length > 0) // 빈 카테고리는 제외
@@ -212,86 +337,65 @@ function AdminDashboard() {
               onClick={() => window.location.href = '/'}
               className="text-left w-full hover:opacity-80 transition-opacity"
             >
-              <img 
-                src="/logo-white.svg" 
-                alt="REAL DAY" 
-                className="h-7 w-auto mb-1"
-              />
-              <p className="text-xs text-gray-400">Admin Panel</p>
+              <p className="text-xs text-gray-400 mb-1">Studio.</p>
+              <p className="text-lg font-bold text-white">REALDAY</p>
+              <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
             </button>
           </div>
 
           {/* Navigation Menu */}
           <nav className="flex-1 px-3 py-3 overflow-y-auto">
             <div className="space-y-4">
-              {filteredCategories.map((category, categoryIndex) => {
-                // collapsedCategories[category.category]가 false면 접힘, true/undefined면 펼쳐짐
-                const isCollapsed = collapsedCategories[category.category] === false
-                return (
+              {filteredCategories.length === 0 ? (
+                <div className="text-gray-400 text-sm px-3 py-2">
+                  메뉴를 불러올 수 없습니다.
+                </div>
+              ) : (
+                filteredCategories.map((category, categoryIndex) => (
                   <div key={category.category}>
-                    {/* 카테고리 제목 (클릭 가능) */}
-                    <button
-                      onClick={() => {
-                        setCollapsedCategories(prev => ({
-                          ...prev,
-                          [category.category]: prev[category.category] === false ? true : false
-                        }))
-                      }}
-                      className="w-full px-3 py-1.5 mb-1.5 flex items-center justify-between rounded transition-colors group"
-                    >
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider transition-colors group-hover:text-gray-300">
-                        {category.category}
-                      </h3>
-                      <svg
-                        className={`w-3 h-3 text-gray-500 transition-all duration-200 group-hover:text-gray-300 ${isCollapsed ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
+                    {/* 카테고리 제목 */}
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-1.5 mb-1.5">
+                      {category.category}
+                    </h3>
                     
                     {/* 카테고리 메뉴 아이템 */}
-                    {!isCollapsed && (
-                      <ul className="space-y-1">
-                        {category.items.map((item) => (
-                          <li key={item.id}>
-                            <button
-                              onClick={() => setActiveMenu(item.id)}
-                              className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
-                                activeMenu === item.id
-                                  ? 'bg-white text-black'
-                                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                              }`}
+                    <ul className="space-y-1">
+                      {category.items.map((item) => (
+                        <li key={item.id}>
+                          <button
+                            onClick={() => setActiveMenu(item.id)}
+                            className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
+                              activeMenu === item.id
+                                ? 'bg-white text-black'
+                                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                            }`}
+                          >
+                            <svg
+                              className="w-4 h-4 mr-2.5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <svg
-                                className="w-4 h-4 mr-2.5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d={item.icon}
-                                />
-                              </svg>
-                              <span className="font-medium text-sm">{item.label}</span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d={item.icon}
+                              />
+                            </svg>
+                            <span className="font-medium text-sm">{item.label}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                     
                     {/* 카테고리 구분선 (마지막 카테고리가 아닐 때만) */}
                     {categoryIndex < filteredCategories.length - 1 && (
                       <div className="mt-4 border-t border-gray-800"></div>
                     )}
                   </div>
-                )
-              })}
+                ))
+              )}
             </div>
           </nav>
 
@@ -302,8 +406,8 @@ function AdminDashboard() {
               className="w-full flex items-center px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
               title="오늘의 점메추"
             >
-              <svg className="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              <svg className="w-4 h-4 mr-2.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11 2v20c0 .55-.45 1-1 1s-1-.45-1-1v-6H7v6c0 .55-.45 1-1 1s-1-.45-1-1V2c0-.55.45-1 1-1s1 .45 1 1v6h2V2c0-.55.45-1 1-1s1 .45 1 1zm7 0v20c0 .55-.45 1-1 1s-1-.45-1-1v-6h-2v6c0 .55-.45 1-1 1s-1-.45-1-1V2c0-.55.45-1 1-1s1 .45 1 1v6h2V2c0-.55.45-1 1-1s1 .45 1 1z"/>
               </svg>
               <span className="font-medium text-sm">점메추</span>
             </button>
@@ -346,12 +450,44 @@ function AdminDashboard() {
           <div className="max-w-[1480px] mx-auto w-full">
           {activeMenu === 'dashboard' && (
             <>
-              {/* Welcome Section */}
+              {/* 공지사항 Section */}
               <div className="bg-white rounded-lg shadow p-4 mb-6">
-                <h2 className="text-xl font-semibold mb-2">환영합니다!</h2>
-                <p className="text-gray-600">
-                  관리자 대시보드에 오신 것을 환영합니다.
-                </p>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    {announcement ? (
+                      <>
+                        <h2 className="text-xl font-semibold mb-2">{announcement.title}</h2>
+                        <p className="text-gray-600 whitespace-pre-wrap">{announcement.content}</p>
+                        {announcement.created_at && (
+                          <p className="text-xs text-gray-400 mt-2">
+                            {new Date(announcement.created_at).toLocaleDateString('ko-KR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-xl font-semibold mb-2">환영합니다!</h2>
+                        <p className="text-gray-600">
+                          관리자 대시보드에 오신 것을 환영합니다.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  {isSuperAdmin() && (
+                    <button
+                      onClick={() => {
+                        setShowAnnouncementModal(true)
+                      }}
+                      className="ml-4 px-3 py-1.5 text-sm bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                      {announcement ? '수정' : '공지 작성'}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Stats Grid */}
@@ -468,6 +604,16 @@ function AdminDashboard() {
                   </div>
                 </div>
               )}
+
+              {/* 캘린더 섹션 */}
+              <div className="mt-6">
+                <Calendar
+                  events={events}
+                  onDateClick={handleDateClick}
+                  onEventClick={handleEventClick}
+                  currentUserId={user?.id}
+                />
+              </div>
             </>
           )}
           
@@ -508,6 +654,31 @@ function AdminDashboard() {
         <LunchRoulette 
           isOpen={showLunchRoulette} 
           onClose={() => setShowLunchRoulette(false)} 
+        />
+
+        {/* 일정 모달 */}
+        <EventModal
+          isOpen={showEventModal}
+          onClose={() => {
+            setShowEventModal(false)
+            setSelectedEvent(null)
+            setSelectedDate(null)
+          }}
+          event={selectedEvent}
+          selectedDate={selectedDate}
+          onSave={handleEventSave}
+          onDelete={handleEventDelete}
+        />
+
+        {/* 공지사항 모달 */}
+        <AnnouncementModal
+          isOpen={showAnnouncementModal}
+          onClose={() => {
+            setShowAnnouncementModal(false)
+          }}
+          announcement={announcement}
+          onSave={handleAnnouncementSave}
+          onDelete={handleAnnouncementDelete}
         />
       </div>
     </div>
