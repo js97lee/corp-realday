@@ -755,9 +755,11 @@ app.post('/api/projects', async (req, res) => {
 
   } catch (error) {
     console.error('Project add error:', error)
+    console.error('Error details:', error.message, error.stack)
     res.status(500).json({ 
       success: false, 
-      message: '서버 오류가 발생했습니다.' 
+      message: error.message || '서버 오류가 발생했습니다.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 })
@@ -1578,11 +1580,19 @@ app.delete('/api/events/:id', async (req, res) => {
 // 공지사항 조회
 app.get('/api/announcements', async (req, res) => {
   try {
-    // 인증 확인 (간단한 예시)
-    // const isSuperAdmin = req.user?.role === 'ceo' || req.user?.role === 'super_admin'
+    // Authorization 헤더에서 사용자 정보 가져오기
+    const authHeader = req.headers.authorization
+    let user = null
+    let isSuperAdmin = false
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7)
+      // 토큰에서 사용자 이메일 추출 (간단한 예시, 실제로는 JWT 디코딩)
+      // 여기서는 localStorage의 user 정보를 사용하므로, 다른 방법 필요
+      // 일단 모든 공지사항 반환하도록 수정
+    }
     
     // 슈퍼어드민은 모든 공지사항 조회, 일반 사용자는 활성 공지사항만 조회
-    // 여기서는 모든 사용자에게 활성 공지사항만 반환 (실제로는 권한에 따라 분기)
     const announcements = await sql`
       SELECT 
         a.*,
@@ -1591,7 +1601,6 @@ app.get('/api/announcements', async (req, res) => {
       LEFT JOIN users u ON a.created_by = u.id
       WHERE a.is_active = true
       ORDER BY a.created_at DESC
-      LIMIT 1
     `
     res.json(announcements)
   } catch (error) {
@@ -1615,15 +1624,28 @@ app.post('/api/announcements', async (req, res) => {
       })
     }
 
+    // Authorization 헤더에서 사용자 정보 가져오기
+    const authHeader = req.headers.authorization
+    let userId = null
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // 실제로는 JWT 토큰을 디코딩해야 하지만, 여기서는 간단하게 처리
+      // 클라이언트에서 user 정보를 함께 보내도록 하거나, 
+      // 토큰에서 사용자 정보를 추출해야 함
+      // 일단 created_by는 null로 설정 (나중에 수정 가능)
+    }
+
+    // is_active 값 처리 (undefined일 경우 true로 설정)
+    const activeStatus = is_active !== undefined ? is_active : true
+
     // 기존 활성 공지사항 비활성화 (하나만 활성화되도록)
-    if (is_active !== false) {
+    if (activeStatus === true) {
       await sql`UPDATE announcements SET is_active = false WHERE is_active = true`
     }
 
-    const userId = req.user?.id || null
     const result = await sql`
       INSERT INTO announcements (title, content, is_active, created_by)
-      VALUES (${title}, ${content}, ${is_active !== false}, ${userId})
+      VALUES (${title}, ${content}, ${activeStatus}, ${userId})
       RETURNING *
     `
 
@@ -1635,9 +1657,10 @@ app.post('/api/announcements', async (req, res) => {
 
   } catch (error) {
     console.error('Announcement add error:', error)
+    console.error('Error details:', error.message, error.stack)
     res.status(500).json({ 
       success: false, 
-      message: '서버 오류가 발생했습니다.' 
+      message: error.message || '서버 오류가 발생했습니다.' 
     })
   }
 })

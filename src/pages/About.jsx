@@ -2,7 +2,7 @@ function About() {
   return (
     <div className="min-h-screen bg-white">
       {/* Top Section - Navy Blue Background */}
-      <section className="bg-[#1e3a8a] text-white py-16 md:py-24 pt-[calc(1px+3rem+1px)] md:pt-[calc(1px+4rem+1px)]">
+      <section className="bg-[#1e3a8a] text-white py-16 md:py-24 pt-[calc(1px+3rem+1px+4rem)] md:pt-[calc(1px+4rem+1px+6rem)]">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="text-center space-y-4 md:space-y-6 max-w-4xl mx-auto">
             <p className="text-lg md:text-xl leading-relaxed">
@@ -69,7 +69,7 @@ function About() {
               </div>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl md:text-2xl font-bold mb-4">Works</h3>
+                  <h3 className="text-xl md:text-2xl font-bold mb-4">Projects</h3>
                   <p className="text-base md:text-lg leading-relaxed text-gray-300 mb-4">
                     We create and transform brands and convey them to specific targets. We find out and identify brand essence based on meticulous observation and analysis. Moreover, we connect this brand essence to the design outcome. The process completes a brand that conveys positive emotion with a coherent voice.
                   </p>

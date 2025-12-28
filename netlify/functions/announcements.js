@@ -32,18 +32,34 @@ export const handler = async (event, context) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    // 간단한 토큰 검증 (실제로는 JWT 검증 필요)
-    const userResult = await sql`
-      SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1
-    `
-    if (userResult.length === 0) {
+    // 간단한 토큰 검증 (mock-jwt-token은 모든 사용자 허용)
+    let user = null
+    
+    if (token === 'mock-jwt-token') {
+      // mock 토큰인 경우 첫 번째 사용자를 사용 (실제로는 토큰에서 사용자 정보 추출)
+      const userResult = await sql`
+        SELECT id, email, role FROM users LIMIT 1
+      `
+      if (userResult.length > 0) {
+        user = userResult[0]
+      }
+    } else {
+      // 실제 토큰인 경우 password와 비교 (임시)
+      const userResult = await sql`
+        SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1
+      `
+      if (userResult.length > 0) {
+        user = userResult[0]
+      }
+    }
+    
+    if (!user) {
       return {
         statusCode: 401,
         headers,
         body: JSON.stringify({ error: '유효하지 않은 토큰입니다.' }),
       }
     }
-    const user = userResult[0]
 
     // GET: 활성 공지사항 조회 (모든 사용자) 또는 모든 공지사항 조회 (슈퍼어드민)
     if (event.httpMethod === 'GET') {

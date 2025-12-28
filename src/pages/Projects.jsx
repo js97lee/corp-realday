@@ -45,7 +45,7 @@ function Projects() {
           <div className="mb-4 md:mb-6">
             <div className="flex items-baseline gap-2 mb-2">
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black">
-                Works
+                Projects
               </h2>
               <span className="text-base md:text-lg text-gray-500 align-super">
                 ({projects.length})

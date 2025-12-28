@@ -243,13 +243,17 @@ function AdminProjects() {
       }
       
       const response = await addProject(copyData)
-      if (response.success) {
+      if (response && response.success) {
         await loadProjects() // 목록 다시 불러오기
         alert('프로젝트가 복사되었습니다.')
+      } else {
+        throw new Error(response?.message || '프로젝트 복사에 실패했습니다.')
       }
     } catch (err) {
       console.error('프로젝트 복사 실패:', err)
-      alert(err.message || '프로젝트 복사에 실패했습니다.')
+      const errorMessage = err.message || '프로젝트 복사에 실패했습니다. 서버 연결을 확인해주세요.'
+      setError(errorMessage)
+      alert(errorMessage)
     } finally {
       setLoading(false)
     }

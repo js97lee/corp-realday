@@ -68,8 +68,8 @@ function Home() {
         <div className="mb-4 md:mb-6">
           <div className="mb-2">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-relaxed tracking-tight font-outfit mb-2">
-              FROM VISION<br />
-              TO INFINITE CREATION
+              From Vision<br />
+              To Infinite Creation
             </h1>
           </div>
         </div>
@@ -97,10 +97,10 @@ function Home() {
                   to={`/project/${projectSlug}`}
                   className="group block"
                 >
-                  <div className="h-full flex flex-col transition-all duration-500 ease-out overflow-hidden group-hover:[clip-path:polygon(0%_0%,100%_0%,100%_85%,95%_100%,0%_100%)]">
+                  <div className="h-full flex flex-col transition-all duration-500 ease-out overflow-hidden group-hover:rounded-tl-[200px] group-hover:rounded-br-[200px]">
                     {/* Image */}
                     {project.image && (
-                      <div className="w-full aspect-[4/3] mb-4 md:mb-6 overflow-hidden bg-gray-100 transition-all duration-500 group-hover:[clip-path:polygon(0%_0%,100%_0%,100%_90%,95%_100%,0%_100%)]">
+                      <div className="w-full aspect-video mb-4 md:mb-6 overflow-hidden bg-gray-100 transition-all duration-500 group-hover:rounded-tl-[200px] group-hover:rounded-br-[200px]">
                         <img
                           src={project.image}
                           alt={project.title}
