@@ -499,3 +499,137 @@ export const deletePortfolioItem = async (id) => {
   }
 }
 
+// 재무 내역 목록 조회 API
+export const fetchFinances = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/finances`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 재무 내역 추가 API
+export const addFinance = async (financeData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/finances`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(financeData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 재무 내역 수정 API
+export const updateFinance = async (id, financeData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/finances/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(financeData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 재무 내역 삭제 API
+export const deleteFinance = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/finances/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 이메일 전송 API (최고관리자 전용)
+export const sendEmail = async (emailData) => {
+  try {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      throw new Error('인증이 필요합니다.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(emailData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+

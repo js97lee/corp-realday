@@ -142,6 +142,21 @@ async function initDatabase() {
       )
     `
 
+    // finances 테이블 생성 (재무 관리)
+    await sql`
+      CREATE TABLE IF NOT EXISTS finances (
+        id SERIAL PRIMARY KEY,
+        date DATE NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        description TEXT,
+        amount DECIMAL(15, 2) NOT NULL,
+        type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
+        payment_method VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sql`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
@@ -980,6 +995,164 @@ app.delete('/api/portfolio-items/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Portfolio item delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 재무 내역 목록 조회
+app.get('/api/finances', async (req, res) => {
+  try {
+    const finances = await sql`
+      SELECT id, date, category, description, amount, type, payment_method, created_at, updated_at
+      FROM finances
+      ORDER BY date DESC, created_at DESC
+    `
+    
+    res.json({
+      success: true,
+      finances: finances.map(f => ({
+        ...f,
+        amount: parseFloat(f.amount)
+      }))
+    })
+  } catch (error) {
+    console.error('Finances fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 재무 내역 추가
+app.post('/api/finances', async (req, res) => {
+  try {
+    const { date, category, description, amount, type, paymentMethod } = req.body
+
+    if (!date || !category || !amount || !type) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '날짜, 카테고리, 금액, 유형을 모두 입력해주세요.' 
+      })
+    }
+
+    if (type !== 'income' && type !== 'expense') {
+      return res.status(400).json({ 
+        success: false, 
+        message: '유형은 income 또는 expense여야 합니다.' 
+      })
+    }
+
+    const result = await sql`
+      INSERT INTO finances (date, category, description, amount, type, payment_method)
+      VALUES (${date}, ${category}, ${description || null}, ${amount}, ${type}, ${paymentMethod || null})
+      RETURNING *
+    `
+
+    res.json({
+      success: true,
+      message: '재무 내역이 추가되었습니다.',
+      finance: {
+        ...result[0],
+        amount: parseFloat(result[0].amount)
+      }
+    })
+
+  } catch (error) {
+    console.error('Finance add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 재무 내역 수정
+app.put('/api/finances/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { date, category, description, amount, type, paymentMethod } = req.body
+
+    if (!date || !category || !amount || !type) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '날짜, 카테고리, 금액, 유형을 모두 입력해주세요.' 
+      })
+    }
+
+    if (type !== 'income' && type !== 'expense') {
+      return res.status(400).json({ 
+        success: false, 
+        message: '유형은 income 또는 expense여야 합니다.' 
+      })
+    }
+
+    const result = await sql`
+      UPDATE finances
+      SET date = ${date},
+          category = ${category},
+          description = ${description || null},
+          amount = ${amount},
+          type = ${type},
+          payment_method = ${paymentMethod || null},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING *
+    `
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '재무 내역을 찾을 수 없습니다.' 
+      })
+    }
+
+    res.json({
+      success: true,
+      message: '재무 내역이 수정되었습니다.',
+      finance: {
+        ...result[0],
+        amount: parseFloat(result[0].amount)
+      }
+    })
+
+  } catch (error) {
+    console.error('Finance update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 재무 내역 삭제
+app.delete('/api/finances/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const finance = await sql`
+      SELECT * FROM finances WHERE id = ${id}
+    `
+    
+    if (finance.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '재무 내역을 찾을 수 없습니다.' 
+      })
+    }
+
+    await sql`DELETE FROM finances WHERE id = ${id}`
+
+    res.json({
+      success: true,
+      message: '재무 내역이 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Finance delete error:', error)
     res.status(500).json({ 
       success: false, 
       message: '서버 오류가 발생했습니다.' 

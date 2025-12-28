@@ -6,11 +6,24 @@ import AdminFinance from './AdminFinance'
 import AdminTasks from './AdminTasks'
 import AdminMembers from './AdminMembers'
 import AdminPortfolio from './AdminPortfolio'
+import AdminEmailComposer from '../components/AdminEmailComposer'
 import { getUserRole, USER_ROLES, isSuperAdmin, isManagerOrAbove } from '../utils/auth'
+import { fetchContacts, fetchProjects, fetchMembers, fetchFinances } from '../utils/api'
 
 function AdminDashboard() {
   const [user, setUser] = useState(null)
   const [activeMenu, setActiveMenu] = useState('dashboard')
+  const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false)
+  const [stats, setStats] = useState({
+    contactsCount: 0,
+    projectsCount: 0,
+    membersCount: 0,
+    totalIncome: 0,
+    totalExpense: 0,
+    balance: 0,
+  })
+  const [recentContacts, setRecentContacts] = useState([])
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -32,6 +45,69 @@ function AdminDashboard() {
       navigate('/admin')
     }
   }, [navigate])
+
+  // 대시보드 데이터 로드
+  useEffect(() => {
+    if (user) {
+      loadDashboardData()
+    }
+  }, [user])
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // 병렬로 데이터 로드
+      const [contactsRes, projectsRes, membersRes, financesRes] = await Promise.allSettled([
+        fetchContacts(),
+        fetchProjects(),
+        fetchMembers(),
+        isSuperAdmin() ? fetchFinances() : Promise.resolve({ success: false })
+      ])
+
+      // 문의 데이터
+      if (contactsRes.status === 'fulfilled' && contactsRes.value.success) {
+        const contacts = contactsRes.value.contacts || []
+        setStats(prev => ({ ...prev, contactsCount: contacts.length }))
+        setRecentContacts(contacts.slice(0, 5)) // 최근 5개
+      }
+
+      // 프로젝트 데이터
+      if (projectsRes.status === 'fulfilled' && projectsRes.value.success) {
+        const projects = projectsRes.value.projects || []
+        setStats(prev => ({ ...prev, projectsCount: projects.length }))
+      }
+
+      // 멤버 데이터
+      if (membersRes.status === 'fulfilled' && membersRes.value.success) {
+        const members = membersRes.value.members || []
+        setStats(prev => ({ ...prev, membersCount: members.length }))
+      }
+
+      // 재무 데이터 (최고관리자만)
+      if (financesRes.status === 'fulfilled' && financesRes.value.success) {
+        const finances = financesRes.value.finances || []
+        const totalIncome = finances
+          .filter(f => f.type === 'income')
+          .reduce((sum, f) => sum + f.amount, 0)
+        const totalExpense = finances
+          .filter(f => f.type === 'expense')
+          .reduce((sum, f) => sum + f.amount, 0)
+        const balance = totalIncome - totalExpense
+        
+        setStats(prev => ({
+          ...prev,
+          totalIncome,
+          totalExpense,
+          balance
+        }))
+      }
+    } catch (error) {
+      console.error('대시보드 데이터 로드 실패:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('authToken')
@@ -67,7 +143,7 @@ function AdminDashboard() {
   })
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#D9D9D9' }}>
+    <div className="min-h-screen flex bg-gray-50">
       {/* Left Navigation Bar (LNB) */}
       <aside className="w-64 bg-black border-r border-gray-800 flex-shrink-0">
         <div className="h-full flex flex-col">
@@ -138,13 +214,37 @@ function AdminDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#D9D9D9' }}>
+      <div className="flex-1 flex flex-col bg-gray-50">
         {/* Top Header */}
-        <header className="bg-white border-b border-gray-200 px-3 md:px-4 py-3">
-          <div className="max-w-[1480px] mx-auto w-full flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-black">
-              {menuItems.find(item => item.id === activeMenu)?.label || '대시보드'}
-            </h2>
+        <header className="bg-white px-3 md:px-4 py-3">
+          <div className="max-w-[1480px] mx-auto w-full">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold text-black">
+                {menuItems.find(item => item.id === activeMenu)?.label || '대시보드'}
+              </h2>
+              {isSuperAdmin() && (
+                <button
+                  onClick={() => setIsEmailComposerOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
+                >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>메일 쓰기</span>
+              </button>
+            )}
+            </div>
+            <div className="h-px bg-black"></div>
           </div>
         </header>
 
@@ -162,12 +262,14 @@ function AdminDashboard() {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className={`grid grid-cols-1 gap-4 mb-6 ${isSuperAdmin() ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <div className="bg-white rounded-lg shadow p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">전체 문의</p>
-                      <p className="text-3xl font-bold">0</p>
+                      <p className="text-3xl font-bold">
+                        {loading ? '...' : stats.contactsCount}
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                       <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +283,9 @@ function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">프로젝트</p>
-                      <p className="text-3xl font-bold">0</p>
+                      <p className="text-3xl font-bold">
+                        {loading ? '...' : stats.projectsCount}
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                       <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,7 +299,9 @@ function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">사용자</p>
-                      <p className="text-3xl font-bold">1</p>
+                      <p className="text-3xl font-bold">
+                        {loading ? '...' : stats.membersCount}
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                       <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,6 +310,28 @@ function AdminDashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* 재무 통계 (최고관리자만) */}
+                {isSuperAdmin() && (
+                  <div className="bg-white rounded-lg shadow p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">잔액</p>
+                        <p className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {loading ? '...' : `${stats.balance >= 0 ? '+' : ''}${stats.balance.toLocaleString()}`}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          수익: {stats.totalIncome.toLocaleString()} / 지출: {stats.totalExpense.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Recent Contacts */}
@@ -212,9 +340,35 @@ function AdminDashboard() {
                   <h2 className="text-lg font-semibold">최근 문의</h2>
                 </div>
                 <div className="p-4">
-                  <p className="text-gray-500 text-center py-8">
-                    아직 문의가 없습니다.
-                  </p>
+                  {loading ? (
+                    <p className="text-gray-500 text-center py-8">로딩 중...</p>
+                  ) : recentContacts.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">
+                      아직 문의가 없습니다.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {recentContacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{contact.name}</p>
+                              <p className="text-sm text-gray-600 mt-1">{contact.email}</p>
+                              <p className="text-sm text-gray-500 mt-2 line-clamp-2">
+                                {contact.message}
+                              </p>
+                            </div>
+                            <span className="text-xs text-gray-400 ml-4">
+                              {new Date(contact.created_at).toLocaleDateString('ko-KR')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -229,6 +383,12 @@ function AdminDashboard() {
           </div>
         </main>
       </div>
+      
+      {/* Email Composer Modal */}
+      <AdminEmailComposer
+        isOpen={isEmailComposerOpen}
+        onClose={() => setIsEmailComposerOpen(false)}
+      />
     </div>
   )
 }

@@ -45,10 +45,10 @@ function Navigation() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`text-xs md:text-sm font-medium transition-colors ${
+                  className={`text-xs md:text-sm transition-colors ${
                     isActive(item.path)
-                      ? 'text-black'
-                      : 'text-gray-600 hover:text-black'
+                      ? 'text-black font-bold'
+                      : 'text-gray-600 hover:text-black font-medium'
                   }`}
                 >
                   {item.label}
@@ -84,16 +84,16 @@ function Navigation() {
         {/* 모바일 메뉴 */}
         {isOpen && (
           <div className="md:hidden mt-4 pb-2 border-t border-gray-300 pt-4">
-            <div className="flex flex-col space-y-3">
+            <div className="flex flex-col space-y-3 px-6 md:px-12">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-sm transition-colors ${
                     isActive(item.path)
-                      ? 'text-black'
-                      : 'text-gray-600 hover:text-black'
+                      ? 'text-black font-bold'
+                      : 'text-gray-600 hover:text-black font-medium'
                   }`}
                 >
                   {item.label}

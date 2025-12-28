@@ -636,35 +636,39 @@ function AdminTasks() {
                 </select>
               </div>
             )}
-              <div className="flex gap-4 pt-4 border-t border-gray-200">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? '저장 중...' : '저장'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAdding(false)
-                    setSelectedTask(null)
-                    setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
-                  }}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
-                >
-                  취소
-                </button>
-                {selectedTask && (
+              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                <div className="flex gap-4">
+                  {selectedTask && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(selectedTask.id)}
+                      disabled={loading}
+                      className="text-red-600 hover:text-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      삭제
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? '저장 중...' : '저장'}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(selectedTask.id)}
-                    disabled={loading}
-                    className="px-6 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      setIsAdding(false)
+                      setSelectedTask(null)
+                      setFormData({ title: '', description: '', assigneeIds: [], assigneeNames: [], priority: 'medium', status: 'backlog', projectId: '', startDate: '', endDate: '' })
+                    }}
+                    className="px-6 py-2 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors rounded-lg"
                   >
-                    삭제
+                    취소
                   </button>
-                )}
+                </div>
               </div>
             </form>
           </div>

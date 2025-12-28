@@ -147,6 +147,21 @@ export async function initDatabase() {
       )
     `
 
+    // finances 테이블 생성 (재무 관리)
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS finances (
+        id SERIAL PRIMARY KEY,
+        date DATE NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        description TEXT,
+        amount DECIMAL(15, 2) NOT NULL,
+        type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
+        payment_method VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sqlFunc`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}

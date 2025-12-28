@@ -2,8 +2,8 @@ function About() {
   return (
     <div className="pt-16 md:pt-20">
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-12 md:py-20">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black mb-6 md:mb-8">
             ABOUT
           </h1>
@@ -23,8 +23,8 @@ function About() {
       </section>
 
       {/* Values Section */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-12 md:py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center">
             우리의 가치
           </h2>
@@ -62,8 +62,8 @@ function About() {
       </section>
 
       {/* Team Section */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-12 md:py-20">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8">
               함께하는 사람들

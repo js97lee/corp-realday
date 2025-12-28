@@ -46,8 +46,8 @@ function Contact() {
   return (
     <div className="pt-16 md:pt-20">
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-12 md:py-20">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black mb-6 md:mb-8">
             CONTACT
           </h1>
@@ -58,8 +58,9 @@ function Contact() {
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
+      <section className="py-12 md:py-20">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
             <div>
               <label htmlFor="name" className="block text-sm md:text-base font-medium text-gray-700 mb-2">
@@ -129,12 +130,13 @@ function Contact() {
               {loading ? '전송 중...' : '전송하기'}
             </button>
           </form>
+          </div>
         </div>
       </section>
 
       {/* Contact Info Section */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-12 md:py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
             <div>
               <div className="w-12 h-12 md:w-16 md:h-16 bg-black rounded-full mx-auto mb-4 flex items-center justify-center">
