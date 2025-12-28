@@ -61,14 +61,53 @@ function About() {
 
       {/* Team Section */}
       <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8">
-            함께하는 사람들
-          </h2>
-          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
-            REAL DAY는 다양한 전문성을 가진 팀원들이 함께 모여 
-            최고의 결과물을 만들어냅니다.
-          </p>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 md:mb-8">
+              함께하는 사람들
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
+              REAL DAY는 다양한 전문성을 가진 팀원들이 함께 모여 
+              최고의 결과물을 만들어냅니다.
+            </p>
+          </div>
+          
+          {/* Team Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+            <div className="text-center">
+              <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-full mx-auto mb-4 md:mb-6 flex items-center justify-center">
+                <svg className="w-12 h-12 md:w-16 md:h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h3 className="text-xl md:text-2xl font-semibold mb-2">팀 멤버</h3>
+              <p className="text-gray-600 text-sm md:text-base">
+                전문성과 열정을 가진 팀원들
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-full mx-auto mb-4 md:mb-6 flex items-center justify-center">
+                <svg className="w-12 h-12 md:w-16 md:h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl md:text-2xl font-semibold mb-2">협업</h3>
+              <p className="text-gray-600 text-sm md:text-base">
+                효율적인 협업 시스템
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-full mx-auto mb-4 md:mb-6 flex items-center justify-center">
+                <svg className="w-12 h-12 md:w-16 md:h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              </div>
+              <h3 className="text-xl md:text-2xl font-semibold mb-2">품질</h3>
+              <p className="text-gray-600 text-sm md:text-base">
+                최고 품질의 결과물
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -76,6 +115,7 @@ function About() {
 }
 
 export default About
+
 
 
 

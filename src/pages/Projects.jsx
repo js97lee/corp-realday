@@ -46,23 +46,30 @@ function Projects() {
       <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {loading ? (
-            <div className="text-center py-12 text-gray-500">
-              프로젝트를 불러오는 중...
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+              <p className="mt-4 text-gray-500">프로젝트를 불러오는 중...</p>
             </div>
           ) : error ? (
-            <div className="text-center py-12 text-red-500">
-              {error}
+            <div className="text-center py-12">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg inline-block">
+                {error}
+              </div>
             </div>
           ) : projects.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              등록된 프로젝트가 없습니다.
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <p className="text-lg">등록된 프로젝트가 없습니다.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-              {projects.map((project) => (
+              {projects.map((project, index) => (
                 <div
                   key={project.id}
-                  className="group cursor-pointer transition-transform hover:scale-[1.02]"
+                  className="group cursor-pointer transition-all hover:scale-[1.02] animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="bg-gray-100 aspect-video mb-4 md:mb-6 overflow-hidden rounded-lg">
                     {project.image ? (
