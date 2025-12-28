@@ -40,10 +40,22 @@ const EventModal = ({ isOpen, onClose, event, selectedDate, onSave, onDelete }) 
       const invitedIds = event.invitations 
         ? event.invitations.map(inv => inv.user_id)
         : []
+      // event.date가 이미 YYYY-MM-DD 형식 문자열이면 그대로 사용, 아니면 변환
+      let eventDateStr = ''
+      if (event.date) {
+        if (typeof event.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(event.date)) {
+          // 이미 YYYY-MM-DD 형식이면 그대로 사용
+          eventDateStr = event.date
+        } else {
+          // Date 객체나 다른 형식이면 변환
+          eventDateStr = formatDateShort(new Date(event.date))
+        }
+      }
+      
       setFormData({
         title: event.title || '',
         description: event.description || '',
-        date: event.date ? formatDateShort(new Date(event.date)) : '',
+        date: eventDateStr,
         startTime: event.start_time || '',
         endTime: event.end_time || '',
         color: event.color || 'blue',

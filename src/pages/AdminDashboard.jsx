@@ -460,12 +460,16 @@ function AdminDashboard() {
                         setShowAnnouncementModal(true)
                       }}
                       className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+                      title="공지사항 작성/수정"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                       {announcement ? '수정하기' : '공지 작성하기'}
                     </button>
+                  )}
+                  {!isSuperAdmin() && (
+                    <span className="text-xs text-gray-400">최고관리자만 작성 가능</span>
                   )}
                 </div>
                 <div className="border-t border-gray-200 pt-4">

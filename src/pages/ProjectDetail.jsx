@@ -12,7 +12,8 @@ function ProjectDetail() {
     const loadProject = async () => {
       try {
         setLoading(true)
-        const response = await fetchProjects(false, true) // featured=true: 랜딩페이지용
+        // 모든 프로젝트에서 찾기 (visible=false로 모든 프로젝트 조회)
+        const response = await fetchProjects(false)
         if (response.success) {
           // 프로젝트 이름을 URL-friendly slug로 변환하여 매칭
           const foundProject = response.projects?.find(proj => {
@@ -65,12 +66,23 @@ function ProjectDetail() {
     )
   }
 
+  // 미디어 배열 파싱 (JSON 문자열일 수 있음)
+  const mediaArray = project.media 
+    ? (typeof project.media === 'string' ? JSON.parse(project.media) : project.media)
+    : []
+
+  // 썸네일 이미지도 미디어 배열에 포함
+  const allMedia = project.image 
+    ? [{ type: 'image', url: project.image }, ...mediaArray]
+    : mediaArray
+
   return (
     <div className="min-h-screen bg-white pt-20 md:pt-24">
       <section className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        {/* 뒤로가기 버튼 */}
         <div className="mb-8 md:mb-12">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(-1)}
             className="text-gray-600 hover:text-black transition-colors mb-8 inline-flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,27 +92,87 @@ function ProjectDetail() {
           </button>
         </div>
 
+        {/* 프로젝트 헤더 */}
         <div className="mb-16 md:mb-24">
-          <h1 className="text-7xl md:text-8xl lg:text-9xl font-bold text-black leading-[0.9] tracking-tight mb-6 md:mb-8">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black leading-tight tracking-tight mb-6 md:mb-8">
             {project.title}
           </h1>
           {project.description && (
-            <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-3xl leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl leading-relaxed">
               {project.description}
             </p>
           )}
+          {project.category && (
+            <div className="mt-4">
+              <span className="text-sm md:text-base text-gray-500 uppercase tracking-wide">
+                {project.category}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* 추가 콘텐츠 영역 - 필요시 확장 가능 */}
-        <div className="border-t border-black pt-16 md:pt-24">
-          <div className="prose prose-lg max-w-none">
-            {/* 여기에 프로젝트 상세 내용을 추가할 수 있습니다 */}
+        {/* 미디어 갤러리 - Behance 스타일 */}
+        {allMedia.length > 0 ? (
+          <div className="space-y-8 md:space-y-12">
+            {allMedia.map((item, index) => (
+              <div key={index} className="w-full">
+                {item.type === 'video' ? (
+                  // 비디오
+                  <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+                    {item.url.includes('youtube.com') || item.url.includes('youtu.be') ? (
+                      // YouTube 비디오
+                      <iframe
+                        src={item.url.includes('youtu.be') 
+                          ? `https://www.youtube.com/embed/${item.url.split('/').pop()}`
+                          : item.url.includes('embed') 
+                            ? item.url 
+                            : `https://www.youtube.com/embed/${item.url.split('v=')[1]?.split('&')[0]}`
+                        }
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={project.title}
+                      />
+                    ) : (
+                      // 일반 비디오
+                      <video
+                        src={item.url}
+                        controls
+                        className="w-full h-full object-contain"
+                      >
+                        브라우저가 비디오 태그를 지원하지 않습니다.
+                      </video>
+                    )}
+                  </div>
+                ) : (
+                  // 이미지
+                  <div className="w-full">
+                    <img
+                      src={item.url}
+                      alt={`${project.title} - ${index + 1}`}
+                      className="w-full h-auto object-contain rounded-lg"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+        ) : (
+          // 미디어가 없을 때 썸네일 이미지 표시
+          project.image && (
+            <div className="w-full">
+              <img
+                src={project.image}
+                alt={project.title}
+                className="w-full h-auto object-contain rounded-lg"
+              />
+            </div>
+          )
+        )}
       </section>
     </div>
   )
 }
 
 export default ProjectDetail
-

@@ -7,12 +7,12 @@ function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 md:gap-0">
           {/* Left Side - Logo */}
           <div className="flex flex-col gap-6 md:gap-8">
-            {/* Logo - 200% 크기 */}
+            {/* Logo - 20px 높이 */}
             <div>
               <img 
                 src="/logo-white.svg" 
                 alt="REALDAY Logo" 
-                className="h-12 md:h-16 w-auto scale-[2]"
+                className="h-5 w-auto"
               />
             </div>
             
@@ -25,7 +25,7 @@ function Footer() {
             </a>
           </div>
           
-          {/* Right Side - Contact Info & Copyright */}
+          {/* Right Side - Contact Info, Social Media & Copyright */}
           <div className="flex flex-col gap-6 md:gap-8 items-start md:items-end">
             {/* Contact Information */}
             <div className="flex flex-col gap-2 items-start md:items-end">
@@ -49,15 +49,9 @@ function Footer() {
               </a>
             </div>
             
-            {/* Copyright */}
-            <p className="text-gray-300 text-sm md:text-base">
-              ©2025 REALDAY Inc.
-            </p>
-          </div>
-
-          {/* Right Side - Social Media Links */}
-          <div className="flex gap-6 md:gap-8 items-center">
-            <a 
+            {/* Social Media Links */}
+            <div className="flex gap-6 md:gap-8 items-center">
+              <a 
               href="https://www.instagram.com/realday.d" 
               target="_blank" 
               rel="noopener noreferrer"
@@ -85,6 +79,12 @@ function Footer() {
                 <line x1="20" y1="4" x2="24" y2="4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
             </a>
+            </div>
+            
+            {/* Copyright */}
+            <p className="text-gray-300 text-sm md:text-base">
+              ©2025 REALDAY Inc.
+            </p>
           </div>
         </div>
       </div>

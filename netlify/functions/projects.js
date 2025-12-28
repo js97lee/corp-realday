@@ -18,7 +18,7 @@ export const handler = async (event, context) => {
         if (featured === 'true') {
           // 랜딩페이지용: featured 프로젝트만
           projects = await sqlFunc`
-            SELECT id, title, description, category, image, created_at
+            SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
             FROM projects
             WHERE is_featured = true AND is_visible = true
             ORDER BY created_at DESC
@@ -26,7 +26,7 @@ export const handler = async (event, context) => {
         } else if (visible === 'true') {
           // Projects 페이지용: 노출된 프로젝트만
           projects = await sqlFunc`
-            SELECT id, title, description, category, image, created_at
+            SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
             FROM projects
             WHERE is_visible = true
             ORDER BY created_at DESC
@@ -34,7 +34,7 @@ export const handler = async (event, context) => {
         } else {
           // 관리자용: 모든 프로젝트
           projects = await sqlFunc`
-            SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+            SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
             FROM projects
             ORDER BY created_at DESC
           `
@@ -57,21 +57,21 @@ export const handler = async (event, context) => {
 
           if (featured === 'true') {
             projects = await sqlFunc`
-              SELECT id, title, description, category, image, created_at
+              SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
               FROM projects
               WHERE is_featured = true AND is_visible = true
               ORDER BY created_at DESC
             `
           } else if (visible === 'true') {
             projects = await sqlFunc`
-              SELECT id, title, description, category, image, created_at
+              SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
               FROM projects
               WHERE is_visible = true
               ORDER BY created_at DESC
             `
           } else {
             projects = await sqlFunc`
-              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
               FROM projects
               ORDER BY created_at DESC
             `
@@ -94,7 +94,7 @@ export const handler = async (event, context) => {
 
     // POST: 프로젝트 추가
     if (event.httpMethod === 'POST') {
-      const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate, media } = JSON.parse(event.body || '{}')
 
       if (!title) {
         return {
@@ -107,11 +107,33 @@ export const handler = async (event, context) => {
         }
       }
 
-      const result = await sqlFunc`
-        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date)
-        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
-        RETURNING *
-      `
+      let mediaJson = '[]'
+      try {
+        mediaJson = media ? JSON.stringify(media) : '[]'
+      } catch (e) {
+        console.error('Media JSON 변환 실패:', e)
+      }
+
+      // media 컬럼이 없을 수 있으므로 안전하게 처리
+      let result
+      try {
+        result = await sqlFunc`
+          INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, media)
+          VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null}, ${mediaJson}::jsonb)
+          RETURNING *
+        `
+      } catch (e) {
+        // media 컬럼이 없으면 media 없이 INSERT
+        if (e.message && e.message.includes('media')) {
+          result = await sqlFunc`
+            INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date)
+            VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
+            RETURNING *
+          `
+        } else {
+          throw e
+        }
+      }
 
       return {
         statusCode: 200,
@@ -138,7 +160,7 @@ export const handler = async (event, context) => {
         id = event.queryStringParameters.id
       }
       
-      const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate, media } = JSON.parse(event.body || '{}')
 
       if (!id) {
         return {
@@ -199,6 +221,19 @@ export const handler = async (event, context) => {
       }
       if (endDate !== undefined) {
         await sqlFunc`UPDATE projects SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`
+      }
+      if (media !== undefined) {
+        try {
+          const mediaJson = media ? JSON.stringify(media) : '[]'
+          await sqlFunc`UPDATE projects SET media = ${mediaJson}::jsonb WHERE id = ${parseInt(id)}`
+        } catch (e) {
+          // media 컬럼이 없으면 무시
+          if (e.message && e.message.includes('media')) {
+            console.warn('media 컬럼이 없어 업데이트를 건너뜁니다.')
+          } else {
+            throw e
+          }
+        }
       }
       
       await sqlFunc`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`

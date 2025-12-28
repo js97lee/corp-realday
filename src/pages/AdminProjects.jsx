@@ -25,7 +25,10 @@ function AdminProjects() {
     projectKey: 'APP',
     startDate: '',
     endDate: '',
+    media: [],
   })
+  const [newMediaUrl, setNewMediaUrl] = useState('')
+  const [newMediaType, setNewMediaType] = useState('image')
   const [relatedTasks, setRelatedTasks] = useState([])
   const navigate = useNavigate()
 
@@ -58,6 +61,7 @@ function AdminProjects() {
           projectKey: p.project_key || 'APP',
           startDate: p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '',
           endDate: p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '',
+          media: p.media ? (typeof p.media === 'string' ? JSON.parse(p.media) : p.media) : [],
           createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         }))
         
@@ -105,6 +109,7 @@ function AdminProjects() {
       projectKey: project.projectKey || 'APP',
       startDate: project.startDate || '',
       endDate: project.endDate || '',
+      media: project.media || [],
     })
     setIsEditing(true)
     
@@ -145,6 +150,7 @@ function AdminProjects() {
           projectKey: formData.projectKey || 'APP',
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
+          media: formData.media || [],
         }
         
         const response = await updateProject(selectedProject.id, updateData)
@@ -154,7 +160,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '', media: [] })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -172,6 +178,7 @@ function AdminProjects() {
           projectKey: formData.projectKey || 'APP',
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
+          media: formData.media || [],
         })
         if (response.success) {
           await loadProjects() // 목록 다시 불러오기
@@ -179,7 +186,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '', media: [] })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -305,7 +312,7 @@ function AdminProjects() {
           <button
             onClick={() => {
               setSelectedProject(null)
-              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '' })
+              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', projectKey: 'APP', startDate: '', endDate: '', media: [] })
               setIsEditing(true)
             }}
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
@@ -523,6 +530,94 @@ function AdminProjects() {
                         이미지 제거
                       </button>
                     )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 미디어 갤러리 (이미지/비디오) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                미디어 갤러리 (이미지/비디오)
+              </label>
+              <div className="space-y-4">
+                {/* 미디어 추가 입력 */}
+                <div className="flex gap-2">
+                  <select
+                    value={newMediaType}
+                    onChange={(e) => setNewMediaType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                  >
+                    <option value="image">이미지</option>
+                    <option value="video">비디오</option>
+                  </select>
+                  <input
+                    type="url"
+                    value={newMediaUrl}
+                    onChange={(e) => setNewMediaUrl(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                    placeholder={newMediaType === 'image' ? '이미지 URL 입력' : '비디오 URL 입력 (YouTube 또는 직접 링크)'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newMediaUrl.trim()) {
+                        setFormData({
+                          ...formData,
+                          media: [...(formData.media || []), { type: newMediaType, url: newMediaUrl.trim() }]
+                        })
+                        setNewMediaUrl('')
+                      }
+                    }}
+                    disabled={!newMediaUrl.trim()}
+                    className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    추가
+                  </button>
+                </div>
+
+                {/* 미디어 목록 */}
+                {formData.media && formData.media.length > 0 && (
+                  <div className="space-y-3 border border-gray-200 rounded-lg p-4">
+                    {formData.media.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-medium px-2 py-1 bg-gray-200 rounded">
+                              {item.type === 'image' ? '이미지' : '비디오'}
+                            </span>
+                            <span className="text-xs text-gray-600 truncate">{item.url}</span>
+                          </div>
+                          {item.type === 'image' && (
+                            <img
+                              src={item.url}
+                              alt={`미디어 ${index + 1}`}
+                              className="w-full h-32 object-cover rounded border border-gray-300"
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                              }}
+                            />
+                          )}
+                          {item.type === 'video' && (
+                            <div className="w-full h-32 bg-gray-200 rounded border border-gray-300 flex items-center justify-center">
+                              <span className="text-xs text-gray-500">비디오 미리보기</span>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              media: formData.media.filter((_, i) => i !== index)
+                            })
+                          }}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 hover:bg-red-200 transition-colors rounded"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

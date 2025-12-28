@@ -117,6 +117,11 @@ async function initDatabase() {
     try {
       await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS end_date DATE`
     } catch (e) {}
+    
+    // media 컬럼 추가 (JSON 배열로 이미지/비디오 URL 저장)
+    try {
+      await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS media JSONB DEFAULT '[]'::jsonb`
+    } catch (e) {}
 
     // tasks 테이블 생성
     await sql`
@@ -694,7 +699,7 @@ app.get('/api/projects', async (req, res) => {
     if (featured === 'true') {
       // 랜딩페이지용: featured 프로젝트만
       projects = await sql`
-        SELECT id, title, description, category, image, created_at
+        SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
         FROM projects
         WHERE is_featured = true AND is_visible = true
         ORDER BY created_at DESC
@@ -702,7 +707,7 @@ app.get('/api/projects', async (req, res) => {
     } else if (visible === 'true') {
       // Projects 페이지용: 노출된 프로젝트만
       projects = await sql`
-        SELECT id, title, description, category, image, created_at
+        SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
         FROM projects
         WHERE is_visible = true
         ORDER BY created_at DESC
@@ -710,7 +715,7 @@ app.get('/api/projects', async (req, res) => {
     } else {
       // 관리자용: 모든 프로젝트
       projects = await sql`
-        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
         FROM projects
         ORDER BY created_at DESC
       `
@@ -732,7 +737,7 @@ app.get('/api/projects', async (req, res) => {
 // 프로젝트 추가
 app.post('/api/projects', async (req, res) => {
   try {
-    const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate, media } = req.body
 
     if (!title) {
       return res.status(400).json({ 
@@ -741,11 +746,33 @@ app.post('/api/projects', async (req, res) => {
       })
     }
 
-    const result = await sql`
-      INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date)
-      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
-      RETURNING *
-    `
+    let mediaJson = '[]'
+    try {
+      mediaJson = media ? JSON.stringify(media) : '[]'
+    } catch (e) {
+      console.error('Media JSON 변환 실패:', e)
+    }
+
+    // media 컬럼이 없을 수 있으므로 안전하게 처리
+    let result
+    try {
+      result = await sql`
+        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, media)
+        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null}, ${mediaJson}::jsonb)
+        RETURNING *
+      `
+    } catch (e) {
+      // media 컬럼이 없으면 media 없이 INSERT
+      if (e.message && e.message.includes('media')) {
+        result = await sql`
+          INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date)
+          VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
+          RETURNING *
+        `
+      } else {
+        throw e
+      }
+    }
 
     res.json({
       success: true,
@@ -768,7 +795,7 @@ app.post('/api/projects', async (req, res) => {
 app.put('/api/projects/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate, media } = req.body
 
     const existing = await sql`
       SELECT * FROM projects WHERE id = ${id}
@@ -808,6 +835,19 @@ app.put('/api/projects/:id', async (req, res) => {
     }
     if (projectKey !== undefined) {
       await sql`UPDATE projects SET project_key = ${projectKey || 'APP'} WHERE id = ${id}`
+    }
+    if (media !== undefined) {
+      try {
+        const mediaJson = media ? JSON.stringify(media) : '[]'
+        await sql`UPDATE projects SET media = ${mediaJson}::jsonb WHERE id = ${id}`
+      } catch (e) {
+        // media 컬럼이 없으면 무시
+        if (e.message && e.message.includes('media')) {
+          console.warn('media 컬럼이 없어 업데이트를 건너뜁니다.')
+        } else {
+          throw e
+        }
+      }
     }
     
     await sql`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`

@@ -124,6 +124,11 @@ export async function initDatabase() {
     try {
       await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS end_date DATE`
     } catch (e) {}
+    
+    // media 컬럼 추가 (JSON 배열로 이미지/비디오 URL 저장)
+    try {
+      await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS media JSONB DEFAULT '[]'::jsonb`
+    } catch (e) {}
 
     // tasks 테이블 생성
     await sqlFunc`

@@ -65,9 +65,9 @@ function Home() {
     <div className="min-h-screen bg-white pt-10 md:pt-12">
       {/* Hero Section - 디자인 에이전시 스타일 */}
       <section className="max-w-7xl mx-auto px-6 md:px-12 py-8 md:py-12">
-        <div className="mb-4 md:mb-6">
+        <div className="mb-4 md:mb-6 pt-5">
           <div className="mb-2">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-relaxed tracking-tight font-outfit mb-2">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-loose tracking-tight font-outfit mb-2">
               From Vision<br />
               To Infinite Creation
             </h1>
@@ -97,7 +97,7 @@ function Home() {
                   to={`/project/${projectSlug}`}
                   className="group block"
                 >
-                  <div className="h-full flex flex-col transition-all duration-500 ease-out overflow-hidden group-hover:rounded-tl-[200px] group-hover:rounded-br-[200px]">
+                  <div className="h-full flex flex-col transition-all duration-500 ease-out overflow-hidden">
                     {/* Image */}
                     {project.image && (
                       <div className="w-full aspect-video mb-4 md:mb-6 overflow-hidden bg-gray-100 transition-all duration-500 group-hover:rounded-tl-[200px] group-hover:rounded-br-[200px]">
