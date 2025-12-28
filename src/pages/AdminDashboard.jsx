@@ -6,6 +6,7 @@ import AdminFinance from './AdminFinance'
 import AdminTasks from './AdminTasks'
 import AdminMembers from './AdminMembers'
 import AdminPortfolio from './AdminPortfolio'
+import LunchRoulette from '../components/LunchRoulette'
 import { getUserRole, USER_ROLES, isSuperAdmin, isManagerOrAbove } from '../utils/auth'
 import { fetchContacts, fetchProjects, fetchMembers, fetchFinances } from '../utils/api'
 
@@ -22,6 +23,8 @@ function AdminDashboard() {
   })
   const [recentContacts, setRecentContacts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [collapsedCategories, setCollapsedCategories] = useState({}) // 카테고리 접기/펼치기 상태
+  const [showLunchRoulette, setShowLunchRoulette] = useState(false) // 점심 메뉴 룰렛 팝업
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -187,52 +190,71 @@ function AdminDashboard() {
           {/* Navigation Menu */}
           <nav className="flex-1 px-3 py-3 overflow-y-auto">
             <div className="space-y-4">
-              {filteredCategories.map((category, categoryIndex) => (
-                <div key={category.category}>
-                  {/* 카테고리 제목 */}
-                  <div className="px-3 mb-1.5">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      {category.category}
-                    </h3>
+              {filteredCategories.map((category, categoryIndex) => {
+                const isCollapsed = collapsedCategories[category.category] === false
+                return (
+                  <div key={category.category}>
+                    {/* 카테고리 제목 (클릭 가능) */}
+                    <button
+                      onClick={() => setCollapsedCategories({
+                        ...collapsedCategories,
+                        [category.category]: !isCollapsed
+                      })}
+                      className="w-full px-3 mb-1.5 flex items-center justify-between hover:bg-gray-800 rounded transition-colors group"
+                    >
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        {category.category}
+                      </h3>
+                      <svg
+                        className={`w-3 h-3 text-gray-500 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {/* 카테고리 메뉴 아이템 */}
+                    {!isCollapsed && (
+                      <ul className="space-y-1">
+                        {category.items.map((item) => (
+                          <li key={item.id}>
+                            <button
+                              onClick={() => setActiveMenu(item.id)}
+                              className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
+                                activeMenu === item.id
+                                  ? 'bg-white text-black'
+                                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                              }`}
+                            >
+                              <svg
+                                className="w-4 h-4 mr-2.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d={item.icon}
+                                />
+                              </svg>
+                              <span className="font-medium text-sm">{item.label}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    
+                    {/* 카테고리 구분선 (마지막 카테고리가 아닐 때만) */}
+                    {categoryIndex < filteredCategories.length - 1 && (
+                      <div className="mt-4 border-t border-gray-800"></div>
+                    )}
                   </div>
-                  
-                  {/* 카테고리 메뉴 아이템 */}
-                  <ul className="space-y-1">
-                    {category.items.map((item) => (
-                      <li key={item.id}>
-                        <button
-                          onClick={() => setActiveMenu(item.id)}
-                          className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors ${
-                            activeMenu === item.id
-                              ? 'bg-white text-black'
-                              : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                          }`}
-                        >
-                          <svg
-                            className="w-4 h-4 mr-2.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d={item.icon}
-                            />
-                          </svg>
-                          <span className="font-medium text-sm">{item.label}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  {/* 카테고리 구분선 (마지막 카테고리가 아닐 때만) */}
-                  {categoryIndex < filteredCategories.length - 1 && (
-                    <div className="mt-4 border-t border-gray-800"></div>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           </nav>
 
@@ -260,9 +282,20 @@ function AdminDashboard() {
         <header className="bg-white px-3 md:px-4 py-3">
           <div className="max-w-[1480px] mx-auto w-full">
             <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-bold text-black">
-                  {filteredCategories.flatMap(cat => cat.items).find(item => item.id === activeMenu)?.label || '대시보드'}
-                </h2>
+              <h2 className="text-xl font-bold text-black">
+                {filteredCategories.flatMap(cat => cat.items).find(item => item.id === activeMenu)?.label || '대시보드'}
+              </h2>
+              {/* 점심 메뉴 추천 버튼 */}
+              <button
+                onClick={() => setShowLunchRoulette(true)}
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5"
+                title="오늘의 점메추"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                점메추
+              </button>
             </div>
             <div className="h-px bg-black"></div>
           </div>
@@ -291,8 +324,8 @@ function AdminDashboard() {
                         {loading ? '...' : stats.contactsCount}
                       </p>
                     </div>
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -307,8 +340,8 @@ function AdminDashboard() {
                         {loading ? '...' : stats.projectsCount}
                       </p>
                     </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
                     </div>
@@ -323,8 +356,8 @@ function AdminDashboard() {
                         {loading ? '...' : stats.membersCount}
                       </p>
                     </div>
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
@@ -337,15 +370,15 @@ function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600 mb-1">잔액</p>
-                        <p className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                        <p className="text-3xl font-bold text-black">
                           {loading ? '...' : `${stats.balance >= 0 ? '+' : ''}${stats.balance.toLocaleString()}`}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          <span className="text-red-600">수익: {stats.totalIncome.toLocaleString()}</span> / <span className="text-blue-600">지출: {stats.totalExpense.toLocaleString()}</span>
+                          <span className="text-black">수익: {stats.totalIncome.toLocaleString()}</span> / <span className="text-gray-600">지출: {stats.totalExpense.toLocaleString()}</span>
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
@@ -426,6 +459,12 @@ function AdminDashboard() {
           {activeMenu === 'members' && <AdminMembers />}
           </div>
         </main>
+
+        {/* 점심 메뉴 룰렛 팝업 */}
+        <LunchRoulette 
+          isOpen={showLunchRoulette} 
+          onClose={() => setShowLunchRoulette(false)} 
+        />
       </div>
     </div>
   )
