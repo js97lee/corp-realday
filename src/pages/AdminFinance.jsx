@@ -354,9 +354,6 @@ function getPaymentMethodLabel(method) {
   }
   return labels[method] || method
 }
-    </div>
-  )
-}
 
 export default AdminFinance
 
