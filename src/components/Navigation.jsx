@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom'
 function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
-  const currentYear = new Date().getFullYear()
 
   const navItems = [
     { path: '/about', label: 'ABOUT' },
@@ -27,8 +26,14 @@ function Navigation() {
       {/* 회색 배경 헤더 */}
       <div className="bg-gray-50 border-b border-black px-6 md:px-12 py-3 md:py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-sm md:text-base">
-          {/* 왼쪽: 연도 */}
-          <div className="font-medium text-black">{currentYear}</div>
+          {/* 왼쪽: 회사 로고 */}
+          <Link to="/" className="flex items-center">
+            <img 
+              src="/logo-black.svg" 
+              alt="Company Logo" 
+              className="h-6 md:h-8 w-auto"
+            />
+          </Link>
           
           {/* 중앙: 포트폴리오 제목 */}
           <div className="font-medium text-black hidden md:block">UX/UI Design Portfolio</div>

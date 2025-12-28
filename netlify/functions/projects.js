@@ -7,52 +7,94 @@ export const handler = async (event, context) => {
   }
 
   try {
-    await initDatabase()
     const sqlFunc = getSql()
 
     // GET: 프로젝트 목록 조회
     if (event.httpMethod === 'GET') {
-      const { visible, featured } = event.queryStringParameters || {}
-      let projects
+      try {
+        const { visible, featured } = event.queryStringParameters || {}
+        let projects
 
-      if (featured === 'true') {
-        // 랜딩페이지용: featured 프로젝트만
-        projects = await sqlFunc`
-          SELECT id, title, description, category, image, created_at
-          FROM projects
-          WHERE is_featured = true AND is_visible = true
-          ORDER BY created_at DESC
-        `
-      } else if (visible === 'true') {
-        // Projects 페이지용: 노출된 프로젝트만
-        projects = await sqlFunc`
-          SELECT id, title, description, category, image, created_at
-          FROM projects
-          WHERE is_visible = true
-          ORDER BY created_at DESC
-        `
-      } else {
-        // 관리자용: 모든 프로젝트
-        projects = await sqlFunc`
-          SELECT id, title, description, category, image, memo, is_visible, is_featured, status, created_at, updated_at
-          FROM projects
-          ORDER BY created_at DESC
-        `
-      }
+        if (featured === 'true') {
+          // 랜딩페이지용: featured 프로젝트만
+          projects = await sqlFunc`
+            SELECT id, title, description, category, image, created_at
+            FROM projects
+            WHERE is_featured = true AND is_visible = true
+            ORDER BY created_at DESC
+          `
+        } else if (visible === 'true') {
+          // Projects 페이지용: 노출된 프로젝트만
+          projects = await sqlFunc`
+            SELECT id, title, description, category, image, created_at
+            FROM projects
+            WHERE is_visible = true
+            ORDER BY created_at DESC
+          `
+        } else {
+          // 관리자용: 모든 프로젝트
+          projects = await sqlFunc`
+            SELECT id, title, description, category, image, memo, is_visible, is_featured, status, created_at, updated_at
+            FROM projects
+            ORDER BY created_at DESC
+          `
+        }
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          projects
-        }),
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            projects
+          }),
+        }
+      } catch (dbError) {
+        // 테이블이 없으면 초기화 후 재시도
+        if (dbError.message && dbError.message.includes('does not exist')) {
+          await initDatabase()
+          const { visible, featured } = event.queryStringParameters || {}
+          let projects
+
+          if (featured === 'true') {
+            projects = await sqlFunc`
+              SELECT id, title, description, category, image, created_at
+              FROM projects
+              WHERE is_featured = true AND is_visible = true
+              ORDER BY created_at DESC
+            `
+          } else if (visible === 'true') {
+            projects = await sqlFunc`
+              SELECT id, title, description, category, image, created_at
+              FROM projects
+              WHERE is_visible = true
+              ORDER BY created_at DESC
+            `
+          } else {
+            projects = await sqlFunc`
+              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date, created_at, updated_at
+              FROM projects
+              ORDER BY created_at DESC
+            `
+          }
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              success: true,
+              projects
+            }),
+          }
+        }
+        throw dbError
       }
     }
 
+    // POST, PUT, DELETE는 초기화 필요
+    await initDatabase()
+
     // POST: 프로젝트 추가
     if (event.httpMethod === 'POST') {
-      const { title, description, category, image, memo, isVisible, isFeatured, status } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = JSON.parse(event.body || '{}')
 
       if (!title) {
         return {
@@ -66,8 +108,8 @@ export const handler = async (event, context) => {
       }
 
       const result = await sqlFunc`
-        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status)
-        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'})
+        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date)
+        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${startDate || null}, ${endDate || null})
         RETURNING *
       `
 
@@ -84,8 +126,19 @@ export const handler = async (event, context) => {
 
     // PUT: 프로젝트 수정
     if (event.httpMethod === 'PUT') {
-      const { id } = event.pathParameters || {}
-      const { title, description, category, image, memo, isVisible, isFeatured, status } = JSON.parse(event.body || '{}')
+      // 경로에서 ID 추출
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/projects\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
+      
+      const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = JSON.parse(event.body || '{}')
 
       if (!id) {
         return {
@@ -138,6 +191,12 @@ export const handler = async (event, context) => {
       if (status !== undefined) {
         await sqlFunc`UPDATE projects SET status = ${status} WHERE id = ${parseInt(id)}`
       }
+      if (startDate !== undefined) {
+        await sqlFunc`UPDATE projects SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`
+      }
+      if (endDate !== undefined) {
+        await sqlFunc`UPDATE projects SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`
+      }
       
       await sqlFunc`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`
 
@@ -158,7 +217,17 @@ export const handler = async (event, context) => {
 
     // DELETE: 프로젝트 삭제
     if (event.httpMethod === 'DELETE') {
-      const { id } = event.pathParameters || {}
+      // 경로에서 ID 추출
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/projects\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
 
       if (!id) {
         return {

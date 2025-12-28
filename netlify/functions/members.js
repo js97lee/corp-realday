@@ -89,7 +89,22 @@ export const handler = async (event, context) => {
 
     // PUT: 멤버 수정
     if (event.httpMethod === 'PUT') {
-      const { id } = event.pathParameters || {}
+      // 경로에서 ID 추출: /api/members/123 또는 /.netlify/functions/members/123
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      
+      // pathParameters가 없으면 경로에서 직접 추출
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/members\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      
+      // 쿼리 스트링에서도 확인
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
+      
       const { password, role, name } = JSON.parse(event.body || '{}')
 
       if (!id) {
@@ -152,7 +167,21 @@ export const handler = async (event, context) => {
 
     // DELETE: 멤버 삭제
     if (event.httpMethod === 'DELETE') {
-      const { id } = event.pathParameters || {}
+      // 경로에서 ID 추출: /api/members/123 또는 /.netlify/functions/members/123
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      
+      // pathParameters가 없으면 경로에서 직접 추출
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/members\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      
+      // 쿼리 스트링에서도 확인
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
 
       if (!id) {
         return {

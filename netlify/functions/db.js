@@ -79,6 +79,8 @@ export async function initDatabase() {
         is_visible BOOLEAN DEFAULT true,
         is_featured BOOLEAN DEFAULT false,
         status VARCHAR(50) DEFAULT 'planned',
+        start_date DATE,
+        end_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -90,6 +92,14 @@ export async function initDatabase() {
     } catch (e) {
       // 컬럼이 이미 존재하면 무시
     }
+    
+    // start_date, end_date 컬럼이 없으면 추가
+    try {
+      await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS start_date DATE`
+    } catch (e) {}
+    try {
+      await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS end_date DATE`
+    } catch (e) {}
 
     // tasks 테이블 생성
     await sqlFunc`
@@ -102,11 +112,17 @@ export async function initDatabase() {
         priority VARCHAR(50) DEFAULT 'medium',
         assignee_id INTEGER REFERENCES users(id),
         assignee_name VARCHAR(255),
+        project_id INTEGER REFERENCES projects(id),
         project_key VARCHAR(50) DEFAULT 'APP',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // project_id 컬럼이 없으면 추가
+    try {
+      await sqlFunc`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id)`
+    } catch (e) {}
 
     // portfolio_items 테이블 생성 (랜딩페이지 포트폴리오 항목)
     await sqlFunc`

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isManagerOrAbove, getUserRole, USER_ROLES } from '../utils/auth'
-import { fetchProjects, addProject, updateProject, deleteProject } from '../utils/api'
+import { fetchProjects, addProject, updateProject, deleteProject, fetchTasks } from '../utils/api'
 
 function AdminProjects() {
   const [projects, setProjects] = useState([])
@@ -22,7 +22,10 @@ function AdminProjects() {
     isVisible: true,
     isFeatured: false,
     status: 'planned',
+    startDate: '',
+    endDate: '',
   })
+  const [relatedTasks, setRelatedTasks] = useState([])
   const navigate = useNavigate()
 
   // 프로젝트 목록 불러오기
@@ -51,6 +54,8 @@ function AdminProjects() {
           isVisible: p.is_visible !== false,
           isFeatured: p.is_featured === true,
           status: p.status || 'planned',
+          startDate: p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '',
+          endDate: p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '',
           createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         }))
         
@@ -83,7 +88,7 @@ function AdminProjects() {
     loadProjects()
   }, [navigate])
 
-  const handleProjectClick = (project) => {
+  const handleProjectClick = async (project) => {
     setSelectedProject(project)
     setFormData({
       title: project.title,
@@ -95,8 +100,22 @@ function AdminProjects() {
       isVisible: project.isVisible,
       isFeatured: project.isFeatured || false,
       status: project.status || 'planned',
+      startDate: project.startDate || '',
+      endDate: project.endDate || '',
     })
     setIsEditing(true)
+    
+    // 연관된 티켓 불러오기
+    try {
+      const tasksResponse = await fetchTasks()
+      if (tasksResponse.success) {
+        const related = (tasksResponse.tasks || []).filter(task => task.project_id === project.id)
+        setRelatedTasks(related)
+      }
+    } catch (err) {
+      console.error('연관 티켓 불러오기 실패:', err)
+      setRelatedTasks([])
+    }
   }
 
   const handleSave = async () => {
@@ -120,6 +139,8 @@ function AdminProjects() {
           isVisible: formData.isVisible,
           isFeatured: formData.isFeatured,
           status: formData.status || 'planned',
+          startDate: formData.startDate || null,
+          endDate: formData.endDate || null,
         }
         
         const response = await updateProject(selectedProject.id, updateData)
@@ -129,7 +150,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', startDate: '', endDate: '' })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -144,6 +165,8 @@ function AdminProjects() {
           isVisible: formData.isVisible,
           isFeatured: formData.isFeatured,
           status: formData.status || 'planned',
+          startDate: formData.startDate || null,
+          endDate: formData.endDate || null,
         })
         if (response.success) {
           await loadProjects() // 목록 다시 불러오기
@@ -151,7 +174,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', startDate: '', endDate: '' })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -241,7 +264,7 @@ function AdminProjects() {
           <button
             onClick={() => {
               setSelectedProject(null)
-              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned' })
+              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned', startDate: '', endDate: '' })
               setIsEditing(true)
             }}
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
@@ -447,6 +470,31 @@ function AdminProjects() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  시작일
+                </label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  종료일
+                </label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none bg-white"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 상태
@@ -504,6 +552,41 @@ function AdminProjects() {
                 <span className="ml-2 text-xs text-gray-500">(랜딩페이지 메인에 표시)</span>
               </div>
             </div>
+
+            {/* 연관된 티켓 표시 */}
+            {selectedProject && relatedTasks.length > 0 && (
+              <div className="mt-6 border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold mb-4">연관된 티켓 ({relatedTasks.length})</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {relatedTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-medium text-gray-500">{task.task_key}</span>
+                        <span className="text-sm font-medium text-gray-900">{task.title}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs rounded ${
+                          task.status === 'done' ? 'bg-green-100 text-green-700' :
+                          task.status === 'inProgress' ? 'bg-blue-100 text-blue-700' :
+                          task.status === 'selected' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {task.status === 'done' ? '완료' :
+                           task.status === 'inProgress' ? '진행 중' :
+                           task.status === 'selected' ? '선택됨' : '백로그'}
+                        </span>
+                        {task.assignee_name && (
+                          <span className="text-xs text-gray-500">{task.assignee_name}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-4 pt-4">
               <button

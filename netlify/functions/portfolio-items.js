@@ -7,26 +7,49 @@ export const handler = async (event, context) => {
   }
 
   try {
-    await initDatabase()
     const sqlFunc = getSql()
 
     // GET: 포트폴리오 항목 목록 조회
     if (event.httpMethod === 'GET') {
-      const items = await sqlFunc`
-        SELECT id, number, title, description, display_order, created_at, updated_at
-        FROM portfolio_items
-        ORDER BY display_order ASC, number ASC
-      `
+      try {
+        const items = await sqlFunc`
+          SELECT id, number, title, description, display_order, created_at, updated_at
+          FROM portfolio_items
+          ORDER BY display_order ASC, number ASC
+        `
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          items
-        }),
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            items
+          }),
+        }
+      } catch (dbError) {
+        // 테이블이 없으면 초기화 후 재시도
+        if (dbError.message && dbError.message.includes('does not exist')) {
+          await initDatabase()
+          const items = await sqlFunc`
+            SELECT id, number, title, description, display_order, created_at, updated_at
+            FROM portfolio_items
+            ORDER BY display_order ASC, number ASC
+          `
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              success: true,
+              items
+            }),
+          }
+        }
+        throw dbError
       }
     }
+
+    // POST, PUT, DELETE는 초기화 필요
+    await initDatabase()
 
     // POST: 포트폴리오 항목 추가
     if (event.httpMethod === 'POST') {
@@ -62,7 +85,17 @@ export const handler = async (event, context) => {
 
     // PUT: 포트폴리오 항목 수정
     if (event.httpMethod === 'PUT') {
-      const { id } = event.pathParameters || {}
+      // 경로에서 ID 추출
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/portfolio-items\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
       const { number, title, description, displayOrder } = JSON.parse(event.body || '{}')
 
       if (!id) {
@@ -123,7 +156,17 @@ export const handler = async (event, context) => {
 
     // DELETE: 포트폴리오 항목 삭제
     if (event.httpMethod === 'DELETE') {
-      const { id } = event.pathParameters || {}
+      // 경로에서 ID 추출
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/portfolio-items\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
 
       if (!id) {
         return {

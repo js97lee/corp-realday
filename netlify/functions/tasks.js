@@ -40,12 +40,25 @@ export const handler = async (event, context) => {
 
     // GET: 업무 목록 조회
     if (event.httpMethod === 'GET') {
-      const tasks = await sqlFunc`
-        SELECT t.*, u.name as assignee_name, u.email as assignee_email
-        FROM tasks t
-        LEFT JOIN users u ON t.assignee_id = u.id
-        ORDER BY t.created_at DESC
-      `
+      const { projectId } = event.queryStringParameters || {}
+      let tasks
+      
+      if (projectId) {
+        tasks = await sqlFunc`
+          SELECT t.*, u.name as assignee_name, u.email as assignee_email
+          FROM tasks t
+          LEFT JOIN users u ON t.assignee_id = u.id
+          WHERE t.project_id = ${parseInt(projectId)}
+          ORDER BY t.created_at DESC
+        `
+      } else {
+        tasks = await sqlFunc`
+          SELECT t.*, u.name as assignee_name, u.email as assignee_email
+          FROM tasks t
+          LEFT JOIN users u ON t.assignee_id = u.id
+          ORDER BY t.created_at DESC
+        `
+      }
 
       return {
         statusCode: 200,
@@ -59,7 +72,7 @@ export const handler = async (event, context) => {
 
     // POST: 업무 추가
     if (event.httpMethod === 'POST') {
-      const { title, description, status, priority, assigneeId, assigneeName, projectKey } = JSON.parse(event.body || '{}')
+      const { title, description, status, priority, assigneeId, assigneeName, projectKey, projectId } = JSON.parse(event.body || '{}')
 
       if (!title) {
         return {
@@ -75,8 +88,8 @@ export const handler = async (event, context) => {
       const taskKey = await generateTaskKey(sqlFunc, projectKey || 'APP')
 
       const result = await sqlFunc`
-        INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_key)
-        VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectKey || 'APP'})
+        INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key)
+        VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectId || null}, ${projectKey || 'APP'})
         RETURNING *
       `
 
@@ -93,8 +106,19 @@ export const handler = async (event, context) => {
 
     // PUT: 업무 수정
     if (event.httpMethod === 'PUT') {
-      const { id } = event.pathParameters || {}
-      const { title, description, status, priority, assigneeId, assigneeName } = JSON.parse(event.body || '{}')
+      // 경로에서 ID 추출
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/tasks\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
+      
+      const { title, description, status, priority, assigneeId, assigneeName, projectId } = JSON.parse(event.body || '{}')
 
       if (!id) {
         return {
@@ -141,6 +165,9 @@ export const handler = async (event, context) => {
       if (assigneeName !== undefined) {
         await sqlFunc`UPDATE tasks SET assignee_name = ${assigneeName} WHERE id = ${parseInt(id)}`
       }
+      if (projectId !== undefined) {
+        await sqlFunc`UPDATE tasks SET project_id = ${projectId || null} WHERE id = ${parseInt(id)}`
+      }
       
       await sqlFunc`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`
 
@@ -164,7 +191,17 @@ export const handler = async (event, context) => {
 
     // DELETE: 업무 삭제
     if (event.httpMethod === 'DELETE') {
-      const { id } = event.pathParameters || {}
+      // 경로에서 ID 추출
+      let id = event.pathParameters?.id || event.pathParameters?.splat
+      if (!id && event.path) {
+        const pathMatch = event.path.match(/\/tasks\/(\d+)/)
+        if (pathMatch) {
+          id = pathMatch[1]
+        }
+      }
+      if (!id && event.queryStringParameters?.id) {
+        id = event.queryStringParameters.id
+      }
 
       if (!id) {
         return {

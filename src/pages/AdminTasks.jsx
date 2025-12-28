@@ -1,11 +1,142 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchTasks, addTask, updateTask, deleteTask } from '../utils/api'
-import { fetchMembers } from '../utils/api'
+import { fetchMembers, fetchProjects } from '../utils/api'
+
+// 담당자 선택 컴포넌트 (@로 새 담당자 추가 가능)
+function AssigneeSelector({ members, value, onChange, onAddMember }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [inputValue, setInputValue] = useState(value || '')
+  const [filteredMembers, setFilteredMembers] = useState(members)
+  const [showNewOption, setShowNewOption] = useState(false)
+  const inputRef = useRef(null)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    setInputValue(value || '')
+  }, [value])
+
+  useEffect(() => {
+    if (inputValue.startsWith('@')) {
+      const searchTerm = inputValue.substring(1).toLowerCase()
+      if (searchTerm) {
+        const filtered = members.filter(m => 
+          (m.name || m.email).toLowerCase().includes(searchTerm)
+        )
+        setFilteredMembers(filtered)
+        setShowNewOption(!filtered.some(m => (m.name || m.email).toLowerCase() === searchTerm))
+      } else {
+        setFilteredMembers(members)
+        setShowNewOption(false)
+      }
+      setIsOpen(true)
+    } else if (inputValue) {
+      const filtered = members.filter(m => 
+        (m.name || m.email).toLowerCase().includes(inputValue.toLowerCase())
+      )
+      setFilteredMembers(filtered)
+      setShowNewOption(false)
+      setIsOpen(true)
+    } else {
+      setFilteredMembers(members)
+      setIsOpen(false)
+    }
+  }, [inputValue, members])
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleInputChange = (e) => {
+    const val = e.target.value
+    setInputValue(val)
+  }
+
+  const handleSelectMember = (member) => {
+    const name = member.name || member.email
+    setInputValue(name)
+    onChange(name)
+    setIsOpen(false)
+  }
+
+  const handleAddNew = () => {
+    const newName = inputValue.startsWith('@') ? inputValue.substring(1) : inputValue
+    if (newName.trim()) {
+      setInputValue(newName.trim())
+      onChange(newName.trim())
+      onAddMember(newName.trim())
+      setIsOpen(false)
+    }
+  }
+
+  const getAssigneeColor = (id) => {
+    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-indigo-500']
+    return colors[id % colors.length] || 'bg-gray-500'
+  }
+
+  const getAssigneeInitials = (name, email) => {
+    if (name) {
+      const parts = name.split(' ')
+      if (parts.length > 1) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      }
+      return name.substring(0, 2).toUpperCase()
+    }
+    return email.substring(0, 2).toUpperCase()
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <input
+        ref={inputRef}
+        type="text"
+        value={inputValue}
+        onChange={handleInputChange}
+        onFocus={() => setIsOpen(true)}
+        placeholder="@로 검색하거나 새 담당자 추가"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+      />
+      {isOpen && (filteredMembers.length > 0 || showNewOption) && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+          {filteredMembers.map((member) => {
+            const name = member.name || member.email
+            return (
+              <div
+                key={member.id}
+                onClick={() => handleSelectMember(member)}
+                className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+              >
+                <div className={`w-6 h-6 rounded-full ${getAssigneeColor(member.id)} text-white flex items-center justify-center text-xs font-medium`}>
+                  {getAssigneeInitials(member.name, member.email)}
+                </div>
+                <span className="text-sm">{name}</span>
+              </div>
+            )
+          })}
+          {showNewOption && inputValue.startsWith('@') && inputValue.length > 1 && (
+            <div
+              onClick={handleAddNew}
+              className="px-4 py-2 hover:bg-green-50 cursor-pointer flex items-center gap-2 border-t border-gray-200"
+            >
+              <span className="text-green-600 text-sm">+ 새 담당자 추가: {inputValue.substring(1)}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function AdminTasks() {
   const [tasks, setTasks] = useState([])
   const [members, setMembers] = useState([])
+  const [projects, setProjects] = useState([])
   const [filteredTasks, setFilteredTasks] = useState([])
   const [isAdding, setIsAdding] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
@@ -19,6 +150,7 @@ function AdminTasks() {
     assigneeName: '',
     priority: 'medium',
     status: 'backlog',
+    projectId: '',
   })
   const [draggedTask, setDraggedTask] = useState(null)
   const navigate = useNavigate()
@@ -53,6 +185,18 @@ function AdminTasks() {
     }
   }
 
+  // 프로젝트 목록 불러오기
+  const loadProjects = async () => {
+    try {
+      const response = await fetchProjects(false) // 관리자용: 모든 프로젝트
+      if (response.success) {
+        setProjects(response.projects || [])
+      }
+    } catch (err) {
+      console.error('프로젝트 목록 불러오기 실패:', err)
+    }
+  }
+
   useEffect(() => {
     // 로그인 상태 확인
     const token = localStorage.getItem('authToken')
@@ -63,6 +207,7 @@ function AdminTasks() {
 
     loadTasks()
     loadMembers()
+    loadProjects()
   }, [navigate])
 
   // 필터링된 업무 업데이트
@@ -116,7 +261,7 @@ function AdminTasks() {
         await loadTasks()
         setIsAdding(false)
         setSelectedTask(null)
-        setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog' })
+        setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog', projectId: '' })
       }
     } catch (err) {
       console.error('업무 저장 실패:', err)
@@ -235,7 +380,7 @@ function AdminTasks() {
           <button
             onClick={() => {
               setIsAdding(true)
-              setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog' })
+              setFormData({ title: '', description: '', assigneeId: '', assigneeName: '', priority: 'medium', status: 'backlog', projectId: '' })
             }}
             className="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors rounded-lg"
           >
@@ -315,25 +460,26 @@ function AdminTasks() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">담당자</label>
-                <select
-                  value={formData.assigneeId}
-                  onChange={(e) => {
-                    const member = members.find(m => m.id === parseInt(e.target.value))
+                <AssigneeSelector
+                  members={members}
+                  value={formData.assigneeName}
+                  onChange={(name) => {
+                    const member = members.find(m => (m.name || m.email) === name)
                     setFormData({
                       ...formData,
-                      assigneeId: e.target.value,
-                      assigneeName: member ? (member.name || member.email) : ''
+                      assigneeId: member ? member.id : '',
+                      assigneeName: name
                     })
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="">담당자 선택</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name || member.email}
-                    </option>
-                  ))}
-                </select>
+                  onAddMember={(name) => {
+                    // 새 담당자 추가 (임시로 이름만 저장)
+                    setFormData({
+                      ...formData,
+                      assigneeId: '',
+                      assigneeName: name
+                    })
+                  }}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
@@ -349,6 +495,21 @@ function AdminTasks() {
                   <option value="highest">가장 높음</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">프로젝트</label>
+              <select
+                value={formData.projectId}
+                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="">프로젝트 선택 (선택사항)</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </select>
             </div>
             {!selectedTask && (
               <div>
@@ -431,6 +592,7 @@ function AdminTasks() {
                         assigneeName: task.assignee_name || '',
                         priority: task.priority || 'medium',
                         status: task.status || 'backlog',
+                        projectId: task.project_id || '',
                       })
                     }}
                     className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-move hover:shadow-md transition-all hover:border-blue-300"

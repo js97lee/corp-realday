@@ -74,6 +74,8 @@ async function initDatabase() {
         is_visible BOOLEAN DEFAULT true,
         is_featured BOOLEAN DEFAULT false,
         status VARCHAR(50) DEFAULT 'planned',
+        start_date DATE,
+        end_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -85,6 +87,14 @@ async function initDatabase() {
     } catch (e) {
       // 컬럼이 이미 존재하면 무시
     }
+    
+    // start_date, end_date 컬럼이 없으면 추가
+    try {
+      await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS start_date DATE`
+    } catch (e) {}
+    try {
+      await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS end_date DATE`
+    } catch (e) {}
 
     // tasks 테이블 생성
     await sql`
@@ -471,7 +481,7 @@ app.get('/api/projects', async (req, res) => {
     } else {
       // 관리자용: 모든 프로젝트
       projects = await sql`
-        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, created_at, updated_at
+        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date, created_at, updated_at
         FROM projects
         ORDER BY created_at DESC
       `
@@ -493,7 +503,7 @@ app.get('/api/projects', async (req, res) => {
 // 프로젝트 추가
 app.post('/api/projects', async (req, res) => {
   try {
-    const { title, description, category, image, memo, isVisible, isFeatured, status } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = req.body
 
     if (!title) {
       return res.status(400).json({ 
@@ -503,8 +513,8 @@ app.post('/api/projects', async (req, res) => {
     }
 
     const result = await sql`
-      INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status)
-      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'})
+      INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status, start_date, end_date)
+      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'}, ${startDate || null}, ${endDate || null})
       RETURNING *
     `
 
@@ -527,7 +537,7 @@ app.post('/api/projects', async (req, res) => {
 app.put('/api/projects/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { title, description, category, image, memo, isVisible, isFeatured, status } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status, startDate, endDate } = req.body
 
     const existing = await sql`
       SELECT * FROM projects WHERE id = ${id}
@@ -645,12 +655,25 @@ async function generateTaskKey(projectKey = 'APP') {
 // 업무 목록 조회
 app.get('/api/tasks', async (req, res) => {
   try {
-    const tasks = await sql`
-      SELECT t.*, u.name as assignee_name, u.email as assignee_email
-      FROM tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
-      ORDER BY t.created_at DESC
-    `
+    const { projectId } = req.query
+    let tasks
+    
+    if (projectId) {
+      tasks = await sql`
+        SELECT t.*, u.name as assignee_name, u.email as assignee_email
+        FROM tasks t
+        LEFT JOIN users u ON t.assignee_id = u.id
+        WHERE t.project_id = ${parseInt(projectId)}
+        ORDER BY t.created_at DESC
+      `
+    } else {
+      tasks = await sql`
+        SELECT t.*, u.name as assignee_name, u.email as assignee_email
+        FROM tasks t
+        LEFT JOIN users u ON t.assignee_id = u.id
+        ORDER BY t.created_at DESC
+      `
+    }
     
     res.json({
       success: true,
@@ -668,7 +691,7 @@ app.get('/api/tasks', async (req, res) => {
 // 업무 추가
 app.post('/api/tasks', async (req, res) => {
   try {
-    const { title, description, status, priority, assigneeId, assigneeName, projectKey } = req.body
+    const { title, description, status, priority, assigneeId, assigneeName, projectKey, projectId } = req.body
 
     if (!title) {
       return res.status(400).json({ 
@@ -680,8 +703,8 @@ app.post('/api/tasks', async (req, res) => {
     const taskKey = await generateTaskKey(projectKey || 'APP')
 
     const result = await sql`
-      INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_key)
-      VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectKey || 'APP'})
+      INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key)
+      VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectId || null}, ${projectKey || 'APP'})
       RETURNING *
     `
 
@@ -735,6 +758,9 @@ app.put('/api/tasks/:id', async (req, res) => {
     }
     if (assigneeName !== undefined) {
       await sql`UPDATE tasks SET assignee_name = ${assigneeName} WHERE id = ${id}`
+    }
+    if (projectId !== undefined) {
+      await sql`UPDATE tasks SET project_id = ${projectId || null} WHERE id = ${id}`
     }
     
     await sql`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`
