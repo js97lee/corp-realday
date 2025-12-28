@@ -6,7 +6,6 @@ function Navigation() {
   const location = useLocation()
 
   const navItems = [
-    { path: '/', label: 'HOME' },
     { path: '/about', label: 'ABOUT' },
     { path: '/projects', label: 'PROJECTS' },
     { path: '/contact', label: 'CONTACT' },
@@ -24,8 +23,12 @@ function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="text-xl md:text-2xl font-bold text-black hover:opacity-70 transition-opacity">
-            REAL DAY
+          <Link to="/" className="hover:opacity-70 transition-opacity">
+            <img 
+              src="/logo-black.svg" 
+              alt="REAL DAY" 
+              className="h-8 md:h-10 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}

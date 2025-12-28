@@ -20,6 +20,7 @@ function AdminProjects() {
     imageFile: null,
     memo: '',
     isVisible: true,
+    isFeatured: false,
     status: 'planned',
   })
   const navigate = useNavigate()
@@ -48,6 +49,7 @@ function AdminProjects() {
           image: p.image || '',
           memo: p.memo || '',
           isVisible: p.is_visible !== false,
+          isFeatured: p.is_featured === true,
           status: p.status || 'planned',
           createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         }))
@@ -91,6 +93,7 @@ function AdminProjects() {
       imageFile: null,
       memo: project.memo || '',
       isVisible: project.isVisible,
+      isFeatured: project.isFeatured || false,
       status: project.status || 'planned',
     })
     setIsEditing(true)
@@ -115,6 +118,7 @@ function AdminProjects() {
           image: formData.image || null,
           memo: formData.memo || null,
           isVisible: formData.isVisible,
+          isFeatured: formData.isFeatured,
           status: formData.status || 'planned',
         }
         
@@ -125,7 +129,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, status: 'planned' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned' })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -138,6 +142,7 @@ function AdminProjects() {
           image: formData.image || null,
           memo: formData.memo || null,
           isVisible: formData.isVisible,
+          isFeatured: formData.isFeatured,
           status: formData.status || 'planned',
         })
         if (response.success) {
@@ -146,7 +151,7 @@ function AdminProjects() {
           setSelectedProject(null)
           setShowNewCategoryInput(false)
           setNewCategory('')
-          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, status: 'planned' })
+          setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned' })
           const fileInput = document.getElementById('imageFile')
           if (fileInput) fileInput.value = ''
         }
@@ -236,7 +241,7 @@ function AdminProjects() {
           <button
             onClick={() => {
               setSelectedProject(null)
-              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, status: 'planned' })
+              setFormData({ title: '', description: '', category: '', image: '', imageFile: null, memo: '', isVisible: true, isFeatured: false, status: 'planned' })
               setIsEditing(true)
             }}
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg"
@@ -472,17 +477,32 @@ function AdminProjects() {
               <p className="text-xs text-gray-500 mt-1">이 메모는 관리자만 볼 수 있습니다.</p>
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isVisible"
-                checked={formData.isVisible}
-                onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
-                className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
-              />
-              <label htmlFor="isVisible" className="ml-2 text-sm font-medium text-gray-700">
-                랜딩페이지에 노출
-              </label>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isVisible"
+                  checked={formData.isVisible}
+                  onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
+                  className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                />
+                <label htmlFor="isVisible" className="ml-2 text-sm font-medium text-gray-700">
+                  Projects 페이지에 노출
+                </label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                  className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                />
+                <label htmlFor="isFeatured" className="ml-2 text-sm font-medium text-gray-700">
+                  랜딩페이지에 노출
+                </label>
+                <span className="ml-2 text-xs text-gray-500">(랜딩페이지 메인에 표시)</span>
+              </div>
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -549,7 +569,12 @@ function AdminProjects() {
                         </div>
                       )}
                       {/* 노출 상태 배지 */}
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {project.isFeatured && (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-blue-500 text-white">
+                            랜딩
+                          </span>
+                        )}
                         <span className={`px-2 py-1 text-xs font-medium rounded ${
                           project.isVisible 
                             ? 'bg-green-500 text-white' 

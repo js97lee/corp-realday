@@ -5,6 +5,7 @@ import AdminContacts from './AdminContacts'
 import AdminFinance from './AdminFinance'
 import AdminTasks from './AdminTasks'
 import AdminMembers from './AdminMembers'
+import AdminPortfolio from './AdminPortfolio'
 import { getUserRole, USER_ROLES, isSuperAdmin, isManagerOrAbove } from '../utils/auth'
 
 function AdminDashboard() {
@@ -51,6 +52,7 @@ function AdminDashboard() {
 
   const allMenuItems = [
     { id: 'dashboard', label: '대시보드', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
+    { id: 'portfolio', label: '포트폴리오 관리', icon: 'M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER] },
     { id: 'projects', label: '프로젝트 관리', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
     { id: 'contacts', label: '문의하기 관리', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER] },
     { id: 'tasks', label: '업무 진행상황', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', roles: [USER_ROLES.SUPER_ADMIN, USER_ROLES.MANAGER, USER_ROLES.EMPLOYEE] },
@@ -75,8 +77,12 @@ function AdminDashboard() {
               onClick={() => window.location.href = '/'}
               className="text-left w-full hover:opacity-80 transition-opacity"
             >
-              <h1 className="text-xl font-bold text-white">REAL DAY</h1>
-              <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+              <img 
+                src="/logo-white.svg" 
+                alt="REAL DAY" 
+                className="h-8 w-auto mb-2"
+              />
+              <p className="text-xs text-gray-400">Admin Panel</p>
             </button>
           </div>
 
@@ -215,6 +221,7 @@ function AdminDashboard() {
           )}
           
           {activeMenu === 'tasks' && <AdminTasks />}
+          {activeMenu === 'portfolio' && <AdminPortfolio />}
           {activeMenu === 'projects' && <AdminProjects />}
           {activeMenu === 'contacts' && <AdminContacts />}
           {activeMenu === 'finance' && <AdminFinance />}

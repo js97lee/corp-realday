@@ -77,11 +77,19 @@ export async function initDatabase() {
         image TEXT,
         memo TEXT,
         is_visible BOOLEAN DEFAULT true,
+        is_featured BOOLEAN DEFAULT false,
         status VARCHAR(50) DEFAULT 'planned',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // is_featured 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
+    try {
+      await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false`
+    } catch (e) {
+      // 컬럼이 이미 존재하면 무시
+    }
 
     // tasks 테이블 생성
     await sqlFunc`
@@ -95,6 +103,19 @@ export async function initDatabase() {
         assignee_id INTEGER REFERENCES users(id),
         assignee_name VARCHAR(255),
         project_key VARCHAR(50) DEFAULT 'APP',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    // portfolio_items 테이블 생성 (랜딩페이지 포트폴리오 항목)
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS portfolio_items (
+        id SERIAL PRIMARY KEY,
+        number INTEGER NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        display_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )

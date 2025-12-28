@@ -12,11 +12,19 @@ export const handler = async (event, context) => {
 
     // GET: 프로젝트 목록 조회
     if (event.httpMethod === 'GET') {
-      const { visible } = event.queryStringParameters || {}
+      const { visible, featured } = event.queryStringParameters || {}
       let projects
 
-      if (visible === 'true') {
-        // 랜딩페이지용: 노출된 프로젝트만
+      if (featured === 'true') {
+        // 랜딩페이지용: featured 프로젝트만
+        projects = await sqlFunc`
+          SELECT id, title, description, category, image, created_at
+          FROM projects
+          WHERE is_featured = true AND is_visible = true
+          ORDER BY created_at DESC
+        `
+      } else if (visible === 'true') {
+        // Projects 페이지용: 노출된 프로젝트만
         projects = await sqlFunc`
           SELECT id, title, description, category, image, created_at
           FROM projects
@@ -26,7 +34,7 @@ export const handler = async (event, context) => {
       } else {
         // 관리자용: 모든 프로젝트
         projects = await sqlFunc`
-          SELECT id, title, description, category, image, memo, is_visible, status, created_at, updated_at
+          SELECT id, title, description, category, image, memo, is_visible, is_featured, status, created_at, updated_at
           FROM projects
           ORDER BY created_at DESC
         `
@@ -44,7 +52,7 @@ export const handler = async (event, context) => {
 
     // POST: 프로젝트 추가
     if (event.httpMethod === 'POST') {
-      const { title, description, category, image, memo, isVisible, status } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status } = JSON.parse(event.body || '{}')
 
       if (!title) {
         return {
@@ -58,8 +66,8 @@ export const handler = async (event, context) => {
       }
 
       const result = await sqlFunc`
-        INSERT INTO projects (title, description, category, image, memo, is_visible, status)
-        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${status || 'planned'})
+        INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status)
+        VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'})
         RETURNING *
       `
 
@@ -77,7 +85,7 @@ export const handler = async (event, context) => {
     // PUT: 프로젝트 수정
     if (event.httpMethod === 'PUT') {
       const { id } = event.pathParameters || {}
-      const { title, description, category, image, memo, isVisible, status } = JSON.parse(event.body || '{}')
+      const { title, description, category, image, memo, isVisible, isFeatured, status } = JSON.parse(event.body || '{}')
 
       if (!id) {
         return {
@@ -123,6 +131,9 @@ export const handler = async (event, context) => {
       }
       if (isVisible !== undefined) {
         await sqlFunc`UPDATE projects SET is_visible = ${isVisible} WHERE id = ${parseInt(id)}`
+      }
+      if (isFeatured !== undefined) {
+        await sqlFunc`UPDATE projects SET is_featured = ${isFeatured} WHERE id = ${parseInt(id)}`
       }
       if (status !== undefined) {
         await sqlFunc`UPDATE projects SET status = ${status} WHERE id = ${parseInt(id)}`

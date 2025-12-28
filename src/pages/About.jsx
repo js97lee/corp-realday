@@ -9,8 +9,10 @@ function About() {
           </h1>
           <div className="prose prose-lg max-w-none">
             <p className="text-lg md:text-xl text-gray-700 mb-6 leading-relaxed">
-              REAL DAY는 새로운 하루를 시작하는 곳입니다. 우리는 창의적이고 혁신적인 솔루션을 통해 
-              고객의 비전을 현실로 만들어갑니다.
+              FROM VISION TO INFINITE CREATION
+            </p>
+            <p className="text-lg md:text-xl text-gray-700 mb-6 leading-relaxed">
+              우리는 창의적이고 혁신적인 솔루션을 통해 고객의 비전을 무한한 창작으로 만들어갑니다.
             </p>
             <p className="text-lg md:text-xl text-gray-700 mb-6 leading-relaxed">
               최신 기술과 트렌드를 반영한 웹 개발, 사용자 경험 중심의 디자인, 그리고 성능 최적화에 

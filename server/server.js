@@ -72,11 +72,19 @@ async function initDatabase() {
         image TEXT,
         memo TEXT,
         is_visible BOOLEAN DEFAULT true,
+        is_featured BOOLEAN DEFAULT false,
         status VARCHAR(50) DEFAULT 'planned',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+    
+    // is_featured 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
+    try {
+      await sql`ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false`
+    } catch (e) {
+      // 컬럼이 이미 존재하면 무시
+    }
 
     // tasks 테이블 생성
     await sql`
@@ -90,6 +98,19 @@ async function initDatabase() {
         assignee_id INTEGER REFERENCES users(id),
         assignee_name VARCHAR(255),
         project_key VARCHAR(50) DEFAULT 'APP',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    // portfolio_items 테이블 생성 (랜딩페이지 포트폴리오 항목)
+    await sql`
+      CREATE TABLE IF NOT EXISTS portfolio_items (
+        id SERIAL PRIMARY KEY,
+        number INTEGER NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        display_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -425,14 +446,22 @@ app.delete('/api/members/:id', async (req, res) => {
   }
 })
 
-// 프로젝트 목록 조회 (랜딩페이지용 - is_visible=true만)
+// 프로젝트 목록 조회
 app.get('/api/projects', async (req, res) => {
   try {
-    const { visible } = req.query
+    const { visible, featured } = req.query
     let projects
     
-    if (visible === 'true') {
-      // 랜딩페이지용: 노출된 프로젝트만
+    if (featured === 'true') {
+      // 랜딩페이지용: featured 프로젝트만
+      projects = await sql`
+        SELECT id, title, description, category, image, created_at
+        FROM projects
+        WHERE is_featured = true AND is_visible = true
+        ORDER BY created_at DESC
+      `
+    } else if (visible === 'true') {
+      // Projects 페이지용: 노출된 프로젝트만
       projects = await sql`
         SELECT id, title, description, category, image, created_at
         FROM projects
@@ -442,7 +471,7 @@ app.get('/api/projects', async (req, res) => {
     } else {
       // 관리자용: 모든 프로젝트
       projects = await sql`
-        SELECT id, title, description, category, image, memo, is_visible, status, created_at, updated_at
+        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, created_at, updated_at
         FROM projects
         ORDER BY created_at DESC
       `
@@ -464,7 +493,7 @@ app.get('/api/projects', async (req, res) => {
 // 프로젝트 추가
 app.post('/api/projects', async (req, res) => {
   try {
-    const { title, description, category, image, memo, isVisible, status } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status } = req.body
 
     if (!title) {
       return res.status(400).json({ 
@@ -474,8 +503,8 @@ app.post('/api/projects', async (req, res) => {
     }
 
     const result = await sql`
-      INSERT INTO projects (title, description, category, image, memo, is_visible, status)
-      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${status || 'planned'})
+      INSERT INTO projects (title, description, category, image, memo, is_visible, is_featured, status)
+      VALUES (${title}, ${description || null}, ${category || null}, ${image || null}, ${memo || null}, ${isVisible !== false}, ${isFeatured === true}, ${status || 'planned'})
       RETURNING *
     `
 
@@ -498,7 +527,7 @@ app.post('/api/projects', async (req, res) => {
 app.put('/api/projects/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { title, description, category, image, memo, isVisible, status } = req.body
+    const { title, description, category, image, memo, isVisible, isFeatured, status } = req.body
 
     const existing = await sql`
       SELECT * FROM projects WHERE id = ${id}
@@ -529,6 +558,9 @@ app.put('/api/projects/:id', async (req, res) => {
     }
     if (isVisible !== undefined) {
       await sql`UPDATE projects SET is_visible = ${isVisible} WHERE id = ${id}`
+    }
+    if (isFeatured !== undefined) {
+      await sql`UPDATE projects SET is_featured = ${isFeatured} WHERE id = ${id}`
     }
     if (status !== undefined) {
       await sql`UPDATE projects SET status = ${status} WHERE id = ${id}`
@@ -754,6 +786,144 @@ app.delete('/api/tasks/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Task delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 포트폴리오 항목 목록 조회
+app.get('/api/portfolio-items', async (req, res) => {
+  try {
+    const items = await sql`
+      SELECT id, number, title, description, display_order, created_at, updated_at
+      FROM portfolio_items
+      ORDER BY display_order ASC, number ASC
+    `
+    
+    res.json({
+      success: true,
+      items
+    })
+  } catch (error) {
+    console.error('Portfolio items fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 포트폴리오 항목 추가
+app.post('/api/portfolio-items', async (req, res) => {
+  try {
+    const { number, title, description, displayOrder } = req.body
+
+    if (!title || !description) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '제목과 설명을 입력해주세요.' 
+      })
+    }
+
+    const result = await sql`
+      INSERT INTO portfolio_items (number, title, description, display_order)
+      VALUES (${number || null}, ${title}, ${description}, ${displayOrder || 0})
+      RETURNING *
+    `
+
+    res.json({
+      success: true,
+      message: '포트폴리오 항목이 추가되었습니다.',
+      item: result[0]
+    })
+
+  } catch (error) {
+    console.error('Portfolio item add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 포트폴리오 항목 수정
+app.put('/api/portfolio-items/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { number, title, description, displayOrder } = req.body
+
+    const existing = await sql`
+      SELECT * FROM portfolio_items WHERE id = ${id}
+    `
+    
+    if (existing.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '포트폴리오 항목을 찾을 수 없습니다.' 
+      })
+    }
+
+    if (number !== undefined) {
+      await sql`UPDATE portfolio_items SET number = ${number} WHERE id = ${id}`
+    }
+    if (title) {
+      await sql`UPDATE portfolio_items SET title = ${title} WHERE id = ${id}`
+    }
+    if (description !== undefined) {
+      await sql`UPDATE portfolio_items SET description = ${description} WHERE id = ${id}`
+    }
+    if (displayOrder !== undefined) {
+      await sql`UPDATE portfolio_items SET display_order = ${displayOrder} WHERE id = ${id}`
+    }
+    
+    await sql`UPDATE portfolio_items SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`
+
+    const result = await sql`
+      SELECT * FROM portfolio_items WHERE id = ${id}
+    `
+
+    res.json({
+      success: true,
+      message: '포트폴리오 항목이 수정되었습니다.',
+      item: result[0]
+    })
+
+  } catch (error) {
+    console.error('Portfolio item update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 포트폴리오 항목 삭제
+app.delete('/api/portfolio-items/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const item = await sql`
+      SELECT * FROM portfolio_items WHERE id = ${id}
+    `
+    
+    if (item.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '포트폴리오 항목을 찾을 수 없습니다.' 
+      })
+    }
+
+    await sql`DELETE FROM portfolio_items WHERE id = ${id}`
+
+    res.json({
+      success: true,
+      message: '포트폴리오 항목이 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Portfolio item delete error:', error)
     res.status(500).json({ 
       success: false, 
       message: '서버 오류가 발생했습니다.' 
