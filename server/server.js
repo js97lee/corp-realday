@@ -78,6 +78,23 @@ async function initDatabase() {
       )
     `
 
+    // tasks 테이블 생성
+    await sql`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id SERIAL PRIMARY KEY,
+        task_key VARCHAR(50) UNIQUE NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        status VARCHAR(50) DEFAULT 'backlog',
+        priority VARCHAR(50) DEFAULT 'medium',
+        assignee_id INTEGER REFERENCES users(id),
+        assignee_name VARCHAR(255),
+        project_key VARCHAR(50) DEFAULT 'APP',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
     // 초기 관리자 계정이 없으면 생성
     const existingAdmin = await sql`
       SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
@@ -563,6 +580,180 @@ app.delete('/api/projects/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Project delete error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// Task Key 생성 함수 (예: APP-1, APP-2)
+async function generateTaskKey(projectKey = 'APP') {
+  const result = await sql`
+    SELECT task_key FROM tasks 
+    WHERE task_key LIKE ${projectKey + '-%'}
+    ORDER BY task_key DESC
+    LIMIT 1
+  `
+  
+  if (result.length === 0) {
+    return `${projectKey}-1`
+  }
+  
+  const lastKey = result[0].task_key
+  const parts = lastKey.split('-')
+  if (parts.length === 2) {
+    const lastNumber = parseInt(parts[1]) || 0
+    return `${projectKey}-${lastNumber + 1}`
+  }
+  
+  return `${projectKey}-1`
+}
+
+// 업무 목록 조회
+app.get('/api/tasks', async (req, res) => {
+  try {
+    const tasks = await sql`
+      SELECT t.*, u.name as assignee_name, u.email as assignee_email
+      FROM tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      ORDER BY t.created_at DESC
+    `
+    
+    res.json({
+      success: true,
+      tasks
+    })
+  } catch (error) {
+    console.error('Tasks fetch error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 업무 추가
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const { title, description, status, priority, assigneeId, assigneeName, projectKey } = req.body
+
+    if (!title) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '업무 제목을 입력해주세요.' 
+      })
+    }
+
+    const taskKey = await generateTaskKey(projectKey || 'APP')
+
+    const result = await sql`
+      INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_key)
+      VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${assigneeId || null}, ${assigneeName || null}, ${projectKey || 'APP'})
+      RETURNING *
+    `
+
+    res.json({
+      success: true,
+      message: '업무가 추가되었습니다.',
+      task: result[0]
+    })
+
+  } catch (error) {
+    console.error('Task add error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 업무 수정
+app.put('/api/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, description, status, priority, assigneeId, assigneeName } = req.body
+
+    const existing = await sql`
+      SELECT * FROM tasks WHERE id = ${id}
+    `
+    
+    if (existing.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '업무를 찾을 수 없습니다.' 
+      })
+    }
+
+    // 업데이트할 필드만 업데이트
+    if (title) {
+      await sql`UPDATE tasks SET title = ${title} WHERE id = ${id}`
+    }
+    if (description !== undefined) {
+      await sql`UPDATE tasks SET description = ${description} WHERE id = ${id}`
+    }
+    if (status !== undefined) {
+      await sql`UPDATE tasks SET status = ${status} WHERE id = ${id}`
+    }
+    if (priority !== undefined) {
+      await sql`UPDATE tasks SET priority = ${priority} WHERE id = ${id}`
+    }
+    if (assigneeId !== undefined) {
+      await sql`UPDATE tasks SET assignee_id = ${assigneeId} WHERE id = ${id}`
+    }
+    if (assigneeName !== undefined) {
+      await sql`UPDATE tasks SET assignee_name = ${assigneeName} WHERE id = ${id}`
+    }
+    
+    await sql`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`
+
+    const result = await sql`
+      SELECT t.*, u.name as assignee_name, u.email as assignee_email
+      FROM tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      WHERE t.id = ${id}
+    `
+
+    res.json({
+      success: true,
+      message: '업무가 수정되었습니다.',
+      task: result[0]
+    })
+
+  } catch (error) {
+    console.error('Task update error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.' 
+    })
+  }
+})
+
+// 업무 삭제
+app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const task = await sql`
+      SELECT * FROM tasks WHERE id = ${id}
+    `
+    
+    if (task.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '업무를 찾을 수 없습니다.' 
+      })
+    }
+
+    await sql`DELETE FROM tasks WHERE id = ${id}`
+
+    res.json({
+      success: true,
+      message: '업무가 삭제되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('Task delete error:', error)
     res.status(500).json({ 
       success: false, 
       message: '서버 오류가 발생했습니다.' 

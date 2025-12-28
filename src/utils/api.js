@@ -292,3 +292,105 @@ export const deleteProject = async (id) => {
   }
 }
 
+// 업무 목록 조회 API
+export const fetchTasks = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 업무 추가 API
+export const addTask = async (taskData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 업무 수정 API
+export const updateTask = async (id, taskData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
+// 업무 삭제 API
+export const deleteTask = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+    }
+    throw error
+  }
+}
+
