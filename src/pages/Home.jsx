@@ -23,19 +23,8 @@ function Home() {
     loadPortfolioItems()
   }, [])
 
-  const currentYear = new Date().getFullYear()
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b border-black px-6 md:px-12 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm md:text-base">
-          <div className="font-medium">{currentYear}</div>
-          <div className="font-medium">UX/UI Design Portfolio</div>
-          <div className="font-medium">@realday</div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-gray-50 pt-20 md:pt-24">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">

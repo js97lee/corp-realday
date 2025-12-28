@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
+  const currentYear = new Date().getFullYear()
 
   const navItems = [
     { path: '/about', label: 'ABOUT' },
@@ -19,69 +20,75 @@ function Navigation() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 md:h-20">
-          {/* Logo */}
-          <Link to="/" className="hover:opacity-70 transition-opacity">
-            <img 
-              src="/logo-black.svg" 
-              alt="REAL DAY" 
-              className="h-8 md:h-10 w-auto"
-            />
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8 lg:space-x-12">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`text-sm lg:text-base font-medium transition-colors ${
-                  isActive(item.path)
-                    ? 'text-black border-b-2 border-black pb-1'
-                    : 'text-gray-600 hover:text-black'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-black focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <nav className="fixed top-0 left-0 right-0 z-50">
+      {/* 상단 검은색 선 */}
+      <div className="h-px bg-black"></div>
+      
+      {/* 회색 배경 헤더 */}
+      <div className="bg-gray-50 border-b border-black px-6 md:px-12 py-3 md:py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm md:text-base">
+          {/* 왼쪽: 연도 */}
+          <div className="font-medium text-black">{currentYear}</div>
+          
+          {/* 중앙: 포트폴리오 제목 */}
+          <div className="font-medium text-black hidden md:block">UX/UI Design Portfolio</div>
+          
+          {/* 오른쪽: 계정 및 메뉴 */}
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="font-medium text-black hidden md:block">@realday</div>
+            
+            {/* 데스크톱 메뉴 */}
+            <div className="hidden md:flex items-center gap-6">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`text-xs md:text-sm font-medium transition-colors ${
+                    isActive(item.path)
+                      ? 'text-black'
+                      : 'text-gray-600 hover:text-black'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+            
+            {/* 모바일 메뉴 버튼 */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="md:hidden p-2 text-black focus:outline-none"
+              aria-label="Toggle menu"
             >
-              {isOpen ? (
-                <path d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {isOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
-
-        {/* Mobile Navigation */}
+        
+        {/* 모바일 메뉴 */}
         {isOpen && (
-          <div className="md:hidden pb-4">
-            <div className="flex flex-col space-y-4">
+          <div className="md:hidden mt-4 pb-2 border-t border-gray-300 pt-4">
+            <div className="flex flex-col space-y-3">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
-                  className={`text-base font-medium transition-colors ${
+                  className={`text-sm font-medium transition-colors ${
                     isActive(item.path)
                       ? 'text-black'
                       : 'text-gray-600 hover:text-black'
@@ -94,12 +101,11 @@ function Navigation() {
           </div>
         )}
       </div>
+      
+      {/* 하단 검은색 선 */}
+      <div className="h-px bg-black"></div>
     </nav>
   )
 }
 
 export default Navigation
-
-
-
-
