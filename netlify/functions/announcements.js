@@ -18,8 +18,28 @@ export const handler = async (event, context) => {
   }
 
   try {
-    await initDatabase()
-    const sql = getSql()
+    // 데이터베이스 초기화
+    try {
+      await initDatabase()
+    } catch (initError) {
+      console.error('Database initialization error:', initError)
+      // 초기화 실패해도 계속 진행 (이미 초기화되었을 수 있음)
+    }
+    
+    let sql
+    try {
+      sql = getSql()
+    } catch (sqlError) {
+      console.error('SQL connection error:', sqlError)
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          error: '데이터베이스 연결에 실패했습니다.',
+          details: sqlError.message
+        }),
+      }
+    }
 
     // 인증 확인
     const authHeader = event.headers.authorization || event.headers.Authorization
@@ -241,7 +261,37 @@ export const handler = async (event, context) => {
       body: JSON.stringify({ error: '지원하지 않는 메서드입니다.' }),
     }
   } catch (error) {
-    console.error('Announcements API 오류:', error)
+    console.error('Announcements API top-level error:', error)
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
+    console.error('Event method:', event.httpMethod)
+    console.error('Event path:', event.path)
+    
+    // 타임아웃 에러인 경우
+    if (error.message && error.message.includes('timeout')) {
+      return {
+        statusCode: 504,
+        headers,
+        body: JSON.stringify({ 
+          error: '요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.',
+          details: 'Timeout'
+        }),
+      }
+    }
+    
+    // 데이터베이스 연결 에러인 경우
+    if (error.message && (error.message.includes('connection') || error.message.includes('database') || error.message.includes('DATABASE_URL'))) {
+      return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({ 
+          error: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          details: 'Database connection failed'
+        }),
+      }
+    }
+    
     return {
       statusCode: 500,
       headers,

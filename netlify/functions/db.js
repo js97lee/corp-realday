@@ -35,7 +35,13 @@ export function getSql() {
 // 데이터베이스 초기화 (테이블 생성)
 export async function initDatabase() {
   try {
-    const sqlFunc = getSql()
+    let sqlFunc
+    try {
+      sqlFunc = getSql()
+    } catch (sqlError) {
+      console.error('Failed to get SQL connection:', sqlError)
+      throw new Error(`데이터베이스 연결 실패: ${sqlError.message}`)
+    }
     
     // users 테이블 생성
     await sqlFunc`
@@ -128,7 +134,10 @@ export async function initDatabase() {
     // media 컬럼 추가 (JSON 배열로 이미지/비디오 URL 저장)
     try {
       await sqlFunc`ALTER TABLE projects ADD COLUMN IF NOT EXISTS media JSONB DEFAULT '[]'::jsonb`
-    } catch (e) {}
+    } catch (e) {
+      // 컬럼이 이미 존재하거나 다른 이유로 실패할 수 있음
+      console.warn('Media column migration warning:', e.message)
+    }
 
     // tasks 테이블 생성
     await sqlFunc`

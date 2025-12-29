@@ -456,7 +456,7 @@ function AdminDashboard() {
               <div className="bg-white rounded-lg shadow p-6 mb-6">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">공지사항</h3>
-                  {(isSuperAdmin() || userRole === USER_ROLES.CEO) && (
+                  {isSuperAdmin() && (
                     <button
                       onClick={() => {
                         setShowAnnouncementModal(true)
@@ -470,7 +470,7 @@ function AdminDashboard() {
                       {announcement ? '수정하기' : '공지 작성하기'}
                     </button>
                   )}
-                  {!isSuperAdmin() && userRole !== USER_ROLES.CEO && (
+                  {!isSuperAdmin() && (
                     <span className="text-xs text-gray-400">최고관리자만 작성 가능</span>
                   )}
                 </div>

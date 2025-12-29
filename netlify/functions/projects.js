@@ -19,8 +19,28 @@ export const handler = async (event, context) => {
 
   try {
     // 데이터베이스 초기화 (모든 요청에서)
-    await initDatabase()
-    const sqlFunc = getSql()
+    try {
+      await initDatabase()
+    } catch (initError) {
+      console.error('Database initialization error:', initError)
+      // 초기화 실패해도 계속 진행 (이미 초기화되었을 수 있음)
+    }
+    
+    let sqlFunc
+    try {
+      sqlFunc = getSql()
+    } catch (sqlError) {
+      console.error('SQL connection error:', sqlError)
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: '데이터베이스 연결에 실패했습니다.',
+          error: sqlError.message
+        }),
+      }
+    }
 
     // GET: 프로젝트 목록 조회
     if (event.httpMethod === 'GET') {
@@ -521,8 +541,39 @@ export const handler = async (event, context) => {
     }
   } catch (error) {
     console.error('Projects API top-level error:', error)
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
     console.error('Error stack:', error.stack)
-    console.error('Event:', JSON.stringify(event, null, 2))
+    console.error('Event method:', event.httpMethod)
+    console.error('Event path:', event.path)
+    console.error('Event query:', event.queryStringParameters)
+    
+    // 타임아웃 에러인 경우
+    if (error.message && error.message.includes('timeout')) {
+      return {
+        statusCode: 504,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: '요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.',
+          error: 'Timeout'
+        }),
+      }
+    }
+    
+    // 데이터베이스 연결 에러인 경우
+    if (error.message && (error.message.includes('connection') || error.message.includes('database') || error.message.includes('DATABASE_URL'))) {
+      return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          error: 'Database connection failed'
+        }),
+      }
+    }
+    
     return {
       statusCode: 500,
       headers,

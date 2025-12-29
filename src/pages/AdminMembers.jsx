@@ -206,7 +206,7 @@ function AdminMembers() {
     switch (role) {
       case USER_ROLES.CEO:
       case USER_ROLES.SUPER_ADMIN:
-        return 'CEO'
+        return '최고관리자'
       case USER_ROLES.CTO:
         return 'CTO'
       case USER_ROLES.CMO:
@@ -251,7 +251,7 @@ function AdminMembers() {
   }, [])
 
   const roleOptions = useMemo(() => [
-    { value: USER_ROLES.CEO, label: 'CEO', group: '최고 관리자' },
+    { value: USER_ROLES.CEO, label: '최고관리자', group: '최고 관리자' },
     { value: USER_ROLES.CTO, label: 'CTO', group: '임원' },
     { value: USER_ROLES.CMO, label: 'CMO', group: '임원' },
     { value: USER_ROLES.DIRECTOR, label: 'Director', group: '중간 관리자' },

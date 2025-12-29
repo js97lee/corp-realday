@@ -76,8 +76,12 @@ function About() {
                 isVisible.intro ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
-              <div className="w-12 h-12 bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-default">
-                <span className="text-[#1e3a8a] font-bold text-lg">RD</span>
+              <div className="flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-default">
+                <img 
+                  src="/logo-white.svg" 
+                  alt="REALDAY Logo" 
+                  className="h-12 w-auto"
+                />
               </div>
               <p className="text-xl md:text-2xl font-bold uppercase tracking-wide">
                 FROM VISION TO INFINITE CREATION
