@@ -4,9 +4,22 @@ export const handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  }
+
+  // OPTIONS 요청 처리 (CORS preflight)
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: '',
+    }
   }
 
   try {
+    // 데이터베이스 초기화 (모든 요청에서)
+    await initDatabase()
     const sqlFunc = getSql()
 
     // GET: 프로젝트 목록 조회
@@ -217,23 +230,35 @@ export const handler = async (event, context) => {
         
         // 다른 에러는 그대로 throw
         console.error('Projects fetch error:', dbError)
+        console.error('Error stack:', dbError.stack)
         return {
           statusCode: 500,
           headers,
           body: JSON.stringify({
             success: false,
             message: '서버 오류가 발생했습니다.',
-            error: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+            error: dbError.message,
+            details: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
+          }),
+        }
+      } catch (outerError) {
+        // 최상위 에러 핸들링
+        console.error('Outer error in GET:', outerError)
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '프로젝트 목록을 불러오는 중 오류가 발생했습니다.',
+            error: outerError.message
           }),
         }
       }
     }
 
-    // POST, PUT, DELETE는 초기화 필요
-    await initDatabase()
-
     // POST: 프로젝트 추가
     if (event.httpMethod === 'POST') {
+      try {
       const { title, description, category, image, memo, isVisible, isFeatured, status, projectKey, startDate, endDate, media } = JSON.parse(event.body || '{}')
 
       if (!title) {
@@ -275,19 +300,33 @@ export const handler = async (event, context) => {
         }
       }
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: '프로젝트가 추가되었습니다.',
-          project: result[0]
-        }),
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            message: '프로젝트가 추가되었습니다.',
+            project: result[0]
+          }),
+        }
+      } catch (postError) {
+        console.error('POST error:', postError)
+        console.error('POST error stack:', postError.stack)
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '프로젝트 추가 중 오류가 발생했습니다.',
+            error: postError.message
+          }),
+        }
       }
     }
 
     // PUT: 프로젝트 수정
     if (event.httpMethod === 'PUT') {
+      try {
       // 경로에서 ID 추출
       let id = event.pathParameters?.id || event.pathParameters?.splat
       if (!id && event.path) {
@@ -382,19 +421,33 @@ export const handler = async (event, context) => {
         SELECT * FROM projects WHERE id = ${parseInt(id)}
       `
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: '프로젝트가 수정되었습니다.',
-          project: result[0]
-        }),
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            message: '프로젝트가 수정되었습니다.',
+            project: result[0]
+          }),
+        }
+      } catch (putError) {
+        console.error('PUT error:', putError)
+        console.error('PUT error stack:', putError.stack)
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '프로젝트 수정 중 오류가 발생했습니다.',
+            error: putError.message
+          }),
+        }
       }
     }
 
     // DELETE: 프로젝트 삭제
     if (event.httpMethod === 'DELETE') {
+      try {
       // 경로에서 ID 추출
       let id = event.pathParameters?.id || event.pathParameters?.splat
       if (!id && event.path) {
@@ -435,13 +488,26 @@ export const handler = async (event, context) => {
 
       await sqlFunc`DELETE FROM projects WHERE id = ${parseInt(id)}`
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: '프로젝트가 삭제되었습니다.'
-        }),
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            message: '프로젝트가 삭제되었습니다.'
+          }),
+        }
+      } catch (deleteError) {
+        console.error('DELETE error:', deleteError)
+        console.error('DELETE error stack:', deleteError.stack)
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '프로젝트 삭제 중 오류가 발생했습니다.',
+            error: deleteError.message
+          }),
+        }
       }
     }
 
@@ -454,14 +520,17 @@ export const handler = async (event, context) => {
       }),
     }
   } catch (error) {
-    console.error('Projects API error:', error)
+    console.error('Projects API top-level error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Event:', JSON.stringify(event, null, 2))
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         success: false,
         message: '서버 오류가 발생했습니다.',
-        error: error.message
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       }),
     }
   }

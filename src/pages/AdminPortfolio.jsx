@@ -65,7 +65,18 @@ function AdminPortfolio() {
       }
     } catch (err) {
       console.error('프로젝트 목록 불러오기 실패:', err)
-      setError(err.message || '프로젝트 목록을 불러올 수 없습니다.')
+      console.error('에러 상세:', err.details || err.stack)
+      const errorMessage = err.message || '프로젝트 목록을 불러올 수 없습니다.'
+      const detailsMessage = err.details ? ` (${err.details})` : ''
+      setError(`${errorMessage}${detailsMessage}`)
+      
+      // 502, 503, 504 에러인 경우 재시도 안내
+      if (err.status >= 500) {
+        setTimeout(() => {
+          console.log('자동 재시도 중...')
+          loadProjects()
+        }, 3000)
+      }
     } finally {
       setLoading(false)
     }

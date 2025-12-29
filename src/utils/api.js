@@ -217,11 +217,29 @@ export const fetchProjects = async (visible = false, featured = false) => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `서버 오류 (${response.status})`)
+        let errorData = {}
+        try {
+          errorData = await response.json()
+        } catch (e) {
+          errorData = { message: `서버 오류 (${response.status})` }
+        }
+        
+        const errorMessage = errorData.message || errorData.error || `서버 오류 (${response.status})`
+        const error = new Error(errorMessage)
+        error.status = response.status
+        error.details = errorData.details || errorData.error
+        throw error
       }
 
       const data = await response.json()
+      
+      // 응답이 success: false인 경우도 에러로 처리
+      if (data.success === false) {
+        const error = new Error(data.message || '요청 처리에 실패했습니다.')
+        error.details = data.error || data.details
+        throw error
+      }
+      
       return data
     } catch (error) {
       if (error.name === 'TypeError' && error.message.includes('fetch')) {

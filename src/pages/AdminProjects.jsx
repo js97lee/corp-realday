@@ -29,6 +29,7 @@ function AdminProjects() {
   })
   const [newMediaUrl, setNewMediaUrl] = useState('')
   const [newMediaType, setNewMediaType] = useState('image')
+  const [newMediaContent, setNewMediaContent] = useState('') // 텍스트나 임베드용
   const [relatedTasks, setRelatedTasks] = useState([])
   const navigate = useNavigate()
 
@@ -89,7 +90,18 @@ function AdminProjects() {
       }
     } catch (err) {
       console.error('프로젝트 목록 불러오기 실패:', err)
-      setError(err.message || '프로젝트 목록을 불러올 수 없습니다.')
+      console.error('에러 상세:', err.details || err.stack)
+      const errorMessage = err.message || '프로젝트 목록을 불러올 수 없습니다.'
+      const detailsMessage = err.details ? ` (${err.details})` : ''
+      setError(`${errorMessage}${detailsMessage}`)
+      
+      // 502, 503, 504 에러인 경우 재시도 안내
+      if (err.status >= 500) {
+        setTimeout(() => {
+          console.log('자동 재시도 중...')
+          loadProjects()
+        }, 3000)
+      }
     } finally {
       setLoading(false)
     }
@@ -548,60 +560,243 @@ function AdminProjects() {
               </div>
             </div>
 
-            {/* 미디어 갤러리 (이미지/비디오) */}
+            {/* 콘텐츠 추가 - Behance 스타일 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                미디어 갤러리 (이미지/비디오)
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                콘텐츠 추가
               </label>
+              
+              {/* 콘텐츠 타입 선택 버튼 그리드 */}
+              <div className="grid grid-cols-4 gap-3 mb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewMediaType('image')
+                    setNewMediaContent('')
+                  }}
+                  className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    newMediaType === 'image' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-xs font-medium">이미지</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewMediaType('text')
+                    setNewMediaUrl('')
+                  }}
+                  className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    newMediaType === 'text' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                  <span className="text-xs font-medium">텍스트</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewMediaType('photoGrid')
+                    setNewMediaContent('')
+                  }}
+                  className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    newMediaType === 'photoGrid' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                  </svg>
+                  <span className="text-xs font-medium">포토 그리드</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewMediaType('video')
+                    setNewMediaContent('')
+                  }}
+                  className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    newMediaType === 'video' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-xs font-medium">비디오</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewMediaType('embed')
+                    setNewMediaUrl('')
+                  }}
+                  className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    newMediaType === 'embed' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                  <span className="text-xs font-medium">임베드</span>
+                </button>
+              </div>
+              
+              {/* 콘텐츠 입력 영역 */}
               <div className="space-y-4">
-                {/* 미디어 추가 입력 */}
-                <div className="flex gap-2">
-                  <select
-                    value={newMediaType}
-                    onChange={(e) => setNewMediaType(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
-                  >
-                    <option value="image">이미지</option>
-                    <option value="video">비디오</option>
-                  </select>
-                  <input
-                    type="url"
-                    value={newMediaUrl}
-                    onChange={(e) => setNewMediaUrl(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
-                    placeholder={newMediaType === 'image' ? '이미지 URL 입력' : '비디오 URL 입력 (YouTube 또는 직접 링크)'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newMediaUrl.trim()) {
-                        setFormData({
-                          ...formData,
-                          media: [...(formData.media || []), { type: newMediaType, url: newMediaUrl.trim() }]
-                        })
-                        setNewMediaUrl('')
-                      }
-                    }}
-                    disabled={!newMediaUrl.trim()}
-                    className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    추가
-                  </button>
-                </div>
+                {newMediaType === 'text' ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={newMediaContent}
+                      onChange={(e) => setNewMediaContent(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none"
+                      rows="4"
+                      placeholder="텍스트 내용을 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newMediaContent.trim()) {
+                          setFormData({
+                            ...formData,
+                            media: [...(formData.media || []), { type: 'text', content: newMediaContent.trim() }]
+                          })
+                          setNewMediaContent('')
+                        }
+                      }}
+                      disabled={!newMediaContent.trim()}
+                      className="w-full px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      추가
+                    </button>
+                  </div>
+                ) : newMediaType === 'embed' ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={newMediaContent}
+                      onChange={(e) => setNewMediaContent(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none font-mono text-sm"
+                      rows="4"
+                      placeholder="임베드 코드를 입력하세요 (iframe, script 등)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newMediaContent.trim()) {
+                          setFormData({
+                            ...formData,
+                            media: [...(formData.media || []), { type: 'embed', content: newMediaContent.trim() }]
+                          })
+                          setNewMediaContent('')
+                        }
+                      }}
+                      disabled={!newMediaContent.trim()}
+                      className="w-full px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      추가
+                    </button>
+                  </div>
+                ) : newMediaType === 'photoGrid' ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={newMediaUrl}
+                      onChange={(e) => setNewMediaUrl(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                      placeholder="이미지 URL을 쉼표로 구분하여 입력 (예: url1, url2, url3, url4)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newMediaUrl.trim()) {
+                          const urls = newMediaUrl.split(',').map(url => url.trim()).filter(Boolean)
+                          if (urls.length > 0) {
+                            setFormData({
+                              ...formData,
+                              media: [...(formData.media || []), { type: 'photoGrid', urls: urls }]
+                            })
+                            setNewMediaUrl('')
+                          }
+                        }
+                      }}
+                      disabled={!newMediaUrl.trim()}
+                      className="w-full px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      추가
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newMediaUrl}
+                      onChange={(e) => setNewMediaUrl(e.target.value)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                      placeholder={newMediaType === 'image' ? '이미지 URL 입력' : '비디오 URL 입력 (YouTube 또는 직접 링크)'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newMediaUrl.trim()) {
+                          setFormData({
+                            ...formData,
+                            media: [...(formData.media || []), { type: newMediaType, url: newMediaUrl.trim() }]
+                          })
+                          setNewMediaUrl('')
+                        }
+                      }}
+                      disabled={!newMediaUrl.trim()}
+                      className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      추가
+                    </button>
+                  </div>
+                )}
+              </div>
 
                 {/* 미디어 목록 */}
                 {formData.media && formData.media.length > 0 && (
-                  <div className="space-y-3 border border-gray-200 rounded-lg p-4">
+                  <div className="space-y-3 border border-gray-200 rounded-lg p-4 mt-4">
                     {formData.media.map((item, index) => (
                       <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs font-medium px-2 py-1 bg-gray-200 rounded">
-                              {item.type === 'image' ? '이미지' : '비디오'}
+                              {item.type === 'image' ? '이미지' : 
+                               item.type === 'video' ? '비디오' :
+                               item.type === 'text' ? '텍스트' :
+                               item.type === 'photoGrid' ? '포토 그리드' :
+                               item.type === 'embed' ? '임베드' : item.type}
                             </span>
-                            <span className="text-xs text-gray-600 truncate">{item.url}</span>
+                            {item.url && (
+                              <span className="text-xs text-gray-600 truncate">{item.url}</span>
+                            )}
+                            {item.content && (
+                              <span className="text-xs text-gray-600 truncate">콘텐츠 입력됨</span>
+                            )}
+                            {item.urls && (
+                              <span className="text-xs text-gray-600">{item.urls.length}개 이미지</span>
+                            )}
                           </div>
-                          {item.type === 'image' && (
+                          {item.type === 'image' && item.url && (
                             <img
                               src={item.url}
                               alt={`미디어 ${index + 1}`}
@@ -611,9 +806,34 @@ function AdminProjects() {
                               }}
                             />
                           )}
-                          {item.type === 'video' && (
+                          {item.type === 'video' && item.url && (
                             <div className="w-full h-32 bg-gray-200 rounded border border-gray-300 flex items-center justify-center">
                               <span className="text-xs text-gray-500">비디오 미리보기</span>
+                            </div>
+                          )}
+                          {item.type === 'text' && item.content && (
+                            <div className="w-full p-3 bg-white rounded border border-gray-300">
+                              <p className="text-sm text-gray-700 line-clamp-3">{item.content}</p>
+                            </div>
+                          )}
+                          {item.type === 'photoGrid' && item.urls && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {item.urls.slice(0, 4).map((url, idx) => (
+                                <img
+                                  key={idx}
+                                  src={url}
+                                  alt={`그리드 ${idx + 1}`}
+                                  className="w-full h-24 object-cover rounded border border-gray-300"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none'
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {item.type === 'embed' && item.content && (
+                            <div className="w-full p-3 bg-white rounded border border-gray-300">
+                              <code className="text-xs text-gray-600 line-clamp-2">{item.content.substring(0, 100)}...</code>
                             </div>
                           )}
                         </div>

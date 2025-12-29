@@ -1755,13 +1755,65 @@ app.post('/api/announcements', async (req, res) => {
 
     // Authorization 헤더에서 사용자 정보 가져오기
     const authHeader = req.headers.authorization
+    let user = null
     let userId = null
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      // 실제로는 JWT 토큰을 디코딩해야 하지만, 여기서는 간단하게 처리
-      // 클라이언트에서 user 정보를 함께 보내도록 하거나, 
-      // 토큰에서 사용자 정보를 추출해야 함
-      // 일단 created_by는 null로 설정 (나중에 수정 가능)
+      const token = authHeader.substring(7)
+      
+      // mock-jwt-token인 경우 CEO 역할을 가진 사용자를 우선 찾고, 없으면 첫 번째 사용자 사용
+      if (token === 'mock-jwt-token') {
+        const ceoUserResult = await sql`
+          SELECT id, email, role FROM users 
+          WHERE LOWER(role) = 'ceo' OR LOWER(role) = 'super_admin'
+          LIMIT 1
+        `
+        if (ceoUserResult.length > 0) {
+          user = ceoUserResult[0]
+        } else {
+          const userResult = await sql`
+            SELECT id, email, role FROM users LIMIT 1
+          `
+          if (userResult.length > 0) {
+            user = userResult[0]
+          }
+        }
+      } else {
+        // 실제 토큰인 경우 password와 비교
+        const userResult = await sql`
+          SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1
+        `
+        if (userResult.length > 0) {
+          user = userResult[0]
+        }
+      }
+      
+      if (!user) {
+        return res.status(401).json({ 
+          success: false, 
+          message: '유효하지 않은 토큰입니다.' 
+        })
+      }
+      
+      userId = user.id
+      
+      // 권한 체크 (CEO 또는 super_admin만 가능)
+      const normalizedRole = user.role ? user.role.toLowerCase() : ''
+      const isSuperAdmin = normalizedRole === 'ceo' || normalizedRole === 'super_admin'
+      
+      if (!isSuperAdmin) {
+        console.log('권한 체크 실패:', { userId: user.id, email: user.email, role: user.role, normalizedRole })
+        return res.status(403).json({ 
+          success: false, 
+          message: '권한이 없습니다. 최고관리자만 공지를 작성할 수 있습니다.',
+          details: `현재 역할: ${user.role}`
+        })
+      }
+    } else {
+      return res.status(401).json({ 
+        success: false, 
+        message: '인증이 필요합니다.' 
+      })
     }
 
     // is_active 값 처리 (undefined일 경우 true로 설정)
@@ -1807,6 +1859,60 @@ app.put('/api/announcements/:id', async (req, res) => {
       })
     }
 
+    // 권한 체크
+    const authHeader = req.headers.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '인증이 필요합니다.' 
+      })
+    }
+
+    const token = authHeader.substring(7)
+    let user = null
+    
+    if (token === 'mock-jwt-token') {
+      const ceoUserResult = await sql`
+        SELECT id, email, role FROM users 
+        WHERE LOWER(role) = 'ceo' OR LOWER(role) = 'super_admin'
+        LIMIT 1
+      `
+      if (ceoUserResult.length > 0) {
+        user = ceoUserResult[0]
+      } else {
+        const userResult = await sql`
+          SELECT id, email, role FROM users LIMIT 1
+        `
+        if (userResult.length > 0) {
+          user = userResult[0]
+        }
+      }
+    } else {
+      const userResult = await sql`
+        SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1
+      `
+      if (userResult.length > 0) {
+        user = userResult[0]
+      }
+    }
+    
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '유효하지 않은 토큰입니다.' 
+      })
+    }
+    
+    const normalizedRole = user.role ? user.role.toLowerCase() : ''
+    const isSuperAdmin = normalizedRole === 'ceo' || normalizedRole === 'super_admin'
+    
+    if (!isSuperAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: '권한이 없습니다. 최고관리자만 공지를 수정할 수 있습니다.' 
+      })
+    }
+
     // 활성화할 경우 기존 활성 공지사항 비활성화
     if (is_active === true) {
       await sql`UPDATE announcements SET is_active = false WHERE is_active = true AND id != ${id}`
@@ -1849,6 +1955,60 @@ app.put('/api/announcements/:id', async (req, res) => {
 app.delete('/api/announcements/:id', async (req, res) => {
   try {
     const { id } = req.params
+
+    // 권한 체크
+    const authHeader = req.headers.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '인증이 필요합니다.' 
+      })
+    }
+
+    const token = authHeader.substring(7)
+    let user = null
+    
+    if (token === 'mock-jwt-token') {
+      const ceoUserResult = await sql`
+        SELECT id, email, role FROM users 
+        WHERE LOWER(role) = 'ceo' OR LOWER(role) = 'super_admin'
+        LIMIT 1
+      `
+      if (ceoUserResult.length > 0) {
+        user = ceoUserResult[0]
+      } else {
+        const userResult = await sql`
+          SELECT id, email, role FROM users LIMIT 1
+        `
+        if (userResult.length > 0) {
+          user = userResult[0]
+        }
+      }
+    } else {
+      const userResult = await sql`
+        SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1
+      `
+      if (userResult.length > 0) {
+        user = userResult[0]
+      }
+    }
+    
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '유효하지 않은 토큰입니다.' 
+      })
+    }
+    
+    const normalizedRole = user.role ? user.role.toLowerCase() : ''
+    const isSuperAdmin = normalizedRole === 'ceo' || normalizedRole === 'super_admin'
+    
+    if (!isSuperAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: '권한이 없습니다. 최고관리자만 공지를 삭제할 수 있습니다.' 
+      })
+    }
 
     const announcement = await sql`
       SELECT * FROM announcements WHERE id = ${id}

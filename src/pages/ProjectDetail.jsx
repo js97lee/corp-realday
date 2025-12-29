@@ -68,7 +68,16 @@ function ProjectDetail() {
 
   // 미디어 배열 파싱 (JSON 문자열일 수 있음)
   const mediaArray = project.media 
-    ? (typeof project.media === 'string' ? JSON.parse(project.media) : project.media)
+    ? (typeof project.media === 'string' 
+        ? (() => {
+            try {
+              return JSON.parse(project.media)
+            } catch (e) {
+              console.warn('Media 파싱 실패:', e)
+              return []
+            }
+          })()
+        : project.media)
     : []
 
   // 썸네일 이미지도 미디어 배열에 포함
@@ -127,7 +136,7 @@ function ProjectDetail() {
                   {item.type === 'video' ? (
                     // 비디오
                     <div className="w-full aspect-video bg-black overflow-hidden">
-                      {item.url.includes('youtube.com') || item.url.includes('youtu.be') ? (
+                      {item.url && (item.url.includes('youtube.com') || item.url.includes('youtu.be')) ? (
                         // YouTube 비디오
                         <iframe
                           src={item.url.includes('youtu.be') 
@@ -141,7 +150,7 @@ function ProjectDetail() {
                           allowFullScreen
                           title={project.title}
                         />
-                      ) : (
+                      ) : item.url ? (
                         // 일반 비디오
                         <video
                           src={item.url}
@@ -150,9 +159,42 @@ function ProjectDetail() {
                         >
                           브라우저가 비디오 태그를 지원하지 않습니다.
                         </video>
-                      )}
+                      ) : null}
                     </div>
-                  ) : (
+                  ) : item.type === 'text' ? (
+                    // 텍스트
+                    <div className="w-full p-8 md:p-12 bg-white">
+                      <div className="max-w-3xl mx-auto">
+                        <p className="text-base md:text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">
+                          {item.content}
+                        </p>
+                      </div>
+                    </div>
+                  ) : item.type === 'photoGrid' && item.urls ? (
+                    // 포토 그리드
+                    <div className="w-full bg-gray-50 p-4 md:p-6">
+                      <div className="grid grid-cols-2 gap-2 md:gap-4">
+                        {item.urls.map((url, idx) => (
+                          <div key={idx} className="w-full aspect-square bg-gray-200 overflow-hidden rounded">
+                            <img
+                              src={url}
+                              alt={`${project.title} - 그리드 ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : item.type === 'embed' && item.content ? (
+                    // 임베드
+                    <div className="w-full bg-gray-50 p-4 md:p-6">
+                      <div 
+                        className="w-full"
+                        dangerouslySetInnerHTML={{ __html: item.content }}
+                      />
+                    </div>
+                  ) : item.url ? (
                     // 이미지
                     <div className="w-full bg-gray-50">
                       <img
@@ -162,7 +204,7 @@ function ProjectDetail() {
                         loading="lazy"
                       />
                     </div>
-                  )}
+                  ) : null}
                   
                   {/* 미디어 인덱스 표시 (선택사항) */}
                   {allMedia.length > 1 && (

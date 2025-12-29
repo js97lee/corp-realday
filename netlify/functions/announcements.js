@@ -36,12 +36,22 @@ export const handler = async (event, context) => {
     let user = null
     
     if (token === 'mock-jwt-token') {
-      // mock 토큰인 경우 첫 번째 사용자를 사용 (실제로는 토큰에서 사용자 정보 추출)
-      const userResult = await sql`
-        SELECT id, email, role FROM users LIMIT 1
+      // mock 토큰인 경우 CEO 역할을 가진 사용자를 우선 찾고, 없으면 첫 번째 사용자 사용
+      const ceoUserResult = await sql`
+        SELECT id, email, role FROM users 
+        WHERE LOWER(role) = 'ceo' OR LOWER(role) = 'super_admin'
+        LIMIT 1
       `
-      if (userResult.length > 0) {
-        user = userResult[0]
+      if (ceoUserResult.length > 0) {
+        user = ceoUserResult[0]
+      } else {
+        // CEO가 없으면 첫 번째 사용자를 사용
+        const userResult = await sql`
+          SELECT id, email, role FROM users LIMIT 1
+        `
+        if (userResult.length > 0) {
+          user = userResult[0]
+        }
       }
     } else {
       // 실제 토큰인 경우 password와 비교 (임시)
@@ -61,9 +71,12 @@ export const handler = async (event, context) => {
       }
     }
 
+    // 역할 정규화 (대소문자 구분 없이)
+    const normalizedRole = user.role ? user.role.toLowerCase() : ''
+
     // GET: 활성 공지사항 조회 (모든 사용자) 또는 모든 공지사항 조회 (슈퍼어드민)
     if (event.httpMethod === 'GET') {
-      const isSuperAdmin = user.role === 'ceo' || user.role === 'super_admin'
+      const isSuperAdmin = normalizedRole === 'ceo' || normalizedRole === 'super_admin'
       
       if (isSuperAdmin) {
         // 슈퍼어드민은 모든 공지사항 조회
@@ -102,12 +115,16 @@ export const handler = async (event, context) => {
     }
 
     // POST, PUT, DELETE는 슈퍼어드민만 가능
-    const isSuperAdmin = user.role === 'ceo' || user.role === 'super_admin'
+    const isSuperAdmin = normalizedRole === 'ceo' || normalizedRole === 'super_admin'
     if (!isSuperAdmin) {
+      console.log('권한 체크 실패:', { userId: user.id, email: user.email, role: user.role, normalizedRole })
       return {
         statusCode: 403,
         headers,
-        body: JSON.stringify({ error: '권한이 없습니다. 최고관리자만 공지를 작성할 수 있습니다.' }),
+        body: JSON.stringify({ 
+          error: '권한이 없습니다. 최고관리자만 공지를 작성할 수 있습니다.',
+          details: `현재 역할: ${user.role}`
+        }),
       }
     }
 
