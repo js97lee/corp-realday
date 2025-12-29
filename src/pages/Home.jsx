@@ -48,11 +48,16 @@ function Home() {
     const loadFeaturedProjects = async () => {
       try {
         const response = await fetchProjects(false, true) // featured=true: 랜딩페이지용
-        if (response.success) {
+        console.log('랜딩페이지 프로젝트 응답:', response)
+        if (response && (response.success || response.projects)) {
           setProjects(response.projects || [])
+        } else {
+          console.warn('예상치 못한 응답 형식:', response)
+          setProjects([])
         }
       } catch (err) {
         console.error('랜딩페이지 프로젝트 불러오기 실패:', err)
+        console.error('에러 상세:', err.message, err.stack)
         setProjects([])
       } finally {
         setLoading(false)

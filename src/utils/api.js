@@ -209,12 +209,19 @@ export const fetchProjects = async (visible = false, featured = false) => {
         url += '?visible=true'
       }
       
+      // 타임아웃 설정 (15초)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+      
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         let errorData = {}
@@ -238,6 +245,20 @@ export const fetchProjects = async (visible = false, featured = false) => {
         const error = new Error(data.message || '요청 처리에 실패했습니다.')
         error.details = data.error || data.details
         throw error
+      }
+      
+      // 응답 형식이 올바른지 확인 (배포 환경에서 형식이 다를 수 있음)
+      // success가 없어도 projects 배열이 있으면 정상으로 처리
+      if (data.success !== true && !data.projects && !Array.isArray(data)) {
+        console.warn('예상치 못한 응답 형식:', data)
+        // 배열로 직접 반환된 경우도 처리
+        if (Array.isArray(data)) {
+          return { success: true, projects: data }
+        }
+        // projects 필드가 없으면 빈 배열로 처리
+        if (!data.projects) {
+          return { success: true, projects: [] }
+        }
       }
       
       return data

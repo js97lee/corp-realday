@@ -60,6 +60,7 @@ function AdminDashboard() {
   const [selectedEvent, setSelectedEvent] = useState(null) // 선택된 일정
   const [selectedDate, setSelectedDate] = useState(null) // 선택된 날짜
   const [announcement, setAnnouncement] = useState(null) // 공지사항
+  const [allAnnouncements, setAllAnnouncements] = useState([]) // 모든 공지사항 목록
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false) // 공지사항 모달
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,13 +99,27 @@ function AdminDashboard() {
     try {
       setLoading(true)
       
-      // 병렬로 데이터 로드
-      const [contactsRes, projectsRes, membersRes, financesRes] = await Promise.allSettled([
-        fetchContacts(),
-        fetchProjects(),
-        fetchMembers(),
-        isSuperAdmin() ? fetchFinances() : Promise.resolve({ success: false })
+      // 타임아웃 설정 (20초)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('데이터 로드 시간이 초과되었습니다.')), 20000)
+      )
+      
+      // 병렬로 데이터 로드 (타임아웃 포함)
+      const results = await Promise.race([
+        Promise.allSettled([
+          fetchContacts(),
+          fetchProjects(),
+          fetchMembers(),
+          isSuperAdmin() ? fetchFinances() : Promise.resolve({ success: false })
+        ]),
+        timeoutPromise
       ])
+      
+      if (results instanceof Error) {
+        throw results
+      }
+      
+      const [contactsRes, projectsRes, membersRes, financesRes] = results
 
       // 문의 데이터
       if (contactsRes.status === 'fulfilled' && contactsRes.value.success) {
@@ -168,6 +183,13 @@ function AdminDashboard() {
     }
   }, [user, activeMenu, loadEvents])
 
+  // 공지사항 관리 페이지 진입 시 모든 공지사항 로드
+  useEffect(() => {
+    if (user && activeMenu === 'announcements' && isSuperAdmin()) {
+      loadAnnouncement()
+    }
+  }, [user, activeMenu, loadAnnouncement])
+
   // 공지사항 로드
   const loadAnnouncement = useCallback(async () => {
     try {
@@ -175,6 +197,8 @@ function AdminDashboard() {
       // 활성 공지사항만 표시 (일반 사용자) 또는 최신 공지사항 (슈퍼어드민)
       const activeAnnouncement = announcements.find(a => a.is_active) || announcements[0] || null
       setAnnouncement(activeAnnouncement)
+      // 모든 공지사항 저장 (공지사항 관리 페이지용)
+      setAllAnnouncements(Array.isArray(announcements) ? announcements : [])
     } catch (error) {
       console.error('공지사항 로드 실패:', error)
     }
@@ -192,6 +216,7 @@ function AdminDashboard() {
       }
       await loadAnnouncement()
       setShowAnnouncementModal(false)
+      setAnnouncement(null) // 선택된 공지사항 초기화
     } catch (error) {
       console.error('공지사항 저장 실패:', error)
       alert(error.message || '공지사항 저장에 실패했습니다.')
@@ -204,6 +229,7 @@ function AdminDashboard() {
       await deleteAnnouncement(announcementId)
       await loadAnnouncement()
       setShowAnnouncementModal(false)
+      setAnnouncement(null) // 선택된 공지사항 초기화
     } catch (error) {
       console.error('공지사항 삭제 실패:', error)
       alert(error.message || '공지사항 삭제에 실패했습니다.')
@@ -306,6 +332,7 @@ function AdminDashboard() {
     {
       category: '시스템',
       items: [
+        { id: 'announcements', label: '공지사항 관리', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
         { id: 'contacts', label: '문의하기 관리', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
         { id: 'finance', label: '재무 관리', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
         { id: 'members', label: '멤버 관리', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: [USER_ROLES.CEO, USER_ROLES.SUPER_ADMIN] },
@@ -667,6 +694,109 @@ function AdminDashboard() {
             <Suspense fallback={<LoadingSpinner />}>
               <AdminMembers />
             </Suspense>
+          )}
+          {activeMenu === 'announcements' && isSuperAdmin() && (
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">공지사항 관리</h3>
+                <button
+                  onClick={() => {
+                    setAnnouncement(null)
+                    setShowAnnouncementModal(true)
+                  }}
+                  className="px-4 py-2 text-sm font-medium bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  새 공지사항 작성
+                </button>
+              </div>
+              <div className="p-6">
+                {allAnnouncements.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-sm">등록된 공지사항이 없습니다.</p>
+                    <p className="text-xs mt-2 text-gray-500">위의 '새 공지사항 작성' 버튼을 클릭하여 공지사항을 작성하세요.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allAnnouncements.map((ann) => (
+                      <div
+                        key={ann.id}
+                        className={`border rounded-lg p-4 transition-all hover:shadow-md ${
+                          ann.is_active ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="text-lg font-semibold text-gray-900">{ann.title}</h4>
+                              {ann.is_active && (
+                                <span className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded">
+                                  활성
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{ann.content}</p>
+                            <div className="flex items-center gap-4 text-xs text-gray-400">
+                              {ann.created_at && (
+                                <div className="flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <span>
+                                    {new Date(ann.created_at).toLocaleDateString('ko-KR', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                    })}
+                                  </span>
+                                </div>
+                              )}
+                              {ann.created_by_name && (
+                                <div className="flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>
+                                  <span>{ann.created_by_name}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => {
+                                setAnnouncement(ann)
+                                setShowAnnouncementModal(true)
+                              }}
+                              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg flex items-center gap-1.5"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              수정
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm('정말 이 공지사항을 삭제하시겠습니까?')) {
+                                  handleAnnouncementDelete(ann.id)
+                                }
+                              }}
+                              className="px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 transition-colors rounded-lg flex items-center gap-1.5"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
           </div>
         </main>

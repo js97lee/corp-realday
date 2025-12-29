@@ -276,3 +276,4 @@ const loadDashboardData = async () => {
 3. **중기 적용**: 배치 API 생성
 4. **장기 검토**: Vercel 또는 Render로 전환 고려
 
+

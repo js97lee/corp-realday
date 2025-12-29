@@ -24,8 +24,10 @@ function AdminPortfolio() {
     try {
       setLoading(true)
       setError('')
+      console.log('랜딩페이지 관리 - 프로젝트 목록 불러오기 시작...')
       const response = await fetchProjects(false) // 관리자용: 모든 프로젝트
-      if (response.success) {
+      console.log('랜딩페이지 관리 - 프로젝트 목록 응답:', response)
+      if (response && (response.success || response.projects)) {
         // 데이터베이스 필드명을 컴포넌트 필드명으로 변환
         const formattedProjects = (response.projects || []).map(p => {
           // media 필드 안전하게 처리
@@ -72,10 +74,12 @@ function AdminPortfolio() {
       
       // 502, 503, 504 에러인 경우 재시도 안내
       if (err.status >= 500) {
+        setLoading(false) // 재시도 전에 로딩 상태 해제
         setTimeout(() => {
           console.log('자동 재시도 중...')
           loadProjects()
         }, 3000)
+        return // 재시도하는 경우 여기서 종료
       }
     } finally {
       setLoading(false)

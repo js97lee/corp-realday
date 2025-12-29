@@ -38,8 +38,10 @@ function AdminProjects() {
     try {
       setLoading(true)
       setError('')
+      console.log('프로젝트 목록 불러오기 시작...')
       const response = await fetchProjects(false) // 관리자용: 모든 프로젝트
-      if (response.success) {
+      console.log('프로젝트 목록 응답:', response)
+      if (response && (response.success || response.projects)) {
         // 직원은 진행 중인 프로젝트만 볼 수 있음
         const userRole = getUserRole()
         let filteredProjects = response.projects || []
@@ -97,10 +99,12 @@ function AdminProjects() {
       
       // 502, 503, 504 에러인 경우 재시도 안내
       if (err.status >= 500) {
+        setLoading(false) // 재시도 전에 로딩 상태 해제
         setTimeout(() => {
           console.log('자동 재시도 중...')
           loadProjects()
         }, 3000)
+        return // 재시도하는 경우 여기서 종료
       }
     } finally {
       setLoading(false)

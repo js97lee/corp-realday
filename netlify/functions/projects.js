@@ -23,16 +23,35 @@ export const handler = async (event, context) => {
       await initDatabase()
     } catch (initError) {
       console.error('Database initialization error:', initError)
-      // 초기화 실패해도 계속 진행 (이미 초기화되었을 수 있음)
+      console.error('Init error stack:', initError.stack)
+      // 초기화 실패는 치명적이므로 에러 반환
+      return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: '데이터베이스 초기화에 실패했습니다.',
+          error: initError.message
+        }),
+      }
     }
     
     let sqlFunc
     try {
       sqlFunc = getSql()
+      // 연결 테스트 (타임아웃 설정)
+      await Promise.race([
+        sqlFunc`SELECT 1`,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+        )
+      ])
     } catch (sqlError) {
       console.error('SQL connection error:', sqlError)
+      console.error('SQL error stack:', sqlError.stack)
+      console.error('DATABASE_URL exists:', !!process.env.DATABASE_URL)
       return {
-        statusCode: 500,
+        statusCode: 503,
         headers,
         body: JSON.stringify({
           success: false,
@@ -46,85 +65,142 @@ export const handler = async (event, context) => {
     if (event.httpMethod === 'GET') {
       try {
         const { visible, featured } = event.queryStringParameters || {}
+        console.log('GET projects request:', { visible, featured, queryParams: event.queryStringParameters })
+        
+        // 쿼리 실행 전 연결 확인
+        try {
+          await Promise.race([
+            sqlFunc`SELECT 1`,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Connection check timeout')), 3000))
+          ])
+        } catch (connError) {
+          console.error('Connection check failed:', connError)
+          return {
+            statusCode: 503,
+            headers,
+            body: JSON.stringify({
+              success: false,
+              message: '데이터베이스 연결 확인 실패',
+              error: connError.message
+            }),
+          }
+        }
+        
         let projects
 
-        // media 컬럼 존재 여부 확인
+        // media 컬럼 존재 여부 확인 (타임아웃 설정)
         let hasMediaColumn = false
         try {
-          const columnCheck = await sqlFunc`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'projects' AND column_name = 'media'
-          `
+          const columnCheck = await Promise.race([
+            sqlFunc`
+              SELECT column_name 
+              FROM information_schema.columns 
+              WHERE table_name = 'projects' AND column_name = 'media'
+            `,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Column check timeout')), 3000))
+          ])
           hasMediaColumn = columnCheck.length > 0
         } catch (e) {
-          console.warn('Media 컬럼 확인 실패:', e)
+          console.warn('Media 컬럼 확인 실패 (기본값: false):', e.message)
           hasMediaColumn = false
         }
 
-        if (featured === 'true') {
-          // 랜딩페이지용: featured 프로젝트만
-          if (hasMediaColumn) {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
-              FROM projects
-              WHERE is_featured = true AND is_visible = true
-              ORDER BY created_at DESC
-            `
+        // 쿼리 실행 (타임아웃 설정)
+        try {
+          if (featured === 'true') {
+            // 랜딩페이지용: featured 프로젝트만
+            if (hasMediaColumn) {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
+                  FROM projects
+                  WHERE is_featured = true AND is_visible = true
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+              ])
+            } else {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, created_at
+                  FROM projects
+                  WHERE is_featured = true AND is_visible = true
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+              ])
+              // media 필드 추가 (빈 배열)
+              projects = (projects || []).map(p => ({ ...p, media: [] }))
+            }
+          } else if (visible === 'true') {
+            // Projects 페이지용: 노출된 프로젝트만
+            if (hasMediaColumn) {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
+                  FROM projects
+                  WHERE is_visible = true
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+              ])
+            } else {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, created_at
+                  FROM projects
+                  WHERE is_visible = true
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+              ])
+              // media 필드 추가 (빈 배열)
+              projects = (projects || []).map(p => ({ ...p, media: [] }))
+            }
           } else {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, created_at
-              FROM projects
-              WHERE is_featured = true AND is_visible = true
-              ORDER BY created_at DESC
-            `
-            // media 필드 추가 (빈 배열)
-            projects = projects.map(p => ({ ...p, media: [] }))
+            // 관리자용: 모든 프로젝트
+            if (hasMediaColumn) {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
+                  FROM projects
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+              ])
+            } else {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+                  FROM projects
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+              ])
+              // media 필드 추가 (빈 배열)
+              projects = (projects || []).map(p => ({ ...p, media: [] }))
+            }
           }
-        } else if (visible === 'true') {
-          // Projects 페이지용: 노출된 프로젝트만
-          if (hasMediaColumn) {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
-              FROM projects
-              WHERE is_visible = true
-              ORDER BY created_at DESC
-            `
-          } else {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, created_at
-              FROM projects
-              WHERE is_visible = true
-              ORDER BY created_at DESC
-            `
-            // media 필드 추가 (빈 배열)
-            projects = projects.map(p => ({ ...p, media: [] }))
-          }
-        } else {
-          // 관리자용: 모든 프로젝트
-          if (hasMediaColumn) {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
-              FROM projects
-              ORDER BY created_at DESC
-            `
-          } else {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
-              FROM projects
-              ORDER BY created_at DESC
-            `
-            // media 필드 추가 (빈 배열)
-            projects = projects.map(p => ({ ...p, media: [] }))
-          }
+        } catch (queryError) {
+          console.error('Query execution error:', queryError)
+          console.error('Query error stack:', queryError.stack)
+          throw queryError
         }
 
+        // 결과가 배열이 아닌 경우 처리
+        if (!Array.isArray(projects)) {
+          console.warn('Projects is not an array:', typeof projects, projects)
+          projects = []
+        }
+
+        console.log('Projects fetched successfully:', { count: projects?.length || 0, featured, visible })
+        
         return {
           statusCode: 200,
           headers,
           body: JSON.stringify({
             success: true,
-            projects
+            projects: projects || []
           }),
         }
       } catch (dbError) {
