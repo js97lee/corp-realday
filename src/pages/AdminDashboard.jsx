@@ -272,6 +272,8 @@ function AdminDashboard() {
       if (role === 'employee') role = USER_ROLES.PRO
       else if (role === 'manager') role = USER_ROLES.DIRECTOR
       else if (role === 'super_admin') role = USER_ROLES.CEO
+      // 'ceo' 문자열도 USER_ROLES.CEO로 정규화
+      else if (role === 'ceo') role = USER_ROLES.CEO
       
       setUserRole(role || getUserRole() || USER_ROLES.PRO)
     } else {
@@ -454,7 +456,7 @@ function AdminDashboard() {
               <div className="bg-white rounded-lg shadow p-6 mb-6">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">공지사항</h3>
-                  {isSuperAdmin() && (
+                  {(isSuperAdmin() || userRole === USER_ROLES.CEO) && (
                     <button
                       onClick={() => {
                         setShowAnnouncementModal(true)
@@ -468,7 +470,7 @@ function AdminDashboard() {
                       {announcement ? '수정하기' : '공지 작성하기'}
                     </button>
                   )}
-                  {!isSuperAdmin() && (
+                  {!isSuperAdmin() && userRole !== USER_ROLES.CEO && (
                     <span className="text-xs text-gray-400">최고관리자만 작성 가능</span>
                   )}
                 </div>

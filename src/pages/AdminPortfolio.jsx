@@ -27,19 +27,39 @@ function AdminPortfolio() {
       const response = await fetchProjects(false) // 관리자용: 모든 프로젝트
       if (response.success) {
         // 데이터베이스 필드명을 컴포넌트 필드명으로 변환
-        const formattedProjects = (response.projects || []).map(p => ({
-          id: p.id,
-          title: p.title,
-          description: p.description || '',
-          category: p.category || '',
-          image: p.image || '',
-          isVisible: p.is_visible !== false,
-          isFeatured: p.is_featured === true,
-          status: p.status || 'planned',
-          startDate: p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '',
-          endDate: p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '',
-          createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-        }))
+        const formattedProjects = (response.projects || []).map(p => {
+          // media 필드 안전하게 처리
+          let media = []
+          try {
+            if (p.media) {
+              if (typeof p.media === 'string') {
+                if (p.media && p.media !== 'null' && p.media !== 'undefined') {
+                  media = JSON.parse(p.media)
+                }
+              } else if (Array.isArray(p.media)) {
+                media = p.media
+              }
+            }
+          } catch (e) {
+            console.warn('Media 파싱 실패:', e, p.media)
+            media = []
+          }
+          
+          return {
+            id: p.id,
+            title: p.title,
+            description: p.description || '',
+            category: p.category || '',
+            image: p.image || '',
+            isVisible: p.is_visible !== false,
+            isFeatured: p.is_featured === true,
+            status: p.status || 'planned',
+            startDate: p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '',
+            endDate: p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '',
+            media: media,
+            createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+          }
+        })
         
         setProjects(formattedProjects)
       }

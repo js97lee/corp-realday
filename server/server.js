@@ -696,29 +696,75 @@ app.get('/api/projects', async (req, res) => {
     const { visible, featured } = req.query
     let projects
     
+    // media 컬럼 존재 여부 확인
+    let hasMediaColumn = false
+    try {
+      const columnCheck = await sql`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'projects' AND column_name = 'media'
+      `
+      hasMediaColumn = columnCheck.length > 0
+    } catch (e) {
+      console.warn('Media 컬럼 확인 실패:', e)
+      hasMediaColumn = false
+    }
+    
     if (featured === 'true') {
       // 랜딩페이지용: featured 프로젝트만
-      projects = await sql`
-        SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
-        FROM projects
-        WHERE is_featured = true AND is_visible = true
-        ORDER BY created_at DESC
-      `
+      if (hasMediaColumn) {
+        projects = await sql`
+          SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
+          FROM projects
+          WHERE is_featured = true AND is_visible = true
+          ORDER BY created_at DESC
+        `
+      } else {
+        projects = await sql`
+          SELECT id, title, description, category, image, created_at
+          FROM projects
+          WHERE is_featured = true AND is_visible = true
+          ORDER BY created_at DESC
+        `
+        // media 필드 추가 (빈 배열)
+        projects = projects.map(p => ({ ...p, media: [] }))
+      }
     } else if (visible === 'true') {
       // Projects 페이지용: 노출된 프로젝트만
-      projects = await sql`
-        SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
-        FROM projects
-        WHERE is_visible = true
-        ORDER BY created_at DESC
-      `
+      if (hasMediaColumn) {
+        projects = await sql`
+          SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
+          FROM projects
+          WHERE is_visible = true
+          ORDER BY created_at DESC
+        `
+      } else {
+        projects = await sql`
+          SELECT id, title, description, category, image, created_at
+          FROM projects
+          WHERE is_visible = true
+          ORDER BY created_at DESC
+        `
+        // media 필드 추가 (빈 배열)
+        projects = projects.map(p => ({ ...p, media: [] }))
+      }
     } else {
       // 관리자용: 모든 프로젝트
-      projects = await sql`
-        SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
-        FROM projects
-        ORDER BY created_at DESC
-      `
+      if (hasMediaColumn) {
+        projects = await sql`
+          SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
+          FROM projects
+          ORDER BY created_at DESC
+        `
+      } else {
+        projects = await sql`
+          SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+          FROM projects
+          ORDER BY created_at DESC
+        `
+        // media 필드 추가 (빈 배열)
+        projects = projects.map(p => ({ ...p, media: [] }))
+      }
     }
     
     res.json({
@@ -727,9 +773,52 @@ app.get('/api/projects', async (req, res) => {
     })
   } catch (error) {
     console.error('Projects fetch error:', error)
+    
+    // media 컬럼 관련 에러인 경우 media 없이 재시도
+    if (error.message && (error.message.includes('media') || error.message.includes('column'))) {
+      console.warn('Media 컬럼 에러, media 없이 재시도:', error.message)
+      try {
+        const { visible, featured } = req.query
+        let projects
+
+        if (featured === 'true') {
+          projects = await sql`
+            SELECT id, title, description, category, image, created_at
+            FROM projects
+            WHERE is_featured = true AND is_visible = true
+            ORDER BY created_at DESC
+          `
+        } else if (visible === 'true') {
+          projects = await sql`
+            SELECT id, title, description, category, image, created_at
+            FROM projects
+            WHERE is_visible = true
+            ORDER BY created_at DESC
+          `
+        } else {
+          projects = await sql`
+            SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+            FROM projects
+            ORDER BY created_at DESC
+          `
+        }
+        
+        // media 필드 추가 (빈 배열)
+        projects = projects.map(p => ({ ...p, media: [] }))
+        
+        return res.json({
+          success: true,
+          projects
+        })
+      } catch (retryError) {
+        console.error('재시도 실패:', retryError)
+      }
+    }
+    
     res.status(500).json({ 
       success: false, 
-      message: '서버 오류가 발생했습니다.' 
+      message: '서버 오류가 발생했습니다.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 })

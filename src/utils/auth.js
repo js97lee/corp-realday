@@ -54,7 +54,11 @@ export const hasPermission = (requiredRole) => {
 // 최고 관리자 확인 (CEO)
 export const isSuperAdmin = () => {
   const role = getUserRole()
-  return role === USER_ROLES.CEO || role === USER_ROLES.SUPER_ADMIN
+  // 'ceo' 문자열 또는 USER_ROLES.CEO 상수 모두 체크
+  return role === USER_ROLES.CEO || 
+         role === USER_ROLES.SUPER_ADMIN || 
+         role === 'ceo' || 
+         role === 'super_admin'
 }
 
 // 중간 관리자 이상 확인 (Director 이상)

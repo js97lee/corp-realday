@@ -111,50 +111,66 @@ function ProjectDetail() {
           )}
         </div>
 
-        {/* 미디어 갤러리 - Behance 스타일 */}
+        {/* 미디어 갤러리 - 스택 형태 */}
         {allMedia.length > 0 ? (
-          <div className="space-y-8 md:space-y-12">
+          <div className="space-y-6 md:space-y-8">
             {allMedia.map((item, index) => (
-              <div key={index} className="w-full">
-                {item.type === 'video' ? (
-                  // 비디오
-                  <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    {item.url.includes('youtube.com') || item.url.includes('youtu.be') ? (
-                      // YouTube 비디오
-                      <iframe
-                        src={item.url.includes('youtu.be') 
-                          ? `https://www.youtube.com/embed/${item.url.split('/').pop()}`
-                          : item.url.includes('embed') 
-                            ? item.url 
-                            : `https://www.youtube.com/embed/${item.url.split('v=')[1]?.split('&')[0]}`
-                        }
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={project.title}
-                      />
-                    ) : (
-                      // 일반 비디오
-                      <video
+              <div 
+                key={index} 
+                className="w-full relative group"
+                style={{ 
+                  zIndex: allMedia.length - index 
+                }}
+              >
+                {/* 스택 카드 효과 */}
+                <div className="relative bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+                  {item.type === 'video' ? (
+                    // 비디오
+                    <div className="w-full aspect-video bg-black overflow-hidden">
+                      {item.url.includes('youtube.com') || item.url.includes('youtu.be') ? (
+                        // YouTube 비디오
+                        <iframe
+                          src={item.url.includes('youtu.be') 
+                            ? `https://www.youtube.com/embed/${item.url.split('/').pop()}`
+                            : item.url.includes('embed') 
+                              ? item.url 
+                              : `https://www.youtube.com/embed/${item.url.split('v=')[1]?.split('&')[0]}`
+                          }
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          title={project.title}
+                        />
+                      ) : (
+                        // 일반 비디오
+                        <video
+                          src={item.url}
+                          controls
+                          className="w-full h-full object-contain"
+                        >
+                          브라우저가 비디오 태그를 지원하지 않습니다.
+                        </video>
+                      )}
+                    </div>
+                  ) : (
+                    // 이미지
+                    <div className="w-full bg-gray-50">
+                      <img
                         src={item.url}
-                        controls
-                        className="w-full h-full object-contain"
-                      >
-                        브라우저가 비디오 태그를 지원하지 않습니다.
-                      </video>
-                    )}
-                  </div>
-                ) : (
-                  // 이미지
-                  <div className="w-full">
-                    <img
-                      src={item.url}
-                      alt={`${project.title} - ${index + 1}`}
-                      className="w-full h-auto object-contain rounded-lg"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
+                        alt={`${project.title} - ${index + 1}`}
+                        className="w-full h-auto object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* 미디어 인덱스 표시 (선택사항) */}
+                  {allMedia.length > 1 && (
+                    <div className="absolute top-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      {index + 1} / {allMedia.length}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -162,11 +178,13 @@ function ProjectDetail() {
           // 미디어가 없을 때 썸네일 이미지 표시
           project.image && (
             <div className="w-full">
-              <img
-                src={project.image}
-                alt={project.title}
-                className="w-full h-auto object-contain rounded-lg"
-              />
+              <div className="relative bg-white rounded-lg shadow-lg overflow-hidden">
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
             </div>
           )
         )}

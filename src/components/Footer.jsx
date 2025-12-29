@@ -7,12 +7,12 @@ function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 md:gap-0">
           {/* Left Side - Logo */}
           <div className="flex flex-col gap-6 md:gap-8">
-            {/* Logo - 20px 높이 */}
+            {/* Logo - 80px 높이 */}
             <div>
               <img 
                 src="/logo-white.svg" 
                 alt="REALDAY Logo" 
-                className="h-5 w-auto"
+                className="h-20 w-auto"
               />
             </div>
             
@@ -69,15 +69,11 @@ function Footer() {
               className="text-gray-300 hover:text-white transition-colors"
               aria-label="Behance"
             >
-              <svg className="w-14 h-6" fill="currentColor" viewBox="0 0 70 24" xmlns="http://www.w3.org/2000/svg">
-                {/* Behance "Bē" 텍스트 로고 - 벡터 경로 */}
-                {/* B */}
-                <path d="M2 2h8c2.2 0 4 1.8 4 4 0 1.5-.8 2.6-2 3v.1c1.2.4 2 1.4 2 2.9 0 2.2-1.8 4-4 4H2V2zm3 6.5h4.5c.7 0 1.2-.5 1.2-1.2 0-.7-.5-1.2-1.2-1.2H5v2.4zm0 5.5h5c.8 0 1.3-.6 1.3-1.3 0-.7-.5-1.3-1.3-1.3H5v2.6z"/>
-                {/* ē (e with macron) */}
-                <path d="M18 2h8v2.5h-5.5v2h5v2.5h-5v2h5.5V14h-8V2z"/>
-                {/* Macron (위의 선) */}
-                <line x1="20" y1="4" x2="24" y2="4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-              </svg>
+              <img 
+                src="/logo-behance.svg" 
+                alt="Behance" 
+                className="w-6 h-6"
+              />
             </a>
             </div>
             

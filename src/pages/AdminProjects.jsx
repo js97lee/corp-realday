@@ -61,7 +61,20 @@ function AdminProjects() {
           projectKey: p.project_key || 'APP',
           startDate: p.start_date ? new Date(p.start_date).toISOString().split('T')[0] : '',
           endDate: p.end_date ? new Date(p.end_date).toISOString().split('T')[0] : '',
-          media: p.media ? (typeof p.media === 'string' ? JSON.parse(p.media) : p.media) : [],
+          media: (() => {
+            try {
+              if (!p.media) return []
+              if (typeof p.media === 'string') {
+                // 빈 문자열이거나 'null'인 경우 빈 배열 반환
+                if (!p.media || p.media === 'null' || p.media === 'undefined') return []
+                return JSON.parse(p.media)
+              }
+              return Array.isArray(p.media) ? p.media : []
+            } catch (e) {
+              console.warn('Media 파싱 실패:', e, p.media)
+              return []
+            }
+          })(),
           createdAt: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         }))
         
