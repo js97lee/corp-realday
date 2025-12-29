@@ -10,22 +10,46 @@ import { cachedFetch, clearCache } from './cache'
 // Admin 로그인 API
 export const adminLogin = async (email, password) => {
   try {
+    // 타임아웃 설정 (10초)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+    
     const response = await fetch(`${API_BASE_URL}/admin-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `서버 오류 (${response.status})`)
+      let errorData = {}
+      try {
+        errorData = await response.json()
+      } catch (e) {
+        errorData = { message: `서버 오류 (${response.status})` }
+      }
+      const error = new Error(errorData.message || `서버 오류 (${response.status})`)
+      error.status = response.status
+      throw error
     }
 
     const data = await response.json()
+    
+    // 응답 형식 확인
+    if (!data.success && !data.token) {
+      throw new Error(data.message || '로그인에 실패했습니다.')
+    }
+    
     return data
   } catch (error) {
+    // 타임아웃 에러 처리
+    if (error.name === 'AbortError') {
+      throw new Error('요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.')
+    }
     // 네트워크 에러 처리
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')

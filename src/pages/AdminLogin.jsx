@@ -19,18 +19,26 @@ function AdminLogin() {
       // 서버와 통신하여 로그인 처리
       const response = await adminLogin(email, password)
       
-        // 로그인 성공
-        if (response.success) {
-          // 토큰 저장 (실제로는 localStorage나 쿠키에 저장)
-          if (response.token) {
-            localStorage.setItem('authToken', response.token)
+      console.log('로그인 응답:', response)
+      
+      // 로그인 성공
+      if (response && (response.success || response.token)) {
+        // 토큰 저장 (실제로는 localStorage나 쿠키에 저장)
+        if (response.token) {
+          localStorage.setItem('authToken', response.token)
+          if (response.user) {
             localStorage.setItem('user', JSON.stringify(response.user))
           }
-          
-          // 로그인 성공 후 관리자 대시보드로 이동
-          navigate('/admin/dashboard')
         }
+        
+        // 로그인 성공 후 관리자 대시보드로 이동
+        console.log('로그인 성공, 대시보드로 이동')
+        navigate('/admin/dashboard', { replace: true })
+      } else {
+        setError(response?.message || '로그인에 실패했습니다.')
+      }
     } catch (err) {
+      console.error('로그인 에러:', err)
       setError(err.message || '로그인에 실패했습니다.')
     } finally {
       setLoading(false)
