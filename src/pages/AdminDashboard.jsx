@@ -99,27 +99,22 @@ function AdminDashboard() {
     try {
       setLoading(true)
       
-      // 타임아웃 설정 (20초)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('데이터 로드 시간이 초과되었습니다.')), 20000)
-      )
-      
-      // 병렬로 데이터 로드 (타임아웃 포함)
-      const results = await Promise.race([
-        Promise.allSettled([
-          fetchContacts(),
-          fetchProjects(),
-          fetchMembers(),
-          isSuperAdmin() ? fetchFinances() : Promise.resolve({ success: false })
-        ]),
-        timeoutPromise
-      ])
-      
-      if (results instanceof Error) {
-        throw results
+      // 병렬로 데이터 로드 (각각 타임아웃 설정)
+      const createTimeoutPromise = (promise, timeout = 20000) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('요청 시간이 초과되었습니다.')), timeout)
+          )
+        ])
       }
       
-      const [contactsRes, projectsRes, membersRes, financesRes] = results
+      const [contactsRes, projectsRes, membersRes, financesRes] = await Promise.allSettled([
+        createTimeoutPromise(fetchContacts()),
+        createTimeoutPromise(fetchProjects()),
+        createTimeoutPromise(fetchMembers()),
+        isSuperAdmin() ? createTimeoutPromise(fetchFinances()) : Promise.resolve({ success: false })
+      ])
 
       // 문의 데이터
       if (contactsRes.status === 'fulfilled' && contactsRes.value.success) {
