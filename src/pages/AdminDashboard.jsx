@@ -91,9 +91,21 @@ function AdminDashboard() {
     }
   }, [navigate])
 
-  // 인증되지 않은 경우 로딩 화면 표시하지 않음
-  if (!authChecked && !user) {
-    return null // 리다이렉트 중이므로 아무것도 렌더링하지 않음
+  // 인증 체크 중이거나 인증되지 않은 경우 로딩 화면 표시
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 인증은 되었지만 사용자 정보가 없는 경우 (이상한 경우)
+  if (!user) {
+    return null
   }
 
   // 대시보드 데이터 로드 (대시보드 메뉴일 때만, 한 번만)
