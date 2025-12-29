@@ -54,6 +54,7 @@ function AdminDashboard() {
   })
   const [recentContacts, setRecentContacts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [authChecked, setAuthChecked] = useState(false) // 인증 체크 완료 여부
   const [showLunchRoulette, setShowLunchRoulette] = useState(false) // 점심 메뉴 룰렛 팝업
   const [events, setEvents] = useState([]) // 캘린더 일정
   const [showEventModal, setShowEventModal] = useState(false) // 일정 모달
@@ -72,17 +73,28 @@ function AdminDashboard() {
 
     if (!token || !userData) {
       // 로그인되지 않았으면 로그인 페이지로 리다이렉트
-      navigate('/admin')
+      console.log('인증되지 않은 사용자, 로그인 페이지로 리다이렉트')
+      navigate('/admin', { replace: true })
       return
     }
 
     try {
-      setUser(JSON.parse(userData))
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+      setAuthChecked(true)
+      setLoading(false)
     } catch (error) {
       console.error('User data parse error:', error)
-      navigate('/admin')
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('user')
+      navigate('/admin', { replace: true })
     }
   }, [navigate])
+
+  // 인증되지 않은 경우 로딩 화면 표시하지 않음
+  if (!authChecked && !user) {
+    return null // 리다이렉트 중이므로 아무것도 렌더링하지 않음
+  }
 
   // 대시보드 데이터 로드 (대시보드 메뉴일 때만, 한 번만)
   const [dashboardDataLoaded, setDashboardDataLoaded] = useState(false)
