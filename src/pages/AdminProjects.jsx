@@ -771,9 +771,10 @@ function AdminProjects() {
                   </div>
                 )}
               </div>
+            </div>
 
-                {/* 미디어 목록 */}
-                {formData.media && formData.media.length > 0 && (
+            {/* 미디어 목록 */}
+            {formData.media && formData.media.length > 0 && (
                   <div className="space-y-3 border border-gray-200 rounded-lg p-4 mt-4">
                     {formData.media.map((item, index) => (
                       <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -853,8 +854,6 @@ function AdminProjects() {
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
