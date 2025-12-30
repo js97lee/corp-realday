@@ -56,9 +56,32 @@ function Home() {
           setProjects([])
         }
       } catch (err) {
-        console.error('랜딩페이지 프로젝트 불러오기 실패:', err)
-        console.error('에러 상세:', err.message, err.stack)
+        console.error('❌ [랜딩페이지] 프로젝트 불러오기 실패:', err)
+        console.error('📍 에러 위치: Home.jsx > loadFeaturedProjects()')
+        console.error('🔍 에러 상세:', {
+          message: err.message,
+          status: err.status,
+          details: err.details,
+          stack: err.stack
+        })
+        
+        // 에러 발생 시 빈 배열 설정하여 빈 화면 방지
         setProjects([])
+        
+        // 502, 503, 504 에러인 경우 콘솔에 상세 정보 출력
+        if (err.status === 502 || err.status === 503 || err.status === 504) {
+          console.warn('⚠️ [랜딩페이지] 서버 연결 문제로 프로젝트를 불러올 수 없습니다.')
+          console.warn('📍 발생 위치: 랜딩페이지 (Home.jsx)')
+          console.warn('🔧 작업 내용: Featured 프로젝트 목록 조회')
+          console.warn(`⚠️ HTTP 상태 코드: ${err.status}`)
+          if (err.status === 502) {
+            console.warn('→ 백엔드 서버가 응답하지 않습니다.')
+          } else if (err.status === 503) {
+            console.warn('→ 서버가 일시적으로 사용할 수 없습니다.')
+          } else if (err.status === 504) {
+            console.warn('→ 서버 응답 시간이 초과되었습니다.')
+          }
+        }
       } finally {
         setLoading(false)
       }

@@ -64,22 +64,75 @@ function AdminPortfolio() {
         })
         
         setProjects(formattedProjects)
+      } else {
+        // 응답이 없거나 형식이 잘못된 경우 빈 배열 설정
+        console.warn('예상치 못한 응답 형식:', response)
+        setProjects([])
       }
     } catch (err) {
-      console.error('프로젝트 목록 불러오기 실패:', err)
-      console.error('에러 상세:', err.details || err.stack)
-      const errorMessage = err.message || '프로젝트 목록을 불러올 수 없습니다.'
-      const detailsMessage = err.details ? ` (${err.details})` : ''
-      setError(`${errorMessage}${detailsMessage}`)
+      console.error('❌ [랜딩페이지 관리] 프로젝트 목록 불러오기 실패:', err)
+      console.error('📍 에러 위치: AdminPortfolio.jsx > loadProjects()')
+      console.error('🔍 에러 상세:', {
+        message: err.message,
+        status: err.status,
+        details: err.details,
+        stack: err.stack
+      })
       
-      // 502, 503, 504 에러인 경우 재시도 안내
-      if (err.status >= 500) {
-        setLoading(false) // 재시도 전에 로딩 상태 해제
-        setTimeout(() => {
-          console.log('자동 재시도 중...')
-          loadProjects()
-        }, 3000)
-        return // 재시도하는 경우 여기서 종료
+      // 에러 발생 시 빈 배열 설정하여 빈 화면 방지
+      setProjects([])
+      
+      // 에러 메시지 구성
+      let errorMessage = '❌ 랜딩페이지 관리 - 프로젝트 목록을 불러올 수 없습니다.\n\n'
+      errorMessage += '📍 발생 위치: 랜딩페이지 관리 페이지\n'
+      errorMessage += '🔧 작업 내용: 프로젝트 목록 조회\n\n'
+      
+      // HTTP 상태 코드별 메시지
+      if (err.status === 502) {
+        errorMessage += '⚠️ 서버 게이트웨이 오류 (502)\n'
+        errorMessage += '→ 백엔드 서버가 응답하지 않습니다. 잠시 후 다시 시도해주세요.'
+      } else if (err.status === 503) {
+        errorMessage += '⚠️ 서비스 일시 중단 (503)\n'
+        errorMessage += '→ 서버가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.'
+      } else if (err.status === 504) {
+        errorMessage += '⚠️ 게이트웨이 타임아웃 (504)\n'
+        errorMessage += '→ 서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.'
+      } else if (err.status >= 500) {
+        errorMessage += `⚠️ 서버 오류 (${err.status})\n`
+        errorMessage += '→ 서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      } else if (err.status === 401 || err.status === 403) {
+        errorMessage += '⚠️ 권한 오류\n'
+        errorMessage += '→ 로그인이 필요하거나 권한이 없습니다. 다시 로그인해주세요.'
+      } else if (err.status === 404) {
+        errorMessage += '⚠️ 리소스를 찾을 수 없음 (404)\n'
+        errorMessage += '→ 요청한 API 엔드포인트를 찾을 수 없습니다.'
+      } else {
+        errorMessage += `⚠️ 오류 발생\n`
+        errorMessage += `→ ${err.message || '알 수 없는 오류가 발생했습니다.'}`
+      }
+      
+      if (err.details) {
+        errorMessage += `\n\n🔍 상세 정보: ${err.details}`
+      }
+      
+      setError(errorMessage)
+      
+      // 502, 503, 504 에러인 경우 재시도 (최대 3회)
+      if (err.status >= 500 && err.status <= 504) {
+        const retryCount = parseInt(sessionStorage.getItem('portfolioRetryCount') || '0', 10)
+        if (retryCount < 3) {
+          sessionStorage.setItem('portfolioRetryCount', String(retryCount + 1))
+          setLoading(false) // 재시도 전에 로딩 상태 해제
+          setTimeout(() => {
+            console.log(`🔄 [랜딩페이지 관리] 자동 재시도 중... (${retryCount + 1}/3)`)
+            loadProjects()
+          }, 3000)
+          return // 재시도하는 경우 여기서 종료
+        } else {
+          // 재시도 횟수 초과 시 재시도 카운터 리셋
+          sessionStorage.removeItem('portfolioRetryCount')
+          setError(errorMessage + '\n\n⏱️ 자동 재시도 3회 실패. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요.')
+        }
       }
     } finally {
       setLoading(false)
@@ -186,7 +239,7 @@ function AdminPortfolio() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm whitespace-pre-line">
           {error}
         </div>
       )}

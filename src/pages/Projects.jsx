@@ -14,14 +14,60 @@ function Projects() {
         setLoading(true)
         setError('')
         const response = await fetchProjects(true) // visible=true: 노출된 프로젝트만
-        if (response.success) {
+        if (response && (response.success || response.projects)) {
           setProjects(response.projects || [])
+        } else {
+          // 응답이 없거나 형식이 잘못된 경우 빈 배열 설정
+          console.warn('예상치 못한 응답 형식:', response)
+          setProjects([])
         }
       } catch (err) {
-        console.error('프로젝트 목록 불러오기 실패:', err)
-        setError('프로젝트를 불러올 수 없습니다.')
-        // 에러 발생 시 빈 배열로 설정
+        console.error('❌ [프로젝트 목록] 프로젝트 불러오기 실패:', err)
+        console.error('📍 에러 위치: Projects.jsx > loadProjects()')
+        console.error('🔍 에러 상세:', {
+          message: err.message,
+          status: err.status,
+          details: err.details,
+          stack: err.stack
+        })
+        
+        // 에러 발생 시 빈 배열로 설정하여 빈 화면 방지
         setProjects([])
+        
+        // 에러 메시지 구성
+        let errorMessage = '❌ 프로젝트 목록을 불러올 수 없습니다.\n\n'
+        errorMessage += '📍 발생 위치: 프로젝트 목록 페이지\n'
+        errorMessage += '🔧 작업 내용: 노출된 프로젝트 목록 조회\n\n'
+        
+        // HTTP 상태 코드별 메시지
+        if (err.status === 502) {
+          errorMessage += '⚠️ 서버 게이트웨이 오류 (502)\n'
+          errorMessage += '→ 백엔드 서버가 응답하지 않습니다. 잠시 후 다시 시도해주세요.'
+        } else if (err.status === 503) {
+          errorMessage += '⚠️ 서비스 일시 중단 (503)\n'
+          errorMessage += '→ 서버가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.'
+        } else if (err.status === 504) {
+          errorMessage += '⚠️ 게이트웨이 타임아웃 (504)\n'
+          errorMessage += '→ 서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.'
+        } else if (err.status >= 500) {
+          errorMessage += `⚠️ 서버 오류 (${err.status})\n`
+          errorMessage += '→ 서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        } else if (err.status === 401 || err.status === 403) {
+          errorMessage += '⚠️ 권한 오류\n'
+          errorMessage += '→ 로그인이 필요하거나 권한이 없습니다.'
+        } else if (err.status === 404) {
+          errorMessage += '⚠️ 리소스를 찾을 수 없음 (404)\n'
+          errorMessage += '→ 요청한 API 엔드포인트를 찾을 수 없습니다.'
+        } else {
+          errorMessage += `⚠️ 오류 발생\n`
+          errorMessage += `→ ${err.message || '알 수 없는 오류가 발생했습니다.'}`
+        }
+        
+        if (err.details) {
+          errorMessage += `\n\n🔍 상세 정보: ${err.details}`
+        }
+        
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
@@ -87,7 +133,7 @@ function Projects() {
           </div>
         ) : error ? (
           <div className="py-20 text-center">
-            <div className="text-red-600 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg text-sm max-w-2xl mx-auto whitespace-pre-line text-left">
               {error}
             </div>
           </div>
