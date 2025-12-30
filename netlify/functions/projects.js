@@ -1,8 +1,11 @@
 import { getSql, initDatabase } from './db.js'
 
+// 데이터베이스 초기화 (최초 실행 시만)
+let dbInitialized = false
+
 export const handler = async (event, context) => {
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:3',message:'Handler entry',data:{method:event.httpMethod,path:event.path,query:event.queryStringParameters,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:3',message:'Handler entry',data:{method:event.httpMethod,path:event.path,query:event.queryStringParameters,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown',dbInitialized},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -21,31 +24,38 @@ export const handler = async (event, context) => {
   }
 
   try {
-    // 데이터베이스 초기화 (모든 요청에서)
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:22',message:'DB init start',data:{hasDatabaseUrl:!!process.env.DATABASE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-    try {
-      await initDatabase()
+    // 데이터베이스 초기화 (한 번만 실행 - 성능 최적화)
+    if (!dbInitialized) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:24',message:'DB init success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:28',message:'DB init start',data:{hasDatabaseUrl:!!process.env.DATABASE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion
-    } catch (initError) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:25',message:'DB init error',data:{error:initError.message,stack:initError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
-      console.error('Database initialization error:', initError)
-      console.error('Init error stack:', initError.stack)
-      // 초기화 실패는 치명적이므로 에러 반환
-      return {
-        statusCode: 503,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: '데이터베이스 초기화에 실패했습니다.',
-          error: initError.message
-        }),
+      try {
+        await initDatabase()
+        dbInitialized = true
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:31',message:'DB init success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+      } catch (initError) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:33',message:'DB init error',data:{error:initError.message,stack:initError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        console.error('Database initialization error:', initError)
+        console.error('Init error stack:', initError.stack)
+        // 초기화 실패는 치명적이므로 에러 반환
+        return {
+          statusCode: 503,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '데이터베이스 초기화에 실패했습니다.',
+            error: initError.message
+          }),
+        }
       }
+    } else {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:48',message:'DB already initialized',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
     }
     
     let sqlFunc
