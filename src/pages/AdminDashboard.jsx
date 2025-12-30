@@ -190,6 +190,20 @@ function AdminDashboard() {
     // 다른 메뉴로 이동했다가 다시 돌아오면 리셋하지 않음 (캐싱 활용)
   }, [user, activeMenu, dashboardDataLoaded, loadDashboardData])
 
+  // 공지사항 자동 새로고침: 대시보드로 돌아올 때마다 공지사항 다시 불러오기
+  useEffect(() => {
+    if (user && activeMenu === 'dashboard') {
+      loadAnnouncement()
+    }
+  }, [user, activeMenu, loadAnnouncement])
+
+  // 공지사항 관리 탭에서도 공지사항 자동 새로고침
+  useEffect(() => {
+    if (user && activeMenu === 'announcements') {
+      loadAnnouncement()
+    }
+  }, [user, activeMenu, loadAnnouncement])
+
   // 일정 데이터 로드 (조건부 return 이전에 정의)
   const loadEvents = useCallback(async () => {
     try {
