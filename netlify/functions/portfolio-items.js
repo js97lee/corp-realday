@@ -41,26 +41,8 @@ export const handler = async (event, context) => {
       }
     }
 
-    // 데이터베이스 연결 확인
-    let sqlFunc
-    try {
-      sqlFunc = getSql()
-      await Promise.race([
-        sqlFunc`SELECT 1`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout (3초 초과)')), 3000))
-      ])
-    } catch (connError) {
-      console.error('Database connection error:', connError)
-      return {
-        statusCode: 503,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: '데이터베이스 연결에 실패했습니다.',
-          error: connError.message
-        }),
-      }
-    }
+    // 데이터베이스 연결 (간단하게)
+    const sqlFunc = getSql()
 
     // GET: 포트폴리오 항목 목록 조회
     if (event.httpMethod === 'GET') {
