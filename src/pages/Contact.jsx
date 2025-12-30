@@ -45,15 +45,24 @@ function Contact() {
 
   return (
     <div className="min-h-screen bg-white pt-10 md:pt-12">
-      {/* Hero Section - 랜딩페이지와 동일한 스타일 */}
       <section className="max-w-7xl mx-auto px-6 md:px-12 py-8 md:py-12">
-        <div className="mb-4 md:mb-6">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight tracking-tight mb-2">
-            CONTACT
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 mt-6 md:mt-8 max-w-2xl">
-            궁금한 점이 있으시거나 프로젝트를 논의하고 싶으시다면 언제든지 연락주세요.
-          </p>
+        {/* Header Section */}
+        <div className="mb-6 md:mb-8">
+          {/* Title */}
+          <div className="mb-4 md:mb-6">
+            <div className="flex items-baseline gap-2 mb-2">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black">
+                Contact
+              </h1>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 md:gap-8">
+            <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed">
+              궁금한 점이 있으시거나 프로젝트를 논의하고 싶으시다면 언제든지 연락주세요.
+            </p>
+          </div>
         </div>
 
         {/* Contact Form Section */}

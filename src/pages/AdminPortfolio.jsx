@@ -21,21 +21,11 @@ function AdminPortfolio() {
 
   // 프로젝트 목록 불러오기
   const loadProjects = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminPortfolio.jsx:23',message:'loadProjects entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     try {
       setLoading(true)
       setError('')
       console.log('랜딩페이지 관리 - 프로젝트 목록 불러오기 시작...')
-      // #region agent log
-      const fetchStartTime = Date.now();
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminPortfolio.jsx:28',message:'fetchProjects call',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       const response = await fetchProjects(false) // 관리자용: 모든 프로젝트
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminPortfolio.jsx:29',message:'fetchProjects response',data:{success:response?.success,projectsCount:response?.projects?.length||0,duration:Date.now()-fetchStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       console.log('랜딩페이지 관리 - 프로젝트 목록 응답:', response)
       if (response && (response.success || response.projects)) {
         // 데이터베이스 필드명을 컴포넌트 필드명으로 변환
@@ -80,9 +70,6 @@ function AdminPortfolio() {
         setProjects([])
       }
     } catch (err) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminPortfolio.jsx:72',message:'loadProjects error',data:{message:err.message,status:err.status,details:err.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       console.error('❌ [랜딩페이지 관리] 프로젝트 목록 불러오기 실패:', err)
       console.error('📍 에러 위치: AdminPortfolio.jsx > loadProjects()')
       console.error('🔍 에러 상세:', {

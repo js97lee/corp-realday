@@ -4,9 +4,6 @@ import { getSql, initDatabase } from './db.js'
 let dbInitialized = false
 
 export const handler = async (event, context) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:3',message:'Handler entry',data:{method:event.httpMethod,path:event.path,query:event.queryStringParameters,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown',dbInitialized},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
@@ -23,24 +20,30 @@ export const handler = async (event, context) => {
     }
   }
 
+  // 남은 실행 시간 확인 (Netlify Functions 제한 고려)
+  const getRemainingTime = () => {
+    if (context && context.getRemainingTimeInMillis) {
+      return context.getRemainingTimeInMillis()
+    }
+    return 10000 // 기본값 10초
+  }
+
+  const remainingTime = getRemainingTime()
+  const queryTimeout = Math.min(5000, remainingTime - 2000) // 쿼리 타임아웃: 최대 5초, 남은 시간 - 2초 중 작은 값
+  const initTimeout = Math.min(2000, remainingTime - 1000) // 초기화 타임아웃: 최대 2초, 남은 시간 - 1초 중 작은 값
+
   try {
     // 데이터베이스 초기화 (한 번만 실행 - 성능 최적화)
     if (!dbInitialized) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:28',message:'DB init start',data:{hasDatabaseUrl:!!process.env.DATABASE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       try {
-        await initDatabase()
+        // initDatabase 타임아웃 설정 (동적)
+        await Promise.race([
+          initDatabase(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Database initialization timeout')), initTimeout))
+        ])
         dbInitialized = true
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:31',message:'DB init success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       } catch (initError) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:33',message:'DB init error',data:{error:initError.message,stack:initError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         console.error('Database initialization error:', initError)
-        console.error('Init error stack:', initError.stack)
         // 초기화 실패는 치명적이므로 에러 반환
         return {
           statusCode: 503,
@@ -52,10 +55,6 @@ export const handler = async (event, context) => {
           }),
         }
       }
-    } else {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:48',message:'DB already initialized',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
     }
     
     // 데이터베이스 연결 (간단하게)
@@ -63,12 +62,12 @@ export const handler = async (event, context) => {
 
     // GET: 프로젝트 목록 조회
     if (event.httpMethod === 'GET') {
-      try {
-        const { visible, featured } = event.queryStringParameters || {}
-        console.log('GET projects request:', { visible, featured })
-        
-        let projects
+      const { visible, featured } = event.queryStringParameters || {}
+      console.log('GET projects request:', { visible, featured })
+      
+      let projects
 
+      try {
         // 쿼리 실행 (간단하게, 타임아웃만 설정)
         try {
           if (featured === 'true') {
@@ -80,7 +79,7 @@ export const handler = async (event, context) => {
                 WHERE is_featured = true AND is_visible = true
                 ORDER BY created_at DESC
               `,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
             ])
           } else if (visible === 'true') {
             // Projects 페이지용: 노출된 프로젝트만
@@ -91,7 +90,7 @@ export const handler = async (event, context) => {
                 WHERE is_visible = true
                 ORDER BY created_at DESC
               `,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
             ])
           } else {
             // 관리자용: 모든 프로젝트
@@ -101,7 +100,7 @@ export const handler = async (event, context) => {
                 FROM projects
                 ORDER BY created_at DESC
               `,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
             ])
           }
           
@@ -119,7 +118,7 @@ export const handler = async (event, context) => {
                     WHERE is_featured = true AND is_visible = true
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
                 projects = (projects || []).map(p => ({ ...p, media: [] }))
               } else if (visible === 'true') {
@@ -130,7 +129,7 @@ export const handler = async (event, context) => {
                     WHERE is_visible = true
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
                 projects = (projects || []).map(p => ({ ...p, media: [] }))
               } else {
@@ -140,7 +139,7 @@ export const handler = async (event, context) => {
                     FROM projects
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
                 projects = (projects || []).map(p => ({ ...p, media: [] }))
               }
@@ -161,9 +160,6 @@ export const handler = async (event, context) => {
         }
 
         console.log('Projects fetched successfully:', { count: projects?.length || 0, featured, visible })
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:207',message:'Response ready',data:{count:projects?.length||0,featured,visible,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         
         return {
           statusCode: 200,
@@ -180,7 +176,7 @@ export const handler = async (event, context) => {
           try {
             await Promise.race([
               initDatabase(),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout (5초 초과)')), 5000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout')), initTimeout))
             ])
             dbInitialized = true // 플래그 업데이트
           } catch (initErr) {
@@ -208,7 +204,7 @@ export const handler = async (event, context) => {
                 FROM information_schema.columns 
                 WHERE table_name = 'projects' AND column_name = 'media'
               `,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Column check timeout')), 2000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Column check timeout')), Math.min(2000, queryTimeout)))
             ])
             hasMediaColumn = columnCheck.length > 0
           } catch (e) {
@@ -227,7 +223,7 @@ export const handler = async (event, context) => {
                     WHERE is_featured = true AND is_visible = true
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
               } else {
                 projects = await Promise.race([
@@ -237,7 +233,7 @@ export const handler = async (event, context) => {
                     WHERE is_featured = true AND is_visible = true
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
                 projects = (projects || []).map(p => ({ ...p, media: [] }))
               }
@@ -250,7 +246,7 @@ export const handler = async (event, context) => {
                     WHERE is_visible = true
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
               } else {
                 projects = await Promise.race([
@@ -260,7 +256,7 @@ export const handler = async (event, context) => {
                     WHERE is_visible = true
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
                 projects = (projects || []).map(p => ({ ...p, media: [] }))
               }
@@ -272,7 +268,7 @@ export const handler = async (event, context) => {
                     FROM projects
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
               } else {
                 projects = await Promise.race([
@@ -281,7 +277,7 @@ export const handler = async (event, context) => {
                     FROM projects
                     ORDER BY created_at DESC
                   `,
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
                 ])
                 projects = (projects || []).map(p => ({ ...p, media: [] }))
               }
@@ -324,7 +320,7 @@ export const handler = async (event, context) => {
                   WHERE is_featured = true AND is_visible = true
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
               ])
             } else if (visible === 'true') {
               projects = await Promise.race([
@@ -334,7 +330,7 @@ export const handler = async (event, context) => {
                   WHERE is_visible = true
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
               ])
             } else {
               projects = await Promise.race([
@@ -343,7 +339,7 @@ export const handler = async (event, context) => {
                   FROM projects
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
               ])
             }
             
@@ -383,18 +379,6 @@ export const handler = async (event, context) => {
             message: '서버 오류가 발생했습니다.',
             error: dbError.message,
             details: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
-          }),
-        }
-      } catch (outerError) {
-        // 최상위 에러 핸들링
-        console.error('Outer error in GET:', outerError)
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: '프로젝트 목록을 불러오는 중 오류가 발생했습니다.',
-            error: outerError.message
           }),
         }
       }
@@ -498,7 +482,7 @@ export const handler = async (event, context) => {
 
       const existing = await Promise.race([
         sqlFunc`SELECT * FROM projects WHERE id = ${parseInt(id)}`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
       ])
       
       if (existing.length === 0) {
@@ -512,67 +496,145 @@ export const handler = async (event, context) => {
         }
       }
 
-      // 업데이트할 필드만 업데이트 (타임아웃 설정)
-      const updateQuery = async (query) => {
-        return Promise.race([
-          query,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
-        ])
-      }
+      // 기존 데이터 가져오기
+      const current = existing[0]
 
-      if (title) {
-        await updateQuery(sqlFunc`UPDATE projects SET title = ${title} WHERE id = ${parseInt(id)}`)
-      }
-      if (description !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET description = ${description} WHERE id = ${parseInt(id)}`)
-      }
-      if (category !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET category = ${category} WHERE id = ${parseInt(id)}`)
-      }
-      if (image !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET image = ${image} WHERE id = ${parseInt(id)}`)
-      }
-      if (memo !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET memo = ${memo} WHERE id = ${parseInt(id)}`)
-      }
-      if (isVisible !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET is_visible = ${isVisible} WHERE id = ${parseInt(id)}`)
-      }
-      if (isFeatured !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET is_featured = ${isFeatured} WHERE id = ${parseInt(id)}`)
-      }
-      if (status !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET status = ${status} WHERE id = ${parseInt(id)}`)
-      }
-      if (projectKey !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET project_key = ${projectKey || 'APP'} WHERE id = ${parseInt(id)}`)
-      }
-      if (startDate !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`)
-      }
-      if (endDate !== undefined) {
-        await updateQuery(sqlFunc`UPDATE projects SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`)
-      }
+      // 업데이트할 값 결정 (undefined가 아닌 경우에만 업데이트)
+      const updateTitle = title !== undefined ? title : current.title
+      const updateDescription = description !== undefined ? description : current.description
+      const updateCategory = category !== undefined ? category : current.category
+      const updateImage = image !== undefined ? image : current.image
+      const updateMemo = memo !== undefined ? memo : current.memo
+      const updateIsVisible = isVisible !== undefined ? isVisible : current.is_visible
+      const updateIsFeatured = isFeatured !== undefined ? isFeatured : current.is_featured
+      const updateStatus = status !== undefined ? status : current.status
+      const updateProjectKey = projectKey !== undefined ? (projectKey || 'APP') : current.project_key
+      const updateStartDate = startDate !== undefined ? startDate : current.start_date
+      const updateEndDate = endDate !== undefined ? endDate : current.end_date
+      
+      // media 처리
+      let updateMedia = current.media
       if (media !== undefined) {
         try {
           const mediaJson = media ? JSON.stringify(media) : '[]'
-          await updateQuery(sqlFunc`UPDATE projects SET media = ${mediaJson}::jsonb WHERE id = ${parseInt(id)}`)
+          // media 컬럼 존재 여부 확인 후 업데이트
+          try {
+            // 단일 UPDATE 쿼리로 모든 필드 업데이트 (타임아웃 설정)
+            const result = await Promise.race([
+              sqlFunc`
+                UPDATE projects
+                SET title = ${updateTitle},
+                    description = ${updateDescription},
+                    category = ${updateCategory},
+                    image = ${updateImage},
+                    memo = ${updateMemo},
+                    is_visible = ${updateIsVisible},
+                    is_featured = ${updateIsFeatured},
+                    status = ${updateStatus},
+                    project_key = ${updateProjectKey},
+                    start_date = ${updateStartDate || null},
+                    end_date = ${updateEndDate || null},
+                    media = ${mediaJson}::jsonb,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ${parseInt(id)}
+                RETURNING *
+              `,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
+            ])
+            
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({
+                success: true,
+                message: '프로젝트가 수정되었습니다.',
+                project: result[0]
+              }),
+            }
+          } catch (e) {
+            // media 컬럼이 없으면 media 없이 업데이트
+            if (e.message && e.message.includes('media')) {
+              console.warn('media 컬럼이 없어 media 없이 업데이트합니다.')
+              const result = await Promise.race([
+                sqlFunc`
+                  UPDATE projects
+                  SET title = ${updateTitle},
+                      description = ${updateDescription},
+                      category = ${updateCategory},
+                      image = ${updateImage},
+                      memo = ${updateMemo},
+                      is_visible = ${updateIsVisible},
+                      is_featured = ${updateIsFeatured},
+                      status = ${updateStatus},
+                      project_key = ${updateProjectKey},
+                      start_date = ${updateStartDate || null},
+                      end_date = ${updateEndDate || null},
+                      updated_at = CURRENT_TIMESTAMP
+                  WHERE id = ${parseInt(id)}
+                  RETURNING *
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
+              ])
+              
+              return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                  success: true,
+                  message: '프로젝트가 수정되었습니다.',
+                  project: result[0]
+                }),
+              }
+            } else {
+              throw e
+            }
+          }
         } catch (e) {
-          // media 컬럼이 없으면 무시
-          if (e.message && e.message.includes('media')) {
-            console.warn('media 컬럼이 없어 업데이트를 건너뜁니다.')
-          } else {
+          throw e
+        }
+      } else {
+        // media가 undefined인 경우 기존 media 유지
+        try {
+          // 단일 UPDATE 쿼리로 모든 필드 업데이트 (타임아웃 설정)
+          const result = await Promise.race([
+            sqlFunc`
+              UPDATE projects
+              SET title = ${updateTitle},
+                  description = ${updateDescription},
+                  category = ${updateCategory},
+                  image = ${updateImage},
+                  memo = ${updateMemo},
+                  is_visible = ${updateIsVisible},
+                  is_featured = ${updateIsFeatured},
+                  status = ${updateStatus},
+                  project_key = ${updateProjectKey},
+                  start_date = ${updateStartDate || null},
+                  end_date = ${updateEndDate || null},
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE id = ${parseInt(id)}
+              RETURNING *
+            `,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
+          ])
+          
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              success: true,
+              message: '프로젝트가 수정되었습니다.',
+              project: result[0]
+            }),
+          }
+        } catch (e) {
+          // media 컬럼이 있는 경우 media도 포함하여 업데이트 재시도
+          if (e.message && !e.message.includes('media')) {
             throw e
           }
+          // media 컬럼이 없으면 위의 쿼리로 충분
+          throw e
         }
       }
-      
-      await updateQuery(sqlFunc`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`)
-
-      const result = await Promise.race([
-        sqlFunc`SELECT * FROM projects WHERE id = ${parseInt(id)}`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
-      ])
 
         return {
           statusCode: 200,
@@ -626,7 +688,7 @@ export const handler = async (event, context) => {
 
       const project = await Promise.race([
         sqlFunc`SELECT * FROM projects WHERE id = ${parseInt(id)}`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
       ])
       
       if (project.length === 0) {
@@ -642,7 +704,7 @@ export const handler = async (event, context) => {
 
       await Promise.race([
         sqlFunc`DELETE FROM projects WHERE id = ${parseInt(id)}`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (10초 초과)')), 10000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
       ])
 
         return {
@@ -678,9 +740,6 @@ export const handler = async (event, context) => {
     }
   } catch (error) {
     // 상세한 에러 로깅
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:630',message:'Top-level error',data:{name:error.name,message:error.message,stack:error.stack,httpMethod:event.httpMethod,path:event.path,queryParams:event.queryStringParameters,hasDatabaseUrl:!!process.env.DATABASE_URL,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     console.error('❌ [Projects API] Top-level error 발생')
     console.error('📍 에러 위치: netlify/functions/projects.js > handler()')
     console.error('🔍 에러 상세:', {

@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
+    port: 5500,
     open: true,
   },
   // Vite는 기본적으로 SPA 라우팅을 지원합니다

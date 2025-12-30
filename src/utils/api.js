@@ -223,9 +223,6 @@ export const deleteMember = async (id) => {
 
 // 프로젝트 목록 조회 API (캐싱 적용)
 export const fetchProjects = async (visible = false, featured = false) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:225',message:'fetchProjects entry',data:{visible,featured,apiBaseUrl:API_BASE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   const cacheKey = `projects_${visible}_${featured}`
   return cachedFetch(cacheKey, async () => {
     try {
@@ -239,10 +236,6 @@ export const fetchProjects = async (visible = false, featured = false) => {
       // 타임아웃 설정 (15초)
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 15000)
-      // #region agent log
-      const fetchStartTime = Date.now();
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:240',message:'Fetch request start',data:{url,timeout:15000},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       
       const response = await fetch(url, {
         method: 'GET',
@@ -253,9 +246,6 @@ export const fetchProjects = async (visible = false, featured = false) => {
       })
       
       clearTimeout(timeoutId)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:248',message:'Fetch response received',data:{status:response.status,ok:response.ok,duration:Date.now()-fetchStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
 
       if (!response.ok) {
         let errorData = {}
@@ -264,9 +254,6 @@ export const fetchProjects = async (visible = false, featured = false) => {
         } catch (e) {
           errorData = { message: `서버 오류 (${response.status})` }
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:250',message:'Response not ok',data:{status:response.status,errorData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
         
         const errorMessage = errorData.message || errorData.error || `서버 오류 (${response.status})`
         const error = new Error(errorMessage)
@@ -276,9 +263,6 @@ export const fetchProjects = async (visible = false, featured = false) => {
       }
 
       const data = await response.json()
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:265',message:'Response parsed',data:{success:data.success,projectsCount:data.projects?.length||0,isArray:Array.isArray(data)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       
       // 응답이 success: false인 경우도 에러로 처리
       if (data.success === false) {

@@ -18,13 +18,25 @@ export const handler = async (event, context) => {
     }
   }
 
+  // 남은 실행 시간 확인 (Netlify Functions 제한 고려)
+  const getRemainingTime = () => {
+    if (context && context.getRemainingTimeInMillis) {
+      return context.getRemainingTimeInMillis()
+    }
+    return 10000 // 기본값 10초
+  }
+
+  const remainingTime = getRemainingTime()
+  const queryTimeout = Math.min(5000, remainingTime - 2000) // 쿼리 타임아웃: 최대 5초, 남은 시간 - 2초 중 작은 값
+  const initTimeout = Math.min(2000, remainingTime - 1000) // 초기화 타임아웃: 최대 2초, 남은 시간 - 1초 중 작은 값
+
   try {
     // 데이터베이스 초기화 (한 번만 실행 - 성능 최적화)
     if (!dbInitialized) {
       try {
         await Promise.race([
           initDatabase(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout (5초 초과)')), 5000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout')), initTimeout))
         ])
         dbInitialized = true
       } catch (initError) {
@@ -53,7 +65,7 @@ export const handler = async (event, context) => {
             FROM portfolio_items
             ORDER BY display_order ASC, number ASC
           `,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
 
         return {
@@ -71,7 +83,7 @@ export const handler = async (event, context) => {
           try {
             await Promise.race([
               initDatabase(),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout (5초 초과)')), 5000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout')), initTimeout))
             ])
             dbInitialized = true
             
@@ -81,7 +93,7 @@ export const handler = async (event, context) => {
                 FROM portfolio_items
                 ORDER BY display_order ASC, number ASC
               `,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
             ])
             
             return {
@@ -142,7 +154,7 @@ export const handler = async (event, context) => {
             VALUES (${number || null}, ${title}, ${description}, ${displayOrder || 0})
             RETURNING *
           `,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
 
         return {
@@ -197,7 +209,7 @@ export const handler = async (event, context) => {
       try {
         const existing = await Promise.race([
           sqlFunc`SELECT * FROM portfolio_items WHERE id = ${parseInt(id)}`,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
         
         if (existing.length === 0) {
@@ -214,36 +226,36 @@ export const handler = async (event, context) => {
         if (number !== undefined) {
           await Promise.race([
             sqlFunc`UPDATE portfolio_items SET number = ${number} WHERE id = ${parseInt(id)}`,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
           ])
         }
         if (title) {
           await Promise.race([
             sqlFunc`UPDATE portfolio_items SET title = ${title} WHERE id = ${parseInt(id)}`,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
           ])
         }
         if (description !== undefined) {
           await Promise.race([
             sqlFunc`UPDATE portfolio_items SET description = ${description} WHERE id = ${parseInt(id)}`,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
           ])
         }
         if (displayOrder !== undefined) {
           await Promise.race([
             sqlFunc`UPDATE portfolio_items SET display_order = ${displayOrder} WHERE id = ${parseInt(id)}`,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
           ])
         }
         
         await Promise.race([
           sqlFunc`UPDATE portfolio_items SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
 
         const result = await Promise.race([
           sqlFunc`SELECT * FROM portfolio_items WHERE id = ${parseInt(id)}`,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
 
         return {
@@ -297,7 +309,7 @@ export const handler = async (event, context) => {
       try {
         const item = await Promise.race([
           sqlFunc`SELECT * FROM portfolio_items WHERE id = ${parseInt(id)}`,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
         
         if (item.length === 0) {
@@ -313,7 +325,7 @@ export const handler = async (event, context) => {
 
         await Promise.race([
           sqlFunc`DELETE FROM portfolio_items WHERE id = ${parseInt(id)}`,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), queryTimeout))
         ])
 
         return {
