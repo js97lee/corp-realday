@@ -618,9 +618,10 @@ export const handler = async (event, context) => {
         }
       }
 
-      const existing = await sqlFunc`
-        SELECT * FROM projects WHERE id = ${parseInt(id)}
-      `
+      const existing = await Promise.race([
+        sqlFunc`SELECT * FROM projects WHERE id = ${parseInt(id)}`,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+      ])
       
       if (existing.length === 0) {
         return {
@@ -633,44 +634,51 @@ export const handler = async (event, context) => {
         }
       }
 
-      // 업데이트할 필드만 업데이트
+      // 업데이트할 필드만 업데이트 (타임아웃 설정)
+      const updateQuery = async (query) => {
+        return Promise.race([
+          query,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+        ])
+      }
+
       if (title) {
-        await sqlFunc`UPDATE projects SET title = ${title} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET title = ${title} WHERE id = ${parseInt(id)}`)
       }
       if (description !== undefined) {
-        await sqlFunc`UPDATE projects SET description = ${description} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET description = ${description} WHERE id = ${parseInt(id)}`)
       }
       if (category !== undefined) {
-        await sqlFunc`UPDATE projects SET category = ${category} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET category = ${category} WHERE id = ${parseInt(id)}`)
       }
       if (image !== undefined) {
-        await sqlFunc`UPDATE projects SET image = ${image} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET image = ${image} WHERE id = ${parseInt(id)}`)
       }
       if (memo !== undefined) {
-        await sqlFunc`UPDATE projects SET memo = ${memo} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET memo = ${memo} WHERE id = ${parseInt(id)}`)
       }
       if (isVisible !== undefined) {
-        await sqlFunc`UPDATE projects SET is_visible = ${isVisible} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET is_visible = ${isVisible} WHERE id = ${parseInt(id)}`)
       }
       if (isFeatured !== undefined) {
-        await sqlFunc`UPDATE projects SET is_featured = ${isFeatured} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET is_featured = ${isFeatured} WHERE id = ${parseInt(id)}`)
       }
       if (status !== undefined) {
-        await sqlFunc`UPDATE projects SET status = ${status} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET status = ${status} WHERE id = ${parseInt(id)}`)
       }
       if (projectKey !== undefined) {
-        await sqlFunc`UPDATE projects SET project_key = ${projectKey || 'APP'} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET project_key = ${projectKey || 'APP'} WHERE id = ${parseInt(id)}`)
       }
       if (startDate !== undefined) {
-        await sqlFunc`UPDATE projects SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`)
       }
       if (endDate !== undefined) {
-        await sqlFunc`UPDATE projects SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`
+        await updateQuery(sqlFunc`UPDATE projects SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`)
       }
       if (media !== undefined) {
         try {
           const mediaJson = media ? JSON.stringify(media) : '[]'
-          await sqlFunc`UPDATE projects SET media = ${mediaJson}::jsonb WHERE id = ${parseInt(id)}`
+          await updateQuery(sqlFunc`UPDATE projects SET media = ${mediaJson}::jsonb WHERE id = ${parseInt(id)}`)
         } catch (e) {
           // media 컬럼이 없으면 무시
           if (e.message && e.message.includes('media')) {
@@ -681,11 +689,11 @@ export const handler = async (event, context) => {
         }
       }
       
-      await sqlFunc`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`
+      await updateQuery(sqlFunc`UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`)
 
-      const result = await sqlFunc`
+      const result = await updateQuery(sqlFunc`
         SELECT * FROM projects WHERE id = ${parseInt(id)}
-      `
+      `)
 
         return {
           statusCode: 200,
