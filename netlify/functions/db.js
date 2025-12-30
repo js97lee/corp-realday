@@ -2,6 +2,7 @@
 import { neon } from '@neondatabase/serverless'
 
 // DATABASE_URL 가져오기 함수 (런타임에 호출)
+// Netlify Neon 확장 프로그램의 NETLIFY_DATABASE_URL 우선 사용
 function getDatabaseUrl() {
   // #region agent log
   const envCheck = {
@@ -13,8 +14,9 @@ function getDatabaseUrl() {
   fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:5',message:'getDatabaseUrl entry',data:envCheck,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
   // #endregion
   
-  const databaseUrl = process.env.DATABASE_URL || 
-                       process.env.NETLIFY_DATABASE_URL ||
+  // Netlify Neon 확장 프로그램의 NETLIFY_DATABASE_URL 우선 사용
+  const databaseUrl = process.env.NETLIFY_DATABASE_URL ||
+                       process.env.DATABASE_URL || 
                        process.env.POSTGRES_PRISMA_URL ||
                        process.env.POSTGRES_URL_NON_POOLING
 
@@ -31,9 +33,11 @@ function getDatabaseUrl() {
   }
 
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:20',message:'DATABASE_URL found',data:{urlPrefix:databaseUrl.substring(0,30),length:databaseUrl.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  const urlSource = process.env.NETLIFY_DATABASE_URL ? 'NETLIFY_DATABASE_URL (Neon 확장 프로그램)' : 
+                    process.env.DATABASE_URL ? 'DATABASE_URL' : '기타'
+  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:20',message:'DATABASE_URL found',data:{urlPrefix:databaseUrl.substring(0,30),length:databaseUrl.length,source:urlSource},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
   // #endregion
-  console.log('✅ DATABASE_URL 확인됨:', databaseUrl.substring(0, 30) + '...')
+  console.log(`✅ DATABASE_URL 확인됨 (${urlSource}):`, databaseUrl.substring(0, 30) + '...')
   return databaseUrl
 }
 
