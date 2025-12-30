@@ -26,14 +26,26 @@ function AdminLogin() {
         // 토큰 저장 (실제로는 localStorage나 쿠키에 저장)
         if (response.token) {
           localStorage.setItem('authToken', response.token)
+          // user가 없어도 기본값으로 저장 (API 응답 확인 필요)
           if (response.user) {
             localStorage.setItem('user', JSON.stringify(response.user))
+          } else {
+            // user가 없으면 기본 사용자 정보 저장
+            console.warn('응답에 user 정보가 없습니다. 기본값 사용')
+            localStorage.setItem('user', JSON.stringify({
+              email: email,
+              role: 'employee'
+            }))
           }
         }
         
-        // 로그인 성공 후 관리자 대시보드로 이동
-        console.log('로그인 성공, 대시보드로 이동')
-        navigate('/admin/dashboard', { replace: true })
+        // localStorage 저장 후 약간의 지연을 두고 이동 (동기화 보장)
+        setTimeout(() => {
+          console.log('로그인 성공, 대시보드로 이동')
+          console.log('저장된 토큰:', localStorage.getItem('authToken'))
+          console.log('저장된 사용자:', localStorage.getItem('user'))
+          navigate('/admin/dashboard', { replace: true })
+        }, 100)
       } else {
         setError(response?.message || '로그인에 실패했습니다.')
       }

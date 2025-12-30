@@ -68,28 +68,57 @@ function AdminDashboard() {
   const location = useLocation()
 
   useEffect(() => {
-    // 로그인 상태 확인
-    const token = localStorage.getItem('authToken')
-    const userData = localStorage.getItem('user')
+    // 로그인 상태 확인 (약간의 지연을 두어 localStorage 동기화 보장)
+    const checkAuth = () => {
+      const token = localStorage.getItem('authToken')
+      const userData = localStorage.getItem('user')
 
-    if (!token || !userData) {
-      // 로그인되지 않았으면 로그인 페이지로 리다이렉트
-      console.log('인증되지 않은 사용자, 로그인 페이지로 리다이렉트')
-      navigate('/admin', { replace: true })
-      return
+      console.log('AdminDashboard 인증 체크:', { token: !!token, userData: !!userData })
+
+      if (!token) {
+        // 토큰이 없으면 로그인 페이지로 리다이렉트
+        console.log('토큰이 없습니다. 로그인 페이지로 리다이렉트')
+        navigate('/admin', { replace: true })
+        return
+      }
+
+      // userData가 없어도 토큰이 있으면 기본 사용자 정보 사용
+      if (!userData) {
+        console.warn('사용자 데이터가 없습니다. 기본값 사용')
+        const defaultUser = {
+          email: 'unknown',
+          role: 'employee'
+        }
+        localStorage.setItem('user', JSON.stringify(defaultUser))
+        setUser(defaultUser)
+        setAuthChecked(true)
+        setLoading(false)
+        return
+      }
+
+      try {
+        const parsedUser = JSON.parse(userData)
+        console.log('사용자 정보 파싱 성공:', parsedUser)
+        setUser(parsedUser)
+        setAuthChecked(true) // 인증 성공 후에만 true로 설정
+        setLoading(false)
+      } catch (error) {
+        console.error('User data parse error:', error)
+        // 파싱 실패해도 토큰이 있으면 기본값 사용
+        const defaultUser = {
+          email: 'unknown',
+          role: 'employee'
+        }
+        localStorage.setItem('user', JSON.stringify(defaultUser))
+        setUser(defaultUser)
+        setAuthChecked(true)
+        setLoading(false)
+      }
     }
 
-    try {
-      const parsedUser = JSON.parse(userData)
-      setUser(parsedUser)
-      setAuthChecked(true) // 인증 성공 후에만 true로 설정
-      setLoading(false)
-    } catch (error) {
-      console.error('User data parse error:', error)
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
-      navigate('/admin', { replace: true })
-    }
+    // 약간의 지연을 두어 localStorage 동기화 보장
+    const timeoutId = setTimeout(checkAuth, 50)
+    return () => clearTimeout(timeoutId)
   }, [navigate])
 
   // 인증 체크 완료 전에는 로딩 화면 표시
