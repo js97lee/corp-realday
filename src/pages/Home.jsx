@@ -128,11 +128,11 @@ function Home() {
                   <div className="h-full flex flex-col transition-all duration-500 ease-out overflow-hidden">
                     {/* Image */}
                     {project.image && (
-                      <div className="w-full aspect-video mb-4 md:mb-6 overflow-hidden bg-gray-100 transition-all duration-500 group-hover:rounded-tl-[200px] group-hover:rounded-br-[200px]">
+                      <div className="w-full aspect-video mb-4 md:mb-6 overflow-hidden bg-gray-100 transition-all duration-500 md:group-hover:rounded-tl-[200px] md:group-hover:rounded-br-[200px]">
                         <img
                           src={project.image}
                           alt={project.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-500"
                           loading="lazy"
                           decoding="async"
                           fetchPriority={index < 2 ? "high" : "low"}
@@ -143,15 +143,15 @@ function Home() {
                     {/* Content */}
                     <div className="flex-1 px-2">
                       <div className="flex items-baseline gap-3 mb-2">
-                        <span className="text-sm md:text-base font-medium text-gray-400 group-hover:text-black transition-colors duration-300">
+                        <span className="text-sm md:text-base font-medium text-gray-400 md:group-hover:text-black transition-colors duration-300">
                           {String(index + 1).padStart(2, '0')}
                         </span>
-                        <h2 className="text-xl md:text-2xl font-bold text-black group-hover:text-gray-700 transition-colors duration-300">
+                        <h2 className="text-xl md:text-2xl font-bold text-black md:group-hover:text-gray-700 transition-colors duration-300">
                           {project.title}
                         </h2>
                       </div>
                       {project.description && (
-                        <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-2 group-hover:text-gray-800 transition-colors duration-300">
+                        <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-2 md:group-hover:text-gray-800 transition-colors duration-300">
                           {project.description}
                         </p>
                       )}

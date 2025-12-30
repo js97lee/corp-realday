@@ -61,8 +61,9 @@ export const handler = async (event, context) => {
       }
     }
 
-    // GET: 모든 일정 조회 (초대 정보 포함)
+    // GET: 모든 일정 조회 (초대 정보 포함) - 배치 쿼리로 최적화
     if (event.httpMethod === 'GET') {
+      // 모든 이벤트와 초대 정보를 한 번에 조회 (N+1 쿼리 문제 해결)
       const events = await sql`
         SELECT 
           e.*,
@@ -72,21 +73,33 @@ export const handler = async (event, context) => {
         ORDER BY e.date ASC, e.start_time ASC
       `
       
-      // 각 일정의 초대 정보 가져오기
-      const eventsWithInvitations = await Promise.all(events.map(async (evt) => {
-        const invitations = await sql`
+      // 모든 초대 정보를 한 번에 조회
+      const eventIds = events.map(e => e.id)
+      let allInvitations = []
+      if (eventIds.length > 0) {
+        allInvitations = await sql`
           SELECT 
             ei.*,
             u.name as user_name,
             u.email as user_email
           FROM event_invitations ei
           LEFT JOIN users u ON ei.user_id = u.id
-          WHERE ei.event_id = ${evt.id}
+          WHERE ei.event_id = ANY(${eventIds})
         `
-        return {
-          ...evt,
-          invitations: invitations
+      }
+      
+      // 이벤트별로 초대 정보 그룹화
+      const invitationsByEventId = {}
+      allInvitations.forEach(inv => {
+        if (!invitationsByEventId[inv.event_id]) {
+          invitationsByEventId[inv.event_id] = []
         }
+        invitationsByEventId[inv.event_id].push(inv)
+      })
+      
+      const eventsWithInvitations = events.map(evt => ({
+        ...evt,
+        invitations: invitationsByEventId[evt.id] || []
       }))
       
       return {
@@ -118,20 +131,16 @@ export const handler = async (event, context) => {
       
       const eventId = result[0].id
       
-      // 초대할 사용자 추가
+      // 초대할 사용자 추가 (배치 처리로 최적화)
       if (invited_user_ids && Array.isArray(invited_user_ids) && invited_user_ids.length > 0) {
-        for (const userId of invited_user_ids) {
-          if (userId !== user.id) { // 자기 자신은 제외
-            try {
-              await sql`
-                INSERT INTO event_invitations (event_id, user_id, status)
-                VALUES (${eventId}, ${userId}, 'pending')
-                ON CONFLICT (event_id, user_id) DO NOTHING
-              `
-            } catch (e) {
-              console.error('초대 추가 실패:', e)
-            }
-          }
+        const validUserIds = invited_user_ids.filter(userId => userId !== user.id)
+        if (validUserIds.length > 0) {
+          // 배치 INSERT로 한 번에 처리 (UNNEST 사용)
+          await sql`
+            INSERT INTO event_invitations (event_id, user_id, status)
+            SELECT ${eventId}, unnest(${validUserIds}), 'pending'
+            ON CONFLICT (event_id, user_id) DO NOTHING
+          `
         }
       }
 
@@ -179,27 +188,26 @@ export const handler = async (event, context) => {
         }
       }
       
-      // 초대할 사용자 업데이트 (새로 추가만, 기존 초대는 유지)
+      // 초대할 사용자 업데이트 (배치 처리로 최적화)
       if (invited_user_ids && Array.isArray(invited_user_ids)) {
         // 기존 초대 목록 가져오기
         const existingInvitations = await sql`
           SELECT user_id FROM event_invitations WHERE event_id = ${eventId}
         `
-        const existingUserIds = existingInvitations.map(i => i.user_id)
+        const existingUserIds = new Set(existingInvitations.map(i => i.user_id))
         
-        // 새로 추가할 사용자
-        for (const userId of invited_user_ids) {
-          if (userId !== user.id && !existingUserIds.includes(userId)) {
-            try {
-              await sql`
-                INSERT INTO event_invitations (event_id, user_id, status)
-                VALUES (${eventId}, ${userId}, 'pending')
-                ON CONFLICT (event_id, user_id) DO NOTHING
-              `
-            } catch (e) {
-              console.error('초대 추가 실패:', e)
-            }
-          }
+        // 새로 추가할 사용자 필터링
+        const validUserIds = invited_user_ids.filter(
+          userId => userId !== user.id && !existingUserIds.has(userId)
+        )
+        
+        // 배치 INSERT로 한 번에 처리
+        if (validUserIds.length > 0) {
+          await sql`
+            INSERT INTO event_invitations (event_id, user_id, status)
+            SELECT ${eventId}, unnest(${validUserIds}), 'pending'
+            ON CONFLICT (event_id, user_id) DO NOTHING
+          `
         }
       }
 

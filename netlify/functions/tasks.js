@@ -1,4 +1,11 @@
 import { getSql, initDatabase } from './db.js'
+import { 
+  handleOptionsRequest, 
+  ensureDatabaseInitialized, 
+  executeQuery, 
+  createErrorResponse, 
+  createSuccessResponse 
+} from './utils.js'
 
 // Task Key 생성 함수 (예: APP-1, APP-2)
 async function generateTaskKey(sqlFunc, projectKey = 'APP') {
@@ -29,66 +36,70 @@ async function generateTaskKey(sqlFunc, projectKey = 'APP') {
 }
 
 export const handler = async (event, context) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
+  // OPTIONS 요청 처리
+  if (event.httpMethod === 'OPTIONS') {
+    return handleOptionsRequest()
   }
 
   try {
-    await initDatabase()
-    const sqlFunc = getSql()
+    const sqlFunc = await ensureDatabaseInitialized(context)
 
-    // GET: 업무 목록 조회
+    // GET: 업무 목록 조회 (쿼리 최적화)
     if (event.httpMethod === 'GET') {
       const { projectId, includeDeleted } = event.queryStringParameters || {}
-      let tasks
       
-      // includeDeleted가 true면 삭제된 항목도 포함, 아니면 삭제되지 않은 항목만 조회
+      // 조건에 따라 쿼리 구성
+      let tasks
       if (projectId) {
         if (includeDeleted === 'true') {
-          tasks = await sqlFunc`
-            SELECT t.*, u.name as assignee_name, u.email as assignee_email
-            FROM tasks t
-            LEFT JOIN users u ON t.assignee_id = u.id
-            WHERE t.project_id = ${parseInt(projectId)}
-            ORDER BY t.is_deleted ASC, t.created_at DESC
-          `
+          tasks = await executeQuery(
+            sqlFunc`
+              SELECT t.*, u.name as assignee_name, u.email as assignee_email
+              FROM tasks t
+              LEFT JOIN users u ON t.assignee_id = u.id
+              WHERE t.project_id = ${parseInt(projectId)}
+              ORDER BY t.is_deleted ASC, t.created_at DESC
+            `,
+            context
+          )
         } else {
-          tasks = await sqlFunc`
-            SELECT t.*, u.name as assignee_name, u.email as assignee_email
-            FROM tasks t
-            LEFT JOIN users u ON t.assignee_id = u.id
-            WHERE t.project_id = ${parseInt(projectId)} AND (t.is_deleted = false OR t.is_deleted IS NULL)
-            ORDER BY t.created_at DESC
-          `
+          tasks = await executeQuery(
+            sqlFunc`
+              SELECT t.*, u.name as assignee_name, u.email as assignee_email
+              FROM tasks t
+              LEFT JOIN users u ON t.assignee_id = u.id
+              WHERE t.project_id = ${parseInt(projectId)} AND (t.is_deleted = false OR t.is_deleted IS NULL)
+              ORDER BY t.created_at DESC
+            `,
+            context
+          )
         }
       } else {
         if (includeDeleted === 'true') {
-          tasks = await sqlFunc`
-            SELECT t.*, u.name as assignee_name, u.email as assignee_email
-            FROM tasks t
-            LEFT JOIN users u ON t.assignee_id = u.id
-            ORDER BY t.is_deleted ASC, t.created_at DESC
-          `
+          tasks = await executeQuery(
+            sqlFunc`
+              SELECT t.*, u.name as assignee_name, u.email as assignee_email
+              FROM tasks t
+              LEFT JOIN users u ON t.assignee_id = u.id
+              ORDER BY t.is_deleted ASC, t.created_at DESC
+            `,
+            context
+          )
         } else {
-          tasks = await sqlFunc`
-            SELECT t.*, u.name as assignee_name, u.email as assignee_email
-            FROM tasks t
-            LEFT JOIN users u ON t.assignee_id = u.id
-            WHERE (t.is_deleted = false OR t.is_deleted IS NULL)
-            ORDER BY t.created_at DESC
-          `
+          tasks = await executeQuery(
+            sqlFunc`
+              SELECT t.*, u.name as assignee_name, u.email as assignee_email
+              FROM tasks t
+              LEFT JOIN users u ON t.assignee_id = u.id
+              WHERE (t.is_deleted = false OR t.is_deleted IS NULL)
+              ORDER BY t.created_at DESC
+            `,
+            context
+          )
         }
       }
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          tasks
-        }),
-      }
+      return createSuccessResponse({ tasks })
     }
 
     // POST: 업무 추가
@@ -102,7 +113,7 @@ export const handler = async (event, context) => {
       if (!title) {
         return {
           statusCode: 400,
-          headers,
+          headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: false,
             message: '업무 제목을 입력해주세요.'
@@ -110,23 +121,24 @@ export const handler = async (event, context) => {
         }
       }
 
-      const taskKey = await generateTaskKey(sqlFunc, projectKey || 'APP')
+      const taskKey = await executeQuery(
+        generateTaskKey(sqlFunc, projectKey || 'APP'),
+        context
+      )
 
-      const result = await sqlFunc`
-        INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key, start_date, end_date)
-        VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${finalAssigneeId || null}, ${finalAssigneeName || null}, ${projectId || null}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
-        RETURNING *
-      `
+      const result = await executeQuery(
+        sqlFunc`
+          INSERT INTO tasks (task_key, title, description, status, priority, assignee_id, assignee_name, project_id, project_key, start_date, end_date)
+          VALUES (${taskKey}, ${title}, ${description || null}, ${status || 'backlog'}, ${priority || 'medium'}, ${finalAssigneeId || null}, ${finalAssigneeName || null}, ${projectId || null}, ${projectKey || 'APP'}, ${startDate || null}, ${endDate || null})
+          RETURNING *
+        `,
+        context
+      )
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: '업무가 추가되었습니다.',
-          task: result[0]
-        }),
-      }
+      return createSuccessResponse({
+        message: '업무가 추가되었습니다.',
+        task: result[0]
+      })
     }
 
     // PUT: 업무 수정
@@ -152,7 +164,7 @@ export const handler = async (event, context) => {
       if (!id) {
         return {
           statusCode: 400,
-          headers,
+          headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: false,
             message: '업무 ID가 필요합니다.'
@@ -160,14 +172,15 @@ export const handler = async (event, context) => {
         }
       }
 
-      const existing = await sqlFunc`
-        SELECT * FROM tasks WHERE id = ${parseInt(id)}
-      `
+      const existing = await executeQuery(
+        sqlFunc`SELECT * FROM tasks WHERE id = ${parseInt(id)}`,
+        context
+      )
       
       if (existing.length === 0) {
         return {
           statusCode: 404,
-          headers,
+          headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: false,
             message: '업무를 찾을 수 없습니다.'
@@ -175,59 +188,58 @@ export const handler = async (event, context) => {
         }
       }
 
-      // 업데이트할 필드만 업데이트
-      if (title) {
-        await sqlFunc`UPDATE tasks SET title = ${title} WHERE id = ${parseInt(id)}`
-      }
-      if (description !== undefined) {
-        await sqlFunc`UPDATE tasks SET description = ${description} WHERE id = ${parseInt(id)}`
-      }
-      if (status !== undefined) {
-        await sqlFunc`UPDATE tasks SET status = ${status} WHERE id = ${parseInt(id)}`
-      }
-      if (priority !== undefined) {
-        await sqlFunc`UPDATE tasks SET priority = ${priority} WHERE id = ${parseInt(id)}`
-      }
-      if (assigneeId !== undefined) {
-        await sqlFunc`UPDATE tasks SET assignee_id = ${assigneeId} WHERE id = ${parseInt(id)}`
-      }
-      if (finalAssigneeId !== undefined) {
-        await sqlFunc`UPDATE tasks SET assignee_id = ${finalAssigneeId || null} WHERE id = ${parseInt(id)}`
-      }
-      if (finalAssigneeName !== undefined) {
-        await sqlFunc`UPDATE tasks SET assignee_name = ${finalAssigneeName || null} WHERE id = ${parseInt(id)}`
-      }
-      if (projectId !== undefined) {
-        await sqlFunc`UPDATE tasks SET project_id = ${projectId || null} WHERE id = ${parseInt(id)}`
-      }
-      if (startDate !== undefined) {
-        await sqlFunc`UPDATE tasks SET start_date = ${startDate || null} WHERE id = ${parseInt(id)}`
-      }
-      if (endDate !== undefined) {
-        await sqlFunc`UPDATE tasks SET end_date = ${endDate || null} WHERE id = ${parseInt(id)}`
-      }
-      if (taskKey !== undefined && taskKey !== null && taskKey !== '') {
-        await sqlFunc`UPDATE tasks SET task_key = ${taskKey} WHERE id = ${parseInt(id)}`
-      }
-      
-      await sqlFunc`UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = ${parseInt(id)}`
+      // 기존 데이터 가져오기
+      const current = existing[0]
 
-      const result = await sqlFunc`
-        SELECT t.*, u.name as assignee_name, u.email as assignee_email
-        FROM tasks t
-        LEFT JOIN users u ON t.assignee_id = u.id
-        WHERE t.id = ${parseInt(id)}
-      `
+      // 업데이트할 값 결정
+      const updateTitle = title !== undefined ? title : current.title
+      const updateDescription = description !== undefined ? description : current.description
+      const updateStatus = status !== undefined ? status : current.status
+      const updatePriority = priority !== undefined ? priority : current.priority
+      const updateAssigneeId = finalAssigneeId !== undefined ? finalAssigneeId : current.assignee_id
+      const updateAssigneeName = finalAssigneeName !== undefined ? finalAssigneeName : current.assignee_name
+      const updateProjectId = projectId !== undefined ? projectId : current.project_id
+      const updateStartDate = startDate !== undefined ? startDate : current.start_date
+      const updateEndDate = endDate !== undefined ? endDate : current.end_date
+      const updateTaskKey = (taskKey !== undefined && taskKey !== null && taskKey !== '') ? taskKey : current.task_key
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: '업무가 수정되었습니다.',
-          task: result[0]
-        }),
-      }
+      // 단일 UPDATE 쿼리로 모든 필드 업데이트
+      const result = await executeQuery(
+        sqlFunc`
+          UPDATE tasks
+          SET 
+            title = ${updateTitle},
+            description = ${updateDescription},
+            status = ${updateStatus},
+            priority = ${updatePriority},
+            assignee_id = ${updateAssigneeId || null},
+            assignee_name = ${updateAssigneeName || null},
+            project_id = ${updateProjectId || null},
+            start_date = ${updateStartDate || null},
+            end_date = ${updateEndDate || null},
+            task_key = ${updateTaskKey},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${parseInt(id)}
+          RETURNING *
+        `,
+        context
+      )
+
+      // 사용자 정보 포함하여 반환
+      const taskWithUser = await executeQuery(
+        sqlFunc`
+          SELECT t.*, u.name as assignee_name, u.email as assignee_email
+          FROM tasks t
+          LEFT JOIN users u ON t.assignee_id = u.id
+          WHERE t.id = ${parseInt(id)}
+        `,
+        context
+      )
+
+      return createSuccessResponse({
+        message: '업무가 수정되었습니다.',
+        task: taskWithUser[0]
+      })
     }
 
     // DELETE: 업무 삭제 (soft delete)
@@ -247,7 +259,7 @@ export const handler = async (event, context) => {
       if (!id) {
         return {
           statusCode: 400,
-          headers,
+          headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: false,
             message: '업무 ID가 필요합니다.'
@@ -255,14 +267,15 @@ export const handler = async (event, context) => {
         }
       }
 
-      const task = await sqlFunc`
-        SELECT * FROM tasks WHERE id = ${parseInt(id)}
-      `
+      const task = await executeQuery(
+        sqlFunc`SELECT * FROM tasks WHERE id = ${parseInt(id)}`,
+        context
+      )
       
       if (task.length === 0) {
         return {
           statusCode: 404,
-          headers,
+          headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
           body: JSON.stringify({
             success: false,
             message: '업무를 찾을 수 없습니다.'
@@ -271,20 +284,18 @@ export const handler = async (event, context) => {
       }
 
       // Soft delete: is_deleted를 true로 설정하고 deleted_at에 현재 시간 저장
-      await sqlFunc`
-        UPDATE tasks 
-        SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ${parseInt(id)}
-      `
+      await executeQuery(
+        sqlFunc`
+          UPDATE tasks 
+          SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${parseInt(id)}
+        `,
+        context
+      )
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: '업무가 삭제되었습니다.'
-        }),
-      }
+      return createSuccessResponse({
+        message: '업무가 삭제되었습니다.'
+      })
     }
 
     return {
@@ -297,15 +308,7 @@ export const handler = async (event, context) => {
     }
   } catch (error) {
     console.error('Tasks API error:', error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: '서버 오류가 발생했습니다.',
-        error: error.message
-      }),
-    }
+    return createErrorResponse(error, context)
   }
 }
 
