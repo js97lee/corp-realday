@@ -39,13 +39,28 @@ function AdminLogin() {
           }
         }
         
-        // localStorage 저장 후 약간의 지연을 두고 이동 (동기화 보장)
-        setTimeout(() => {
-          console.log('로그인 성공, 대시보드로 이동')
-          console.log('저장된 토큰:', localStorage.getItem('authToken'))
-          console.log('저장된 사용자:', localStorage.getItem('user'))
+        // localStorage 저장 확인
+        const savedToken = localStorage.getItem('authToken')
+        const savedUser = localStorage.getItem('user')
+        
+        console.log('로그인 성공, 대시보드로 이동')
+        console.log('저장된 토큰:', savedToken)
+        console.log('저장된 사용자:', savedUser)
+        
+        if (!savedToken) {
+          setError('토큰 저장에 실패했습니다.')
+          setLoading(false)
+          return
+        }
+        
+        // React Router의 navigate 사용 (다음 이벤트 루프에서 실행하여 localStorage 동기화 보장)
+        Promise.resolve().then(() => {
+          console.log('navigate 실행 전 최종 확인:', {
+            token: localStorage.getItem('authToken'),
+            user: localStorage.getItem('user')
+          })
           navigate('/admin/dashboard', { replace: true })
-        }, 100)
+        })
       } else {
         setError(response?.message || '로그인에 실패했습니다.')
       }

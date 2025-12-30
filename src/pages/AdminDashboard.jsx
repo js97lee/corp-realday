@@ -68,84 +68,54 @@ function AdminDashboard() {
   const location = useLocation()
 
   useEffect(() => {
-    // 로그인 상태 확인 (약간의 지연을 두어 localStorage 동기화 보장)
-    const checkAuth = () => {
-      const token = localStorage.getItem('authToken')
-      const userData = localStorage.getItem('user')
+    // 로그인 상태 확인
+    const token = localStorage.getItem('authToken')
+    const userData = localStorage.getItem('user')
 
-      console.log('AdminDashboard 인증 체크:', { token: !!token, userData: !!userData })
+    console.log('AdminDashboard 인증 체크:', { token: !!token, userData: !!userData, tokenValue: token?.substring(0, 10) })
 
-      if (!token) {
-        // 토큰이 없으면 로그인 페이지로 리다이렉트
-        console.log('토큰이 없습니다. 로그인 페이지로 리다이렉트')
-        navigate('/admin', { replace: true })
-        return
-      }
-
-      // userData가 없어도 토큰이 있으면 기본 사용자 정보 사용
-      if (!userData) {
-        console.warn('사용자 데이터가 없습니다. 기본값 사용')
-        const defaultUser = {
-          email: 'unknown',
-          role: 'employee'
-        }
-        localStorage.setItem('user', JSON.stringify(defaultUser))
-        setUser(defaultUser)
-        setAuthChecked(true)
-        setLoading(false)
-        return
-      }
-
-      try {
-        const parsedUser = JSON.parse(userData)
-        console.log('사용자 정보 파싱 성공:', parsedUser)
-        setUser(parsedUser)
-        setAuthChecked(true) // 인증 성공 후에만 true로 설정
-        setLoading(false)
-      } catch (error) {
-        console.error('User data parse error:', error)
-        // 파싱 실패해도 토큰이 있으면 기본값 사용
-        const defaultUser = {
-          email: 'unknown',
-          role: 'employee'
-        }
-        localStorage.setItem('user', JSON.stringify(defaultUser))
-        setUser(defaultUser)
-        setAuthChecked(true)
-        setLoading(false)
-      }
+    if (!token) {
+      // 토큰이 없으면 로그인 페이지로 리다이렉트
+      console.log('토큰이 없습니다. 로그인 페이지로 리다이렉트')
+      navigate('/admin', { replace: true })
+      return
     }
 
-    // 약간의 지연을 두어 localStorage 동기화 보장
-    const timeoutId = setTimeout(checkAuth, 50)
-    return () => clearTimeout(timeoutId)
+    // userData가 없어도 토큰이 있으면 기본 사용자 정보 사용
+    if (!userData) {
+      console.warn('사용자 데이터가 없습니다. 기본값 사용')
+      const defaultUser = {
+        email: 'unknown',
+        role: 'employee'
+      }
+      localStorage.setItem('user', JSON.stringify(defaultUser))
+      setUser(defaultUser)
+      setAuthChecked(true)
+      setLoading(false)
+      return
+    }
+
+    try {
+      const parsedUser = JSON.parse(userData)
+      console.log('사용자 정보 파싱 성공:', parsedUser)
+      setUser(parsedUser)
+      setAuthChecked(true) // 인증 성공 후에만 true로 설정
+      setLoading(false)
+    } catch (error) {
+      console.error('User data parse error:', error)
+      // 파싱 실패해도 토큰이 있으면 기본값 사용
+      const defaultUser = {
+        email: 'unknown',
+        role: 'employee'
+      }
+      localStorage.setItem('user', JSON.stringify(defaultUser))
+      setUser(defaultUser)
+      setAuthChecked(true)
+      setLoading(false)
+    }
   }, [navigate])
 
-  // 인증 체크 완료 전에는 로딩 화면 표시
-  if (!authChecked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-4"></div>
-          <p className="text-gray-600">인증 확인 중...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // 인증되지 않은 경우 (리다이렉트 중)
-  if (!user) {
-    return null
-  }
-  
-  useEffect(() => {
-    if (user && activeMenu === 'dashboard' && !dashboardDataLoaded) {
-      loadDashboardData()
-      setDashboardDataLoaded(true)
-    }
-    // 다른 메뉴로 이동했다가 다시 돌아오면 리셋하지 않음 (캐싱 활용)
-  }, [user, activeMenu, dashboardDataLoaded])
-
+  // 대시보드 데이터 로드 함수 (조건부 return 이전에 정의해야 함)
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true)
@@ -211,7 +181,16 @@ function AdminDashboard() {
     }
   }, [])
 
-  // 일정 데이터 로드
+  // 대시보드 데이터 로드 (useEffect에서 호출)
+  useEffect(() => {
+    if (user && activeMenu === 'dashboard' && !dashboardDataLoaded) {
+      loadDashboardData()
+      setDashboardDataLoaded(true)
+    }
+    // 다른 메뉴로 이동했다가 다시 돌아오면 리셋하지 않음 (캐싱 활용)
+  }, [user, activeMenu, dashboardDataLoaded, loadDashboardData])
+
+  // 일정 데이터 로드 (조건부 return 이전에 정의)
   const loadEvents = useCallback(async () => {
     try {
       const eventsData = await fetchEvents()
@@ -221,22 +200,7 @@ function AdminDashboard() {
     }
   }, [])
 
-  // 대시보드 진입 시 일정도 함께 로드
-  useEffect(() => {
-    if (user && activeMenu === 'dashboard') {
-      loadEvents()
-      loadAnnouncement()
-    }
-  }, [user, activeMenu, loadEvents])
-
-  // 공지사항 관리 페이지 진입 시 모든 공지사항 로드
-  useEffect(() => {
-    if (user && activeMenu === 'announcements' && isSuperAdmin()) {
-      loadAnnouncement()
-    }
-  }, [user, activeMenu, loadAnnouncement])
-
-  // 공지사항 로드
+  // 공지사항 로드 (조건부 return 이전에 정의)
   const loadAnnouncement = useCallback(async () => {
     try {
       const announcements = await fetchAnnouncements()
