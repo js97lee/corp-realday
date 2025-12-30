@@ -72,9 +72,6 @@ function AdminDashboard() {
     const token = localStorage.getItem('authToken')
     const userData = localStorage.getItem('user')
 
-    // 인증 체크 완료 표시 (체크 시작)
-    setAuthChecked(true)
-
     if (!token || !userData) {
       // 로그인되지 않았으면 로그인 페이지로 리다이렉트
       console.log('인증되지 않은 사용자, 로그인 페이지로 리다이렉트')
@@ -85,6 +82,7 @@ function AdminDashboard() {
     try {
       const parsedUser = JSON.parse(userData)
       setUser(parsedUser)
+      setAuthChecked(true) // 인증 성공 후에만 true로 설정
       setLoading(false)
     } catch (error) {
       console.error('User data parse error:', error)
@@ -94,9 +92,16 @@ function AdminDashboard() {
     }
   }, [navigate])
 
-  // 인증 체크 완료 전에는 아무것도 렌더링하지 않음 (리다이렉트 대기)
+  // 인증 체크 완료 전에는 로딩 화면 표시
   if (!authChecked) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-4"></div>
+          <p className="text-gray-600">인증 확인 중...</p>
+        </div>
+      </div>
+    )
   }
 
   // 인증되지 않은 경우 (리다이렉트 중)
