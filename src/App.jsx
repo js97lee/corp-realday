@@ -8,6 +8,7 @@ import ProjectDetail from './pages/ProjectDetail'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
 import CodeStructure from './pages/CodeStructure'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="project/:projectName" element={<ProjectDetail />} />
           <Route path="contact" element={<Contact />} />
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   )

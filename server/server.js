@@ -16,7 +16,9 @@ const PORT = process.env.PORT || 3001
 
 // 미들웨어
 app.use(cors())
-app.use(express.json())
+// body size limit 증가 (프로젝트 media 배열 등 대용량 데이터 처리)
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // DATABASE_URL 확인
 const databaseUrl = process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL

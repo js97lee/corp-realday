@@ -181,6 +181,30 @@ function AdminDashboard() {
     }
   }, [])
 
+  // 일정 데이터 로드 (조건부 return 이전에 정의)
+  const loadEvents = useCallback(async () => {
+    try {
+      const eventsData = await fetchEvents()
+      setEvents(eventsData)
+    } catch (error) {
+      console.error('일정 데이터 로드 실패:', error)
+    }
+  }, [])
+
+  // 공지사항 로드 (조건부 return 이전에 정의, useEffect보다 먼저 정의되어야 함)
+  const loadAnnouncement = useCallback(async () => {
+    try {
+      const announcements = await fetchAnnouncements()
+      // 활성 공지사항만 표시 (일반 사용자) 또는 최신 공지사항 (슈퍼어드민)
+      const activeAnnouncement = announcements.find(a => a.is_active) || announcements[0] || null
+      setAnnouncement(activeAnnouncement)
+      // 모든 공지사항 저장 (공지사항 관리 페이지용)
+      setAllAnnouncements(Array.isArray(announcements) ? announcements : [])
+    } catch (error) {
+      console.error('공지사항 로드 실패:', error)
+    }
+  }, [])
+
   // 대시보드 데이터 로드 (useEffect에서 호출)
   useEffect(() => {
     if (user && activeMenu === 'dashboard' && !dashboardDataLoaded) {
@@ -203,30 +227,6 @@ function AdminDashboard() {
       loadAnnouncement()
     }
   }, [user, activeMenu, loadAnnouncement])
-
-  // 일정 데이터 로드 (조건부 return 이전에 정의)
-  const loadEvents = useCallback(async () => {
-    try {
-      const eventsData = await fetchEvents()
-      setEvents(eventsData)
-    } catch (error) {
-      console.error('일정 데이터 로드 실패:', error)
-    }
-  }, [])
-
-  // 공지사항 로드 (조건부 return 이전에 정의)
-  const loadAnnouncement = useCallback(async () => {
-    try {
-      const announcements = await fetchAnnouncements()
-      // 활성 공지사항만 표시 (일반 사용자) 또는 최신 공지사항 (슈퍼어드민)
-      const activeAnnouncement = announcements.find(a => a.is_active) || announcements[0] || null
-      setAnnouncement(activeAnnouncement)
-      // 모든 공지사항 저장 (공지사항 관리 페이지용)
-      setAllAnnouncements(Array.isArray(announcements) ? announcements : [])
-    } catch (error) {
-      console.error('공지사항 로드 실패:', error)
-    }
-  }, [])
 
   // 공지사항 저장 핸들러
   const handleAnnouncementSave = useCallback(async (announcementData) => {
@@ -380,12 +380,12 @@ function AdminDashboard() {
   }, [userRole])
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="h-screen flex bg-gray-50 overflow-hidden">
       {/* Left Navigation Bar (LNB) */}
-      <aside className="w-64 bg-black border-r border-gray-800 flex-shrink-0">
+      <aside className="w-64 bg-black border-r border-gray-800 flex-shrink-0 h-screen flex flex-col">
         <div className="h-full flex flex-col">
           {/* Logo/Header */}
-          <div className="px-4 py-3 border-b border-gray-800">
+          <div className="px-4 py-3 border-b border-gray-800 flex-shrink-0">
             <button
               onClick={() => window.location.href = '/'}
               className="text-left w-full hover:opacity-80 transition-opacity"
@@ -397,7 +397,7 @@ function AdminDashboard() {
           </div>
 
           {/* Navigation Menu */}
-          <nav className="flex-1 px-3 py-3 overflow-y-auto">
+          <nav className="flex-1 px-3 py-3 overflow-y-auto min-h-0">
             <div className="space-y-4">
               {filteredCategories.length === 0 ? (
                 <div className="text-gray-400 text-sm px-3 py-2">
@@ -452,40 +452,43 @@ function AdminDashboard() {
             </div>
           </nav>
 
-          {/* 점메추 버튼 */}
-          <div className="px-3 py-2 border-t border-gray-800">
-            <button
-              onClick={() => setShowLunchRoulette(true)}
-              className="w-full flex items-center px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-              title="오늘의 점메추"
-            >
-              <svg className="w-4 h-4 mr-2.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11 2v20c0 .55-.45 1-1 1s-1-.45-1-1v-6H7v6c0 .55-.45 1-1 1s-1-.45-1-1V2c0-.55.45-1 1-1s1 .45 1 1v6h2V2c0-.55.45-1 1-1s1 .45 1 1zm7 0v20c0 .55-.45 1-1 1s-1-.45-1-1v-6h-2v6c0 .55-.45 1-1 1s-1-.45-1-1V2c0-.55.45-1 1-1s1 .45 1 1v6h2V2c0-.55.45-1 1-1s1 .45 1 1z"/>
-              </svg>
-              <span className="font-medium text-sm">점메추</span>
-            </button>
-          </div>
-
-          {/* User Info & Logout */}
-          <div className="px-4 py-3 border-t border-gray-800">
-            <div className="mb-3">
-              <p className="text-sm font-medium text-white">
-                {user?.email || 'Admin'}
-              </p>
-              <p className="text-xs text-gray-400">관리자</p>
+          {/* 하단 고정 영역: 점메추 & 프로필 */}
+          <div className="flex-shrink-0 border-t border-gray-800">
+            {/* 점메추 버튼 */}
+            <div className="px-3 py-2">
+              <button
+                onClick={() => setShowLunchRoulette(true)}
+                className="w-full flex items-center px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                title="오늘의 점메추"
+              >
+                <svg className="w-4 h-4 mr-2.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11 2v20c0 .55-.45 1-1 1s-1-.45-1-1v-6H7v6c0 .55-.45 1-1 1s-1-.45-1-1V2c0-.55.45-1 1-1s1 .45 1 1v6h2V2c0-.55.45-1 1-1s1 .45 1 1zm7 0v20c0 .55-.45 1-1 1s-1-.45-1-1v-6h-2v6c0 .55-.45 1-1 1s-1-.45-1-1V2c0-.55.45-1 1-1s1 .45 1 1v6h2V2c0-.55.45-1 1-1s1 .45 1 1z"/>
+                </svg>
+                <span className="font-medium text-sm">점메추</span>
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className="w-full px-4 py-2 bg-gray-800 text-white font-medium hover:bg-gray-700 transition-colors rounded-lg"
-            >
-              로그아웃
-            </button>
+
+            {/* User Info & Logout */}
+            <div className="px-4 py-3 border-t border-gray-800">
+              <div className="mb-3">
+                <p className="text-sm font-medium text-white">
+                  {user?.email || 'Admin'}
+                </p>
+                <p className="text-xs text-gray-400">관리자</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2 bg-gray-800 text-white font-medium hover:bg-gray-700 transition-colors rounded-lg"
+              >
+                로그아웃
+              </button>
+            </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className="flex-1 flex flex-col bg-gray-50 overflow-y-auto h-screen">
         {/* Top Header */}
         <header className="bg-white px-3 md:px-4 py-3">
           <div className="max-w-[1480px] mx-auto w-full">
@@ -506,7 +509,12 @@ function AdminDashboard() {
               {/* 공지사항 Section */}
               <div className="bg-white rounded-lg shadow p-6 mb-6">
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">공지사항</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                    공지사항
+                  </h3>
                   {isSuperAdmin() && (
                     <button
                       onClick={() => {
