@@ -1,6 +1,9 @@
 import { getSql, initDatabase } from './db.js'
 
 export const handler = async (event, context) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:3',message:'Handler entry',data:{method:event.httpMethod,path:event.path,query:event.queryStringParameters,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
@@ -19,9 +22,18 @@ export const handler = async (event, context) => {
 
   try {
     // 데이터베이스 초기화 (모든 요청에서)
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:22',message:'DB init start',data:{hasDatabaseUrl:!!process.env.DATABASE_URL},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     try {
       await initDatabase()
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:24',message:'DB init success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
     } catch (initError) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:25',message:'DB init error',data:{error:initError.message,stack:initError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       console.error('Database initialization error:', initError)
       console.error('Init error stack:', initError.stack)
       // 초기화 실패는 치명적이므로 에러 반환
@@ -38,25 +50,61 @@ export const handler = async (event, context) => {
     
     let sqlFunc
     try {
+      console.log('🔌 데이터베이스 연결 시도 중...')
       sqlFunc = getSql()
-      // 연결 테스트 (타임아웃 설정)
+      
+      // DATABASE_URL 확인
+      const hasDatabaseUrl = !!process.env.DATABASE_URL
+      if (!hasDatabaseUrl) {
+        console.error('❌ DATABASE_URL이 설정되지 않았습니다.')
+        const availableEnvKeys = Object.keys(process.env).filter(key => 
+          key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('NEON')
+        )
+        console.error('사용 가능한 환경 변수:', availableEnvKeys)
+        return {
+          statusCode: 503,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: '데이터베이스 연결 설정 오류',
+            error: 'DATABASE_URL이 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.',
+            details: `사용 가능한 환경 변수: ${availableEnvKeys.join(', ') || '없음'}`
+          }),
+        }
+      }
+      
+      // 연결 테스트 (타임아웃 설정: 3초로 단축)
+      console.log('⏱️ 데이터베이스 연결 테스트 시작...')
+      // #region agent log
+      const connStartTime = Date.now();
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:66',message:'DB connection test start',data:{timeout:3000},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       await Promise.race([
         sqlFunc`SELECT 1`,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+          setTimeout(() => reject(new Error('Database connection timeout (3초 초과)')), 3000)
         )
       ])
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:72',message:'DB connection success',data:{duration:Date.now()-connStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      console.log('✅ 데이터베이스 연결 성공')
     } catch (sqlError) {
-      console.error('SQL connection error:', sqlError)
-      console.error('SQL error stack:', sqlError.stack)
-      console.error('DATABASE_URL exists:', !!process.env.DATABASE_URL)
+      console.error('❌ SQL connection error:', sqlError)
+      console.error('📍 에러 위치: netlify/functions/projects.js > 데이터베이스 연결 테스트')
+      console.error('🔍 에러 상세:', {
+        message: sqlError.message,
+        stack: sqlError.stack,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
+      })
       return {
         statusCode: 503,
         headers,
         body: JSON.stringify({
           success: false,
           message: '데이터베이스 연결에 실패했습니다.',
-          error: sqlError.message
+          error: sqlError.message,
+          details: '데이터베이스 서버에 연결할 수 없습니다. 네트워크 상태나 데이터베이스 서버 상태를 확인해주세요.'
         }),
       }
     }
@@ -67,21 +115,23 @@ export const handler = async (event, context) => {
         const { visible, featured } = event.queryStringParameters || {}
         console.log('GET projects request:', { visible, featured, queryParams: event.queryStringParameters })
         
-        // 쿼리 실행 전 연결 확인
+        // 쿼리 실행 전 연결 확인 (2초로 단축)
         try {
           await Promise.race([
             sqlFunc`SELECT 1`,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Connection check timeout')), 3000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Connection check timeout (2초 초과)')), 2000))
           ])
         } catch (connError) {
-          console.error('Connection check failed:', connError)
+          console.error('❌ Connection check failed:', connError)
+          console.error('📍 에러 위치: netlify/functions/projects.js > GET 요청 > 연결 확인')
           return {
             statusCode: 503,
             headers,
             body: JSON.stringify({
               success: false,
               message: '데이터베이스 연결 확인 실패',
-              error: connError.message
+              error: connError.message,
+              details: '쿼리 실행 전 데이터베이스 연결 확인에 실패했습니다.'
             }),
           }
         }
@@ -90,6 +140,10 @@ export const handler = async (event, context) => {
 
         // media 컬럼 존재 여부 확인 (타임아웃 설정)
         let hasMediaColumn = false
+        // #region agent log
+        const columnCheckStartTime = Date.now();
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:141',message:'Media column check start',data:{timeout:3000},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         try {
           const columnCheck = await Promise.race([
             sqlFunc`
@@ -100,13 +154,25 @@ export const handler = async (event, context) => {
             new Promise((_, reject) => setTimeout(() => reject(new Error('Column check timeout')), 3000))
           ])
           hasMediaColumn = columnCheck.length > 0
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:152',message:'Media column check result',data:{hasMediaColumn,duration:Date.now()-columnCheckStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
         } catch (e) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:153',message:'Media column check error',data:{error:e.message,duration:Date.now()-columnCheckStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
           console.warn('Media 컬럼 확인 실패 (기본값: false):', e.message)
           hasMediaColumn = false
         }
 
-        // 쿼리 실행 (타임아웃 설정)
+        // 쿼리 실행 (타임아웃 설정: 8초로 단축 - Netlify Functions 제한 고려)
         try {
+          console.log('📊 프로젝트 쿼리 실행 시작...', { featured, visible, hasMediaColumn })
+          // #region agent log
+          const queryStartTime = Date.now();
+          fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:112',message:'Query execution start',data:{featured,visible,hasMediaColumn,timeout:8000},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          
           if (featured === 'true') {
             // 랜딩페이지용: featured 프로젝트만
             if (hasMediaColumn) {
@@ -117,7 +183,7 @@ export const handler = async (event, context) => {
                   WHERE is_featured = true AND is_visible = true
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
               ])
             } else {
               projects = await Promise.race([
@@ -127,7 +193,7 @@ export const handler = async (event, context) => {
                   WHERE is_featured = true AND is_visible = true
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
               ])
               // media 필드 추가 (빈 배열)
               projects = (projects || []).map(p => ({ ...p, media: [] }))
@@ -142,7 +208,7 @@ export const handler = async (event, context) => {
                   WHERE is_visible = true
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
               ])
             } else {
               projects = await Promise.race([
@@ -152,7 +218,7 @@ export const handler = async (event, context) => {
                   WHERE is_visible = true
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
               ])
               // media 필드 추가 (빈 배열)
               projects = (projects || []).map(p => ({ ...p, media: [] }))
@@ -166,7 +232,7 @@ export const handler = async (event, context) => {
                   FROM projects
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
               ])
             } else {
               projects = await Promise.race([
@@ -175,15 +241,28 @@ export const handler = async (event, context) => {
                   FROM projects
                   ORDER BY created_at DESC
                 `,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 10000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
               ])
               // media 필드 추가 (빈 배열)
               projects = (projects || []).map(p => ({ ...p, media: [] }))
             }
           }
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:189',message:'Query execution success',data:{count:projects?.length||0,duration:Date.now()-queryStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          console.log('✅ 쿼리 실행 성공:', { count: projects?.length || 0 })
         } catch (queryError) {
-          console.error('Query execution error:', queryError)
-          console.error('Query error stack:', queryError.stack)
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:191',message:'Query execution error',data:{error:queryError.message,stack:queryError.stack,queryType:featured?'featured':visible?'visible':'all',duration:Date.now()-queryStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          console.error('❌ Query execution error:', queryError)
+          console.error('📍 에러 위치: netlify/functions/projects.js > GET 요청 > 쿼리 실행')
+          console.error('🔍 에러 상세:', {
+            message: queryError.message,
+            stack: queryError.stack,
+            queryType: featured ? 'featured' : visible ? 'visible' : 'all'
+          })
           throw queryError
         }
 
@@ -194,6 +273,9 @@ export const handler = async (event, context) => {
         }
 
         console.log('Projects fetched successfully:', { count: projects?.length || 0, featured, visible })
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:207',message:'Response ready',data:{count:projects?.length||0,featured,visible,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         
         return {
           statusCode: 200,
@@ -616,40 +698,58 @@ export const handler = async (event, context) => {
       }),
     }
   } catch (error) {
-    console.error('Projects API top-level error:', error)
-    console.error('Error name:', error.name)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
-    console.error('Event method:', event.httpMethod)
-    console.error('Event path:', event.path)
-    console.error('Event query:', event.queryStringParameters)
+    // 상세한 에러 로깅
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'projects.js:630',message:'Top-level error',data:{name:error.name,message:error.message,stack:error.stack,httpMethod:event.httpMethod,path:event.path,queryParams:event.queryStringParameters,hasDatabaseUrl:!!process.env.DATABASE_URL,remainingTime:context?.getRemainingTimeInMillis?.()||'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    console.error('❌ [Projects API] Top-level error 발생')
+    console.error('📍 에러 위치: netlify/functions/projects.js > handler()')
+    console.error('🔍 에러 상세:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      httpMethod: event.httpMethod,
+      path: event.path,
+      queryParams: event.queryStringParameters,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      remainingTime: context?.getRemainingTimeInMillis?.() || 'unknown'
+    })
     
     // 타임아웃 에러인 경우
-    if (error.message && error.message.includes('timeout')) {
+    if (error.message && (error.message.includes('timeout') || error.message.includes('Timeout'))) {
+      console.error('⏱️ 타임아웃 에러 감지')
       return {
         statusCode: 504,
         headers,
         body: JSON.stringify({
           success: false,
           message: '요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.',
-          error: 'Timeout'
+          error: 'Timeout',
+          details: '서버 응답 시간이 초과되었습니다. 데이터베이스 연결이나 쿼리 실행이 너무 오래 걸렸습니다.'
         }),
       }
     }
     
     // 데이터베이스 연결 에러인 경우
     if (error.message && (error.message.includes('connection') || error.message.includes('database') || error.message.includes('DATABASE_URL'))) {
+      console.error('🔌 데이터베이스 연결 에러 감지')
+      const hasDatabaseUrl = !!process.env.DATABASE_URL
       return {
         statusCode: 503,
         headers,
         body: JSON.stringify({
           success: false,
           message: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
-          error: 'Database connection failed'
+          error: 'Database connection failed',
+          details: hasDatabaseUrl 
+            ? 'DATABASE_URL은 설정되어 있지만 연결에 실패했습니다. 데이터베이스 서버 상태를 확인해주세요.'
+            : 'DATABASE_URL이 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.'
         }),
       }
     }
     
+    // 일반 서버 에러
+    console.error('⚠️ 일반 서버 에러')
     return {
       statusCode: 500,
       headers,
@@ -657,7 +757,7 @@ export const handler = async (event, context) => {
         success: false,
         message: '서버 오류가 발생했습니다.',
         error: error.message,
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: process.env.NODE_ENV === 'development' ? error.stack : '서버에서 예상치 못한 오류가 발생했습니다.'
       }),
     }
   }

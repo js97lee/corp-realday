@@ -46,8 +46,18 @@ function Home() {
     
     // 캐시가 없으면 즉시 로드
     const loadFeaturedProjects = async () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Home.jsx:48',message:'loadFeaturedProjects entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
       try {
+        // #region agent log
+        const fetchStartTime = Date.now();
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Home.jsx:50',message:'fetchProjects call',data:{featured:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
         const response = await fetchProjects(false, true) // featured=true: 랜딩페이지용
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Home.jsx:51',message:'fetchProjects response',data:{success:response?.success,projectsCount:response?.projects?.length||0,duration:Date.now()-fetchStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         console.log('랜딩페이지 프로젝트 응답:', response)
         if (response && (response.success || response.projects)) {
           setProjects(response.projects || [])
@@ -56,6 +66,9 @@ function Home() {
           setProjects([])
         }
       } catch (err) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Home.jsx:58',message:'loadFeaturedProjects error',data:{message:err.message,status:err.status,details:err.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
         console.error('❌ [랜딩페이지] 프로젝트 불러오기 실패:', err)
         console.error('📍 에러 위치: Home.jsx > loadFeaturedProjects()')
         console.error('🔍 에러 상세:', {

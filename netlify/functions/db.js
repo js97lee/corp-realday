@@ -3,6 +3,16 @@ import { neon } from '@neondatabase/serverless'
 
 // DATABASE_URL 가져오기 함수 (런타임에 호출)
 function getDatabaseUrl() {
+  // #region agent log
+  const envCheck = {
+    DATABASE_URL: !!process.env.DATABASE_URL,
+    NETLIFY_DATABASE_URL: !!process.env.NETLIFY_DATABASE_URL,
+    POSTGRES_PRISMA_URL: !!process.env.POSTGRES_PRISMA_URL,
+    POSTGRES_URL_NON_POOLING: !!process.env.POSTGRES_URL_NON_POOLING
+  };
+  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:5',message:'getDatabaseUrl entry',data:envCheck,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+  
   const databaseUrl = process.env.DATABASE_URL || 
                        process.env.NETLIFY_DATABASE_URL ||
                        process.env.POSTGRES_PRISMA_URL ||
@@ -12,11 +22,17 @@ function getDatabaseUrl() {
     const availableEnvKeys = Object.keys(process.env).filter(key => 
       key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('NEON')
     )
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:11',message:'DATABASE_URL not found',data:{availableEnvKeys},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     console.error('❌ DATABASE_URL이 설정되지 않았습니다.')
     console.error('사용 가능한 환경 변수:', availableEnvKeys)
     throw new Error('DATABASE_URL이 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.')
   }
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:20',message:'DATABASE_URL found',data:{urlPrefix:databaseUrl.substring(0,30),length:databaseUrl.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   console.log('✅ DATABASE_URL 확인됨:', databaseUrl.substring(0, 30) + '...')
   return databaseUrl
 }
@@ -34,11 +50,21 @@ export function getSql() {
 
 // 데이터베이스 초기화 (테이블 생성)
 export async function initDatabase() {
+  // #region agent log
+  const initStartTime = Date.now();
+  fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:36',message:'initDatabase entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   try {
     let sqlFunc
     try {
       sqlFunc = getSql()
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:40',message:'getSql success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
     } catch (sqlError) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:41',message:'getSql error',data:{error:sqlError.message,stack:sqlError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       console.error('Failed to get SQL connection:', sqlError)
       throw new Error(`데이터베이스 연결 실패: ${sqlError.message}`)
     }
@@ -341,8 +367,14 @@ export async function initDatabase() {
       console.log(`${dummyProjects.length}개의 더미 프로젝트가 추가되었습니다.`)
     }
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:344',message:'initDatabase success',data:{duration:Date.now()-initStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     console.log('데이터베이스 초기화 완료')
   } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fe74a1d8-c534-4ffd-9b9c-47a74779d2d2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'db.js:345',message:'initDatabase error',data:{error:error.message,stack:error.stack,duration:Date.now()-initStartTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     console.error('데이터베이스 초기화 오류:', error)
     throw error
   }
