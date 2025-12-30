@@ -296,123 +296,201 @@ export const handler = async (event, context) => {
           }),
         }
       } catch (dbError) {
-        // 테이블이 없으면 초기화 후 재시도
+        // 테이블이 없으면 초기화 후 재시도 (타임아웃 설정)
         if (dbError.message && dbError.message.includes('does not exist')) {
-          await initDatabase()
+          console.log('테이블이 없어서 초기화 후 재시도...')
+          try {
+            await Promise.race([
+              initDatabase(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Init timeout (5초 초과)')), 5000))
+            ])
+            dbInitialized = true // 플래그 업데이트
+          } catch (initErr) {
+            console.error('재시도 중 초기화 실패:', initErr)
+            return {
+              statusCode: 503,
+              headers,
+              body: JSON.stringify({
+                success: false,
+                message: '데이터베이스 초기화에 실패했습니다.',
+                error: initErr.message
+              }),
+            }
+          }
+          
           const { visible, featured } = event.queryStringParameters || {}
           let projects
 
-          // media 컬럼 존재 여부 확인
+          // media 컬럼 존재 여부 확인 (타임아웃 설정)
           let hasMediaColumn = false
           try {
-            const columnCheck = await sqlFunc`
-              SELECT column_name 
-              FROM information_schema.columns 
-              WHERE table_name = 'projects' AND column_name = 'media'
-            `
+            const columnCheck = await Promise.race([
+              sqlFunc`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'projects' AND column_name = 'media'
+              `,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Column check timeout')), 2000))
+            ])
             hasMediaColumn = columnCheck.length > 0
           } catch (e) {
+            console.warn('Media 컬럼 확인 실패 (기본값: false):', e.message)
             hasMediaColumn = false
           }
 
-          if (featured === 'true') {
-            if (hasMediaColumn) {
-              projects = await sqlFunc`
-                SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
-                FROM projects
-                WHERE is_featured = true AND is_visible = true
-                ORDER BY created_at DESC
-              `
+          // 재시도 쿼리 실행 (타임아웃 설정)
+          try {
+            if (featured === 'true') {
+              if (hasMediaColumn) {
+                projects = await Promise.race([
+                  sqlFunc`
+                    SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
+                    FROM projects
+                    WHERE is_featured = true AND is_visible = true
+                    ORDER BY created_at DESC
+                  `,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                ])
+              } else {
+                projects = await Promise.race([
+                  sqlFunc`
+                    SELECT id, title, description, category, image, created_at
+                    FROM projects
+                    WHERE is_featured = true AND is_visible = true
+                    ORDER BY created_at DESC
+                  `,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                ])
+                projects = (projects || []).map(p => ({ ...p, media: [] }))
+              }
+            } else if (visible === 'true') {
+              if (hasMediaColumn) {
+                projects = await Promise.race([
+                  sqlFunc`
+                    SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
+                    FROM projects
+                    WHERE is_visible = true
+                    ORDER BY created_at DESC
+                  `,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                ])
+              } else {
+                projects = await Promise.race([
+                  sqlFunc`
+                    SELECT id, title, description, category, image, created_at
+                    FROM projects
+                    WHERE is_visible = true
+                    ORDER BY created_at DESC
+                  `,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                ])
+                projects = (projects || []).map(p => ({ ...p, media: [] }))
+              }
             } else {
-              projects = await sqlFunc`
-                SELECT id, title, description, category, image, created_at
-                FROM projects
-                WHERE is_featured = true AND is_visible = true
-                ORDER BY created_at DESC
-              `
-              projects = projects.map(p => ({ ...p, media: [] }))
+              if (hasMediaColumn) {
+                projects = await Promise.race([
+                  sqlFunc`
+                    SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
+                    FROM projects
+                    ORDER BY created_at DESC
+                  `,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                ])
+              } else {
+                projects = await Promise.race([
+                  sqlFunc`
+                    SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+                    FROM projects
+                    ORDER BY created_at DESC
+                  `,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+                ])
+                projects = (projects || []).map(p => ({ ...p, media: [] }))
+              }
             }
-          } else if (visible === 'true') {
-            if (hasMediaColumn) {
-              projects = await sqlFunc`
-                SELECT id, title, description, category, image, COALESCE(media, '[]'::jsonb) as media, created_at
-                FROM projects
-                WHERE is_visible = true
-                ORDER BY created_at DESC
-              `
-            } else {
-              projects = await sqlFunc`
-                SELECT id, title, description, category, image, created_at
-                FROM projects
-                WHERE is_visible = true
-                ORDER BY created_at DESC
-              `
-              projects = projects.map(p => ({ ...p, media: [] }))
+            
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({
+                success: true,
+                projects: projects || []
+              }),
             }
-          } else {
-            if (hasMediaColumn) {
-              projects = await sqlFunc`
-                SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, COALESCE(media, '[]'::jsonb) as media, created_at, updated_at
-                FROM projects
-                ORDER BY created_at DESC
-              `
-            } else {
-              projects = await sqlFunc`
-                SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
-                FROM projects
-                ORDER BY created_at DESC
-              `
-              projects = projects.map(p => ({ ...p, media: [] }))
+          } catch (retryError) {
+            console.error('재시도 쿼리 실행 실패:', retryError)
+            return {
+              statusCode: 500,
+              headers,
+              body: JSON.stringify({
+                success: false,
+                message: '프로젝트 조회에 실패했습니다.',
+                error: retryError.message
+              }),
             }
-          }
-          return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-              success: true,
-              projects
-            }),
           }
         }
         
-        // media 컬럼 관련 에러인 경우 media 없이 재시도
+        // media 컬럼 관련 에러인 경우 media 없이 재시도 (타임아웃 설정)
         if (dbError.message && (dbError.message.includes('media') || dbError.message.includes('column') || dbError.message.includes('does not exist'))) {
           console.warn('Media 컬럼 에러, media 없이 재시도:', dbError.message)
           const { visible, featured } = event.queryStringParameters || {}
           let projects
 
-          if (featured === 'true') {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, created_at
-              FROM projects
-              WHERE is_featured = true AND is_visible = true
-              ORDER BY created_at DESC
-            `
-          } else if (visible === 'true') {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, created_at
-              FROM projects
-              WHERE is_visible = true
-              ORDER BY created_at DESC
-            `
-          } else {
-            projects = await sqlFunc`
-              SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
-              FROM projects
-              ORDER BY created_at DESC
-            `
-          }
-          
-          // media 필드 추가 (빈 배열)
-          projects = projects.map(p => ({ ...p, media: [] }))
-          
-          return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-              success: true,
-              projects
-            }),
+          try {
+            if (featured === 'true') {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, created_at
+                  FROM projects
+                  WHERE is_featured = true AND is_visible = true
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+              ])
+            } else if (visible === 'true') {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, created_at
+                  FROM projects
+                  WHERE is_visible = true
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+              ])
+            } else {
+              projects = await Promise.race([
+                sqlFunc`
+                  SELECT id, title, description, category, image, memo, is_visible, is_featured, status, project_key, start_date, end_date, created_at, updated_at
+                  FROM projects
+                  ORDER BY created_at DESC
+                `,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout (8초 초과)')), 8000))
+              ])
+            }
+            
+            // media 필드 추가 (빈 배열)
+            projects = (projects || []).map(p => ({ ...p, media: [] }))
+            
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({
+                success: true,
+                projects: projects || []
+              }),
+            }
+          } catch (retryError) {
+            console.error('Media 없이 재시도 실패:', retryError)
+            return {
+              statusCode: 500,
+              headers,
+              body: JSON.stringify({
+                success: false,
+                message: '프로젝트 조회에 실패했습니다.',
+                error: retryError.message
+              }),
+            }
           }
         }
         

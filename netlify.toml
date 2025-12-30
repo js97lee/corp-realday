@@ -3,6 +3,11 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[dev]
+  command = "npm run dev"
+  port = 3000
+  publish = "dist"
+
 # API 리다이렉트는 SPA 리다이렉트보다 먼저 매칭되어야 함
 [[redirects]]
   from = "/api/*"
@@ -10,6 +15,7 @@
   status = 200
   force = true
 
+# SPA 라우팅: 모든 경로를 index.html로 리다이렉트 (API 제외)
 [[redirects]]
   from = "/*"
   to = "/index.html"
