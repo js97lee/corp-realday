@@ -1,5 +1,6 @@
 // 공통 DB 연결 유틸리티
 import { neon } from '@neondatabase/serverless'
+import { hashPassword } from './auth.js'
 
 // DATABASE_URL 가져오기 함수 (런타임에 호출)
 // Netlify Neon 확장 프로그램의 NETLIFY_DATABASE_URL 우선 사용
@@ -59,6 +60,21 @@ export async function initDatabase() {
         join_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `
+
+    await sqlFunc`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id BIGSERIAL PRIMARY KEY,
+        token_hash VARCHAR(64) UNIQUE NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+
+    await sqlFunc`
+      CREATE INDEX IF NOT EXISTS sessions_token_hash_idx
+      ON sessions (token_hash)
     `
     
     // name 컬럼이 없으면 추가 (기존 테이블 마이그레이션)
@@ -268,22 +284,27 @@ export async function initDatabase() {
       )
     `
 
-    // 초기 관리자 계정이 없으면 생성
+    // 초기 관리자 계정은 환경 변수로만 생성
+    const initialAdminEmail = process.env.INITIAL_ADMIN_EMAIL || 'studio.realday@gmail.com'
+    const initialAdminPassword = process.env.INITIAL_ADMIN_PASSWORD
     const existingAdmin = await sqlFunc`
-      SELECT * FROM users WHERE email = ${'studio.realday@gmail.com'}
+      SELECT * FROM users WHERE email = ${initialAdminEmail}
     `
     
     let adminId = null
-    if (existingAdmin.length === 0) {
+    if (existingAdmin.length === 0 && initialAdminPassword) {
+      const passwordHash = await hashPassword(initialAdminPassword)
       const adminResult = await sqlFunc`
         INSERT INTO users (email, password, role)
-        VALUES (${'studio.realday@gmail.com'}, ${'admin0714'}, ${'ceo'})
+        VALUES (${initialAdminEmail}, ${passwordHash}, ${'ceo'})
         RETURNING id
       `
       adminId = adminResult[0].id
       console.log('초기 관리자 계정이 생성되었습니다.')
-    } else {
+    } else if (existingAdmin.length > 0) {
       adminId = existingAdmin[0].id
+    } else {
+      console.warn('초기 관리자 계정이 없습니다. INITIAL_ADMIN_PASSWORD 환경 변수를 설정해주세요.')
     }
 
     // 더미 프로젝트 데이터 추가 (프로젝트가 없을 때만) - 타임아웃 설정

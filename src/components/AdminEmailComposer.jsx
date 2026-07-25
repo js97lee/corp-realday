@@ -43,23 +43,7 @@ function AdminEmailComposer({ isOpen, onClose, initialTo = '' }) {
     setLoading(true)
 
     try {
-      // 현재 로그인한 사용자 정보 가져오기
-      const userData = localStorage.getItem('user')
-      let userEmail = null
-      if (userData) {
-        try {
-          const user = JSON.parse(userData)
-          userEmail = user.email
-        } catch (err) {
-          console.error('User data parse error:', err)
-        }
-      }
-
-      // 사용자 이메일을 포함하여 전송
-      const result = await sendEmail({
-        ...formData,
-        userEmail: userEmail
-      })
+      const result = await sendEmail(formData)
       
       if (result.success) {
         setSuccess(true)

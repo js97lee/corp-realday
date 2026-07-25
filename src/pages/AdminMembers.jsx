@@ -57,7 +57,7 @@ function AdminMembers() {
     setSelectedMember(member)
     setFormData({
       email: member.email,
-      password: member.password || '', // 현재 비밀번호 표시
+      password: '',
       role: member.role,
       name: member.name || '',
       profileImageUrl: member.profile_image_url || '',
@@ -65,7 +65,7 @@ function AdminMembers() {
     })
     setProfileImagePreview(member.profile_image_url || null)
     setIsEditing(true)
-    setShowPassword(true) // 수정 시 비밀번호 표시
+    setShowPassword(false)
   }
 
   const handleAddNew = () => {
@@ -456,14 +456,6 @@ function AdminMembers() {
                           </span>
                         </div>
                         <p className="text-sm text-gray-600">{member.email}</p>
-                        {member.password && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-gray-500">비밀번호:</p>
-                            <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono text-gray-700">
-                              {member.password}
-                            </code>
-                          </div>
-                        )}
                         <div className="flex items-center gap-4 mt-1">
                           {member.join_date && (
                             <p className="text-xs text-gray-400">

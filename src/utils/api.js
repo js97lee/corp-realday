@@ -1,11 +1,22 @@
 // API 기본 URL (환경 변수로 관리 가능)
 // 프로덕션에서는 Netlify Functions 사용 (/api)
 // 로컬 개발 시에는 환경 변수로 백엔드 서버 URL 설정 가능
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 // 캐싱 유틸리티 import
 import { cachedFetch, clearCache } from './cache'
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    throw new Error('인증이 필요합니다.')
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  }
+}
 
 // Admin 로그인 API
 export const adminLogin = async (email, password) => {
@@ -119,9 +130,7 @@ export const fetchMembers = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/members`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
       })
 
       if (!response.ok) {
@@ -145,9 +154,7 @@ export const addMember = async (memberData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/members`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(memberData),
     })
 
@@ -173,9 +180,7 @@ export const updateMember = async (id, memberData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/members/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(memberData),
     })
 
@@ -201,9 +206,7 @@ export const deleteMember = async (id) => {
   try {
     const response = await fetch(`${API_BASE_URL}/members/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     })
 
     if (!response.ok) {

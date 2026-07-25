@@ -1,55 +1,20 @@
-# Real Day 백엔드 서버
+# Real Day 로컬 개발 실행기
 
-## 설치 및 실행
+프로덕션과 로컬 개발 모두 `netlify/functions/`를 단일 백엔드로 사용합니다.
+이 디렉터리는 기존 Express 중복 구현을 제거한 뒤, 이전 실행 명령과의 호환성을 위해 Netlify Dev를 실행하는 얇은 래퍼만 제공합니다.
+
+## 권장 실행 방법
+
+```bash
+npm install
+npm run netlify:dev
+```
+
+기존 명령도 사용할 수 있습니다.
 
 ```bash
 cd server
-npm install
 npm run dev
 ```
 
-서버는 기본적으로 `http://localhost:5000`에서 실행됩니다.
-
-## API 엔드포인트
-
-### 1. Admin 로그인
-- **POST** `/api/admin/login`
-- Body: `{ email: string, password: string }`
-- Response: `{ success: boolean, message: string, user: object, token: string }`
-
-### 2. Contact 폼 제출
-- **POST** `/api/contact`
-- Body: `{ name: string, email: string, message: string }`
-- Response: `{ success: boolean, message: string, contact: object }`
-
-### 3. Contact 목록 조회 (관리자용)
-- **GET** `/api/contacts`
-- Response: `{ success: boolean, contacts: array }`
-
-## 환경 변수
-
-`.env` 파일을 생성하고 다음 내용을 추가하세요:
-
-```
-PORT=5000
-JWT_SECRET=your-secret-key-here
-ADMIN_EMAIL=admin@real-day.com
-ADMIN_PASSWORD=admin123
-```
-
-## 실제 프로덕션 배포 시
-
-1. 데이터베이스 연결 (MongoDB, PostgreSQL 등)
-2. 비밀번호 해싱 (bcrypt)
-3. JWT 토큰 인증
-4. 환경 변수 관리
-5. 에러 핸들링 강화
-6. 로깅 시스템
-7. 보안 강화 (rate limiting, helmet 등)
-
-
-
-
-
-
-
+두 명령 모두 루트의 `netlify.toml` 설정을 사용해 프론트엔드와 Functions를 함께 실행합니다.

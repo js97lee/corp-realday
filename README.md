@@ -76,6 +76,8 @@ src/
    - Netlify 사이트 설정 → Environment variables에서 다음 변수 추가:
    - `DATABASE_URL`: Neon PostgreSQL 연결 URL (필수)
    - `NETLIFY_DATABASE_URL`: DATABASE_URL과 동일한 값 (선택, 백업용)
+   - `INITIAL_ADMIN_EMAIL`: 신규 DB의 초기 관리자 이메일 (선택)
+   - `INITIAL_ADMIN_PASSWORD`: 신규 DB의 초기 관리자 비밀번호 (신규 DB만 필수)
 
 2. **GitHub 연동**
    - Netlify 사이트 설정 → Build & deploy → Connect to Git
@@ -92,10 +94,10 @@ src/
    - `/api/test-db` 엔드포인트로 DB 연결 테스트
    - Netlify Functions 로그에서 에러 확인
 
-2. **기본 관리자 계정**
-   - 이메일: `studio.realday@gmail.com`
-   - 비밀번호: `admin0714`
-   - 첫 로그인 시 자동 생성됨
+2. **관리자 계정**
+   - 기존 관리자는 DB에 등록된 계정을 사용합니다.
+   - 신규 DB에서는 `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` 환경 변수로 생성합니다.
+   - 비밀번호는 bcrypt 해시로만 저장되며 API 응답에 포함되지 않습니다.
 
 ### API 엔드포인트
 
@@ -110,21 +112,11 @@ src/
 
 ## 로컬 개발
 
-### 프론트엔드 실행
+프론트엔드와 Netlify Functions를 동일한 환경에서 실행합니다.
+
 ```bash
 npm install
-npm run dev
+npm run netlify:dev
 ```
 
-### 백엔드 서버 실행 (선택사항)
-```bash
-cd server
-npm install
-# server/.env 파일에 DATABASE_URL 설정 필요
-npm run dev
-```
-
-로컬 개발 시 프론트엔드는 `http://localhost:3000`에서 실행되며, 백엔드 서버는 `http://localhost:5001`에서 실행됩니다.
-
-
-
+`server/`의 기존 Express 중복 구현은 제거되었으며, 이전 `cd server && npm run dev` 명령도 동일하게 Netlify Dev를 실행합니다.

@@ -1,87 +1,20 @@
-import { initDatabase, getSql } from './db.js'
+import {
+  ensureDatabaseInitialized,
+  getCorsHeaders,
+  handleOptionsRequest,
+  verifyAuth,
+} from './utils.js'
 
 export const handler = async (event, context) => {
-  // CORS 헤더 설정
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  }
+  const headers = getCorsHeaders()
 
-  // OPTIONS 요청 처리 (CORS preflight)
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    }
+    return handleOptionsRequest()
   }
 
   try {
-    // 데이터베이스 초기화
-    try {
-      await initDatabase()
-    } catch (initError) {
-      console.error('Database initialization error:', initError)
-      // 초기화 실패해도 계속 진행 (이미 초기화되었을 수 있음)
-    }
-    
-    let sql
-    try {
-      sql = getSql()
-    } catch (sqlError) {
-      console.error('SQL connection error:', sqlError)
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: '데이터베이스 연결에 실패했습니다.',
-          details: sqlError.message
-        }),
-      }
-    }
-
-    // 인증 확인
-    const authHeader = event.headers.authorization || event.headers.Authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: '인증이 필요합니다.' }),
-      }
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    // 간단한 토큰 검증 (mock-jwt-token은 모든 사용자 허용)
-    let user = null
-    
-    if (token === 'mock-jwt-token') {
-      // mock 토큰인 경우 CEO 역할을 가진 사용자를 우선 찾고, 없으면 첫 번째 사용자 사용
-      const ceoUserResult = await sql`
-        SELECT id, email, role FROM users 
-        WHERE LOWER(role) = 'ceo' OR LOWER(role) = 'super_admin'
-        LIMIT 1
-      `
-      if (ceoUserResult.length > 0) {
-        user = ceoUserResult[0]
-      } else {
-        // CEO가 없으면 첫 번째 사용자를 사용
-        const userResult = await sql`
-          SELECT id, email, role FROM users LIMIT 1
-        `
-        if (userResult.length > 0) {
-          user = userResult[0]
-        }
-      }
-    } else {
-      // 실제 토큰인 경우 password와 비교 (임시)
-      const userResult = await sql`
-        SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1
-      `
-      if (userResult.length > 0) {
-        user = userResult[0]
-      }
-    }
+    const sql = await ensureDatabaseInitialized(context)
+    const user = await verifyAuth(event, sql)
     
     if (!user) {
       return {

@@ -1,27 +1,22 @@
-import { getSql, initDatabase } from './db.js'
-
-// 데이터베이스 초기화 (최초 실행 시)
-let dbInitialized = false
+import {
+  createErrorResponse,
+  ensureDatabaseInitialized,
+  getCorsHeaders,
+  handleOptionsRequest,
+} from './utils.js'
+import {
+  createSession,
+  upgradeLegacyPassword,
+  verifyPassword,
+} from './auth.js'
 
 export const handler = async (event, context) => {
-  // CORS 헤더 설정
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  }
+  const headers = getCorsHeaders()
 
-  // OPTIONS 요청 처리 (CORS preflight)
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    }
+    return handleOptionsRequest()
   }
 
-  // POST 요청만 허용
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -31,24 +26,7 @@ export const handler = async (event, context) => {
   }
 
   try {
-    // 데이터베이스 초기화 (한 번만 실행)
-    if (!dbInitialized) {
-      try {
-        await initDatabase()
-        dbInitialized = true
-      } catch (dbError) {
-        console.error('Database initialization error:', dbError)
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: '데이터베이스 연결 오류: ' + dbError.message,
-          }),
-        }
-      }
-    }
-
+    const sqlFunc = await ensureDatabaseInitialized(context)
     const { email, password } = JSON.parse(event.body || '{}')
 
     // 입력 검증
@@ -76,8 +54,6 @@ export const handler = async (event, context) => {
       }
     }
 
-    // 데이터베이스에서 사용자 조회
-    const sqlFunc = getSql()
     const users = await sqlFunc`
       SELECT * FROM users WHERE email = ${email}
     `
@@ -95,8 +71,7 @@ export const handler = async (event, context) => {
 
     const user = users[0]
 
-    // 비밀번호 확인
-    if (password !== user.password) {
+    if (!await verifyPassword(password, user.password)) {
       return {
         statusCode: 401,
         headers,
@@ -107,7 +82,9 @@ export const handler = async (event, context) => {
       }
     }
 
-    // 로그인 성공
+    await upgradeLegacyPassword(sqlFunc, user, password)
+    const token = await createSession(sqlFunc, user.id)
+
     return {
       statusCode: 200,
       headers,
@@ -119,19 +96,11 @@ export const handler = async (event, context) => {
           email: user.email,
           role: user.role || 'employee',
         },
-        token: 'mock-jwt-token',
+        token,
       }),
     }
   } catch (error) {
     console.error('Login error:', error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: '서버 오류가 발생했습니다.',
-      }),
-    }
+    return createErrorResponse(error, context)
   }
 }
-

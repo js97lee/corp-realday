@@ -1,19 +1,36 @@
-import { getSql, initDatabase } from './db.js'
+import { hashPassword } from './auth.js'
+import {
+  createErrorResponse,
+  ensureDatabaseInitialized,
+  getCorsHeaders,
+  handleOptionsRequest,
+  verifyAuth,
+} from './utils.js'
 
 export const handler = async (event, context) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
+  const headers = getCorsHeaders()
+
+  if (event.httpMethod === 'OPTIONS') {
+    return handleOptionsRequest()
   }
 
   try {
-    await initDatabase()
-    const sqlFunc = getSql()
+    const sqlFunc = await ensureDatabaseInitialized(context)
+    const currentUser = await verifyAuth(event, sqlFunc)
+    const role = currentUser?.role?.toLowerCase()
+
+    if (!currentUser || !['ceo', 'super_admin'].includes(role)) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ success: false, message: '최고관리자 권한이 필요합니다.' }),
+      }
+    }
 
     // GET: 멤버 목록 조회
     if (event.httpMethod === 'GET') {
       const users = await sqlFunc`
-        SELECT id, email, password, role, name, profile_image_url, join_date, created_at
+        SELECT id, email, role, name, profile_image_url, join_date, created_at
         FROM users
         ORDER BY created_at DESC
       `
@@ -70,9 +87,10 @@ export const handler = async (event, context) => {
         }
       }
 
+      const passwordHash = await hashPassword(password)
       const result = await sqlFunc`
         INSERT INTO users (email, password, role, name, profile_image_url, join_date)
-        VALUES (${email}, ${password}, ${role || 'pro'}, ${name || null}, ${profileImageUrl || null}, ${joinDate || null})
+        VALUES (${email}, ${passwordHash}, ${role || 'pro'}, ${name || null}, ${profileImageUrl || null}, ${joinDate || null})
         RETURNING id, email, role, name, profile_image_url, join_date, created_at
       `
 
@@ -135,8 +153,9 @@ export const handler = async (event, context) => {
 
       // 업데이트할 필드만 업데이트
       if (password) {
+        const passwordHash = await hashPassword(password)
         await sqlFunc`
-          UPDATE users SET password = ${password} WHERE id = ${parseInt(id)}
+          UPDATE users SET password = ${passwordHash} WHERE id = ${parseInt(id)}
         `
       }
       if (role) {
@@ -254,16 +273,6 @@ export const handler = async (event, context) => {
     }
   } catch (error) {
     console.error('Members API error:', error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: '서버 오류가 발생했습니다.',
-        error: error.message
-      }),
-    }
+    return createErrorResponse(error, context)
   }
 }
-
-

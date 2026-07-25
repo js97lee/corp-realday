@@ -1,4 +1,5 @@
 import { getSql, initDatabase } from './db.js'
+import { getSessionUser } from './auth.js'
 
 // 데이터베이스 초기화 플래그 (모듈 레벨)
 let dbInitialized = false
@@ -43,7 +44,7 @@ export function calculateTimeouts(context) {
   const remainingTime = getRemainingTime(context)
   return {
     queryTimeout: Math.min(5000, remainingTime - 2000), // 쿼리 타임아웃: 최대 5초
-    initTimeout: Math.min(2000, remainingTime - 1000), // 초기화 타임아웃: 최대 2초
+    initTimeout: Math.min(8000, remainingTime - 1000), // 초기화 타임아웃: 최대 8초
   }
 }
 
@@ -165,21 +166,10 @@ export function createSuccessResponse(data, statusCode = 200) {
  * 인증 확인
  */
 export async function verifyAuth(event, sqlFunc) {
-  const authHeader = event.headers.authorization || event.headers.Authorization
+  const authHeader = event.headers?.authorization || event.headers?.Authorization
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null
   }
 
-  const token = authHeader.replace('Bearer ', '')
-  
-  // mock-jwt-token은 모든 사용자 허용
-  if (token === 'mock-jwt-token') {
-    const userResult = await sqlFunc`SELECT id, email, role FROM users LIMIT 1`
-    return userResult.length > 0 ? userResult[0] : null
-  }
-  
-  // 실제 토큰인 경우 password와 비교
-  const userResult = await sqlFunc`SELECT id, email, role FROM users WHERE password = ${token} LIMIT 1`
-  return userResult.length > 0 ? userResult[0] : null
+  return getSessionUser(sqlFunc, authHeader.slice('Bearer '.length))
 }
-
